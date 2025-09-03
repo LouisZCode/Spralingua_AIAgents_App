@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Spralingua - AI-Powered Language Learning{% endblock %}
+
+{% block styles %}
+    <!-- Landing Page Styles -->
+    <link rel="stylesheet" href="/static/css/landing.css?v={{ timestamp }}">
+{% endblock %}
+
+{% block content %}
+    <div class="landing-container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <!-- Logo/Brand -->
+                <div class="brand">
+                    <h1 class="brand-name">Spralingua</h1>
+                    <div class="brand-tagline">Learn Languages with AI</div>
+                </div>
+                
+                <!-- Value Proposition -->
+                <div class="value-prop">
+                    <h2 class="headline">Master Any Language with Your Personal AI Tutor</h2>
+                    <p class="subheadline">Experience personalized language learning powered by advanced AI. Start speaking confidently from day one.</p>
+                </div>
+                
+                <!-- CTA -->
+                <div class="cta-container">
+                    <a href="/register" class="cta-button">
+                        Try it for free
+                    </a>
+                </div>
+                
+                <!-- Trust Indicator -->
+                <div class="trust-indicator">
+                    <span class="trust-text">No credit card required</span>
+                </div>
+            </div>
+            
+            <!-- Background Animation -->
+            <div class="hero-background">
+                <div class="gradient-orb gradient-orb-1"></div>
+                <div class="gradient-orb gradient-orb-2"></div>
+                <div class="gradient-orb gradient-orb-3"></div>
+            </div>
+        </section>
+        
+        <!-- Benefits Section -->
+        <section class="benefits">
+            <div class="container">
+                <h2 class="section-title">Why Choose AI-Powered Language Learning?</h2>
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">🎯</div>
+                        <h3 class="benefit-title">AI-Powered Personalization</h3>
+                        <p class="benefit-text">Learn at your pace with AI that adapts to your level and learning style</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon">💬</div>
+                        <h3 class="benefit-title">Real Conversations</h3>
+                        <p class="benefit-text">Practice speaking with lifelike AI characters in natural scenarios</p>
+                    </div>
+                    <div class="benefit-card">
+                        <div class="benefit-icon">📈</div>
+                        <h3 class="benefit-title">Track Your Progress</h3>
+                        <p class="benefit-text">See your improvement with detailed analytics and personalized feedback</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- How It Works Section -->
+        <section class="how-it-works">
+            <div class="container">
+                <h2 class="section-title">Start Speaking German in 3 Simple Steps</h2>
+                <div class="steps-grid">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <h3 class="step-title">Create Your Profile</h3>
+                        <p class="step-text">Sign up in seconds - no credit card required</p>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <h3 class="step-title">Meet Your AI Tutor</h3>
+                        <p class="step-text">Get personalized onboarding with Herr Müller</p>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <h3 class="step-title">Start Learning</h3>
+                        <p class="step-text">Dive into interactive lessons and conversations</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Social Proof Section -->
+        <section class="social-proof">
+            <div class="container">
+                <h2 class="section-title">Join Our Growing Community</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">500+</div>
+                        <div class="stat-label">Active Learners</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">4.9/5</div>
+                        <div class="stat-label">Satisfaction Rating</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">15 min</div>
+                        <div class="stat-label">Daily Practice</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Final CTA Section -->
+        <section class="final-cta">
+            <div class="container">
+                <h2 class="cta-title">Ready to Start Your Language Journey?</h2>
+                <p class="cta-subtitle">Join thousands of learners mastering German with AI</p>
+                <div class="cta-container">
+                    <a href="/register" class="cta-button cta-button-large">
+                        Start Learning Free
+                    </a>
+                </div>
+                <p class="cta-disclaimer">No credit card required • Free forever plan available</p>
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Minimal JavaScript for animations -->
+    <script>
+        // Set timestamp for cache busting
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate elements on load
+            const elements = document.querySelectorAll('.hero-content > *');
+            elements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+                el.classList.add('fade-in-up');
+            });
+        });
+    </script>
+{% endblock %}
