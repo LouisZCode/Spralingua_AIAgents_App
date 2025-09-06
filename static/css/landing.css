@@ -164,21 +164,41 @@ body {
 /* CTA */
 .cta-container {
     margin-bottom: var(--space-lg);
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
 }
 
 .cta-button {
     display: inline-block;
-    padding: var(--space-md) var(--space-2xl);
-    background: var(--text-white);
-    color: var(--primary-color);
-    font-size: var(--font-size-xl);
+    padding: 1.2rem 3rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1.25rem;
     font-weight: 600;
     text-decoration: none;
     border-radius: 50px;
     transition: all var(--transition-normal);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
     position: relative;
     overflow: hidden;
+}
+
+.cta-button-primary {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+    50% {
+        box-shadow: 0 10px 40px rgba(102, 126, 234, 0.5);
+    }
+    100% {
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
 }
 
 .cta-button:hover {
@@ -205,6 +225,7 @@ body {
 .cta-button:hover::before {
     left: 100%;
 }
+
 
 /* Trust Indicator */
 .trust-indicator {

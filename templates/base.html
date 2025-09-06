@@ -12,11 +12,17 @@
     
     <!-- Global responsive base styles -->
     <link rel="stylesheet" href="/static/css/base.css?v={{ timestamp }}">
+    <link rel="stylesheet" href="/static/css/navigation.css?v={{ timestamp }}">
     
     <!-- Page-specific styles -->
     {% block styles %}{% endblock %}
 </head>
 <body>
+    <!-- Navigation Bar -->
+    {% block navigation %}
+    {% include 'partials/navigation.html' %}
+    {% endblock %}
+    
     <!-- Main Content Area -->
     {% block content %}
     <!-- Page content goes here -->

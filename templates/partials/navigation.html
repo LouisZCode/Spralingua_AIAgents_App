@@ -1,0 +1,33 @@
+<nav class="navbar">
+    <div class="nav-container">
+        <!-- Logo/Brand -->
+        <div class="nav-brand">
+            <a href="/" class="brand-link">
+                <span class="brand-text">Spralingua</span>
+            </a>
+        </div>
+        
+        <!-- Navigation Links -->
+        <div class="nav-links">
+            {% if session.authenticated %}
+                <!-- Authenticated User Menu -->
+                <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+                <div class="nav-user-menu">
+                    <span class="nav-user-email">{{ session.email }}</span>
+                    <a href="{{ url_for('auth_logout') }}" class="nav-link nav-logout">Logout</a>
+                </div>
+            {% else %}
+                <!-- Guest User Menu -->
+                <a href="{{ url_for('auth_login') }}" class="nav-link">Login</a>
+                <a href="{{ url_for('auth_register') }}" class="nav-button nav-signup">Sign up</a>
+            {% endif %}
+        </div>
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="nav-toggle" aria-label="Toggle navigation">
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+        </button>
+    </div>
+</nav>

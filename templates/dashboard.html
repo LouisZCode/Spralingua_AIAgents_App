@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Spralingua{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-container {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: var(--space-xl) var(--container-padding);
+    }
+    
+    .dashboard-header {
+        background: white;
+        border-radius: 20px;
+        padding: var(--space-xl);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: var(--space-xl);
+        max-width: var(--container-lg);
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .dashboard-title {
+        font-size: var(--font-size-3xl);
+        color: #333;
+        margin-bottom: var(--space-md);
+    }
+    
+    .user-info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-lg);
+        margin-bottom: var(--space-xl);
+    }
+    
+    .info-card {
+        flex: 1;
+        min-width: 200px;
+        background: #f8f9fa;
+        padding: var(--space-md);
+        border-radius: 10px;
+    }
+    
+    .info-label {
+        font-size: var(--font-size-sm);
+        color: #666;
+        margin-bottom: var(--space-xs);
+    }
+    
+    .info-value {
+        font-size: var(--font-size-xl);
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 30px;
+        background: #e0e0e0;
+        border-radius: 15px;
+        overflow: hidden;
+        margin-top: var(--space-sm);
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        transition: width 0.3s ease;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: var(--space-md);
+        flex-wrap: wrap;
+    }
+    
+    .btn-dashboard {
+        padding: var(--space-sm) var(--space-lg);
+        font-size: var(--font-size-base);
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-secondary {
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+    
+    .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .btn-danger {
+        background: #e74c3c;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c0392b;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Welcome to Your Dashboard</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="user-info">
+            <div class="info-card">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ email }}</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Progress Level</div>
+                <div class="info-value">Level {{ progress_level }}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ (progress_level * 10) if progress_level <= 10 else 100 }}%">
+                        {{ progress_level * 10 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <a href="#" class="btn-dashboard btn-secondary">Start Learning</a>
+            <a href="#" class="btn-dashboard btn-secondary">View Courses</a>
+            <a href="#" class="btn-dashboard btn-secondary">Settings</a>
+            <a href="{{ url_for('auth_logout') }}" class="btn-dashboard btn-danger">Logout</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
