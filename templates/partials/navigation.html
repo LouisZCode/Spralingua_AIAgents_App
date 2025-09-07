@@ -11,15 +11,15 @@
         <div class="nav-links">
             {% if session.authenticated %}
                 <!-- Authenticated User Menu -->
-                <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('dashboard') }}" class="nav-link" data-translate="nav_dashboard">Dashboard</a>
                 <div class="nav-user-menu">
                     <span class="nav-user-email">{{ session.email }}</span>
-                    <a href="{{ url_for('auth_logout') }}" class="nav-link nav-logout">Logout</a>
+                    <a href="{{ url_for('auth_logout') }}" class="nav-link nav-logout" data-translate="nav_logout">Logout</a>
                 </div>
             {% else %}
                 <!-- Guest User Menu -->
-                <a href="{{ url_for('auth_login') }}" class="nav-link">Login</a>
-                <a href="{{ url_for('auth_register') }}" class="nav-button nav-signup">Sign up</a>
+                <a href="{{ url_for('auth_login') }}" class="nav-link" data-translate="nav_login">Login</a>
+                <a href="{{ url_for('auth_register') }}" class="nav-button nav-signup" data-translate="nav_signup">Sign up</a>
             {% endif %}
         </div>
         

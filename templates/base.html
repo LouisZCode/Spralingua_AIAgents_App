@@ -31,6 +31,9 @@
     <!-- Footer (Optional) -->
     {% block footer %}{% endblock %}
     
+    <!-- Global translation system -->
+    <script src="{{ url_for('static', filename='js/translations.js') }}?v={{ timestamp }}"></script>
+    
     <!-- Page-specific scripts -->
     {% block scripts %}{% endblock %}
 </body>
