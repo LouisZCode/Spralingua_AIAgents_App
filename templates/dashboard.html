@@ -7,6 +7,17 @@
 {% endblock %}
 
 {% block content %}
+<!-- Pass saved progress data to JavaScript -->
+{% if user_progress %}
+<script>
+    window.savedProgress = {
+        input_language: "{{ user_progress.input_language }}",
+        target_language: "{{ user_progress.target_language }}",
+        current_level: "{{ user_progress.current_level }}"
+    };
+</script>
+{% endif %}
+
 <div class="dashboard-container">
     <div class="dashboard-header">
         <h1 class="dashboard-title" data-translate="welcome">Welcome back!</h1>

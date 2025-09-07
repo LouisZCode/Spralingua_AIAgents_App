@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Learning Hub - Your Language Journey{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/exercises.css') }}?v={{ timestamp }}">
+{% endblock %}
+
+{% block content %}
+    <div class="hub-container">
+        <!-- Header Section -->
+        <div class="hub-header">
+            <h1 class="hub-title">Learning Hub</h1>
+            <p class="hub-subtitle">Your personalized language learning journey</p>
+            {% if current_user %}
+                <p class="user-greeting">Welcome back, {{ current_user.display_name or current_user.username }}!</p>
+            {% endif %}
+        </div>
+        
+        <!-- Intro section placeholder -->
+        <div class="modules-section">
+            <!-- Empty intro section for now -->
+        </div>
+        
+        <!-- Practice Modules Grid -->
+        <div class="modules-section">
+            <h2 class="section-title">Practice Modules</h2>
+            
+            <!-- Static Conversation Practice Module -->
+            <div class="practice-module-container">
+                <!-- Main Module Box -->
+                <div class="practice-module-main unlocked">
+                    <span class="practice-module-icon">💬</span>
+                    <h3 class="practice-module-title">Conversation Practice</h3>
+                    <div class="practice-module-status unlocked">
+                        🔓 Ready to practice
+                    </div>
+                </div>
+                
+                <!-- Exercise Boxes -->
+                <div class="practice-exercises-container">
+                    <a href="#" class="practice-exercise-box">
+                        <span class="practice-exercise-icon">☕</span>
+                        <div class="practice-exercise-title">Casual Chat</div>
+                        <div class="practice-exercise-subtitle">Everyday conversations</div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Static Writing Practice Module -->
+            <div class="practice-module-container">
+                <!-- Main Module Box -->
+                <div class="practice-module-main unlocked">
+                    <span class="practice-module-icon">✍️</span>
+                    <h3 class="practice-module-title">Writing Practice</h3>
+                    <div class="practice-module-status unlocked">
+                        🔓 Ready to practice
+                    </div>
+                </div>
+                
+                <!-- Exercise Boxes -->
+                <div class="practice-exercises-container">
+                    <a href="#" class="practice-exercise-box">
+                        <span class="practice-exercise-icon">📧</span>
+                        <div class="practice-exercise-title">Email Writing</div>
+                        <div class="practice-exercise-subtitle">Professional emails</div>
+                    </a>
+                    <a href="#" class="practice-exercise-box">
+                        <span class="practice-exercise-icon">🔤</span>
+                        <div class="practice-exercise-title">Fill the Blanks</div>
+                        <div class="practice-exercise-subtitle">Grammar practice</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

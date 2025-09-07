@@ -73,8 +73,6 @@ class AuthRoutes:
                     if remember_me:
                         session.permanent = True
                     
-                    flash(f'Welcome back!', 'success')
-                    
                     # Redirect to next URL or dashboard
                     next_url = session.pop('next_url', None)
                     if next_url:
@@ -124,8 +122,51 @@ class AuthRoutes:
         @login_required
         def dashboard():
             """Dashboard page for logged-in users."""
+            from progress.progress_manager import ProgressManager
+            
             email = session.get('email', 'User')
-            progress_level = session.get('progress_level', 0)
+            user_id = session.get('user_id')
+            
+            # Get user's most recent progress
+            progress_mgr = ProgressManager()
+            user_progress = progress_mgr.get_user_progress(user_id) if user_id else None
+            
+            # Prepare progress data for template
+            progress_data = None
+            if user_progress:
+                progress_data = {
+                    'input_language': user_progress.input_language,
+                    'target_language': user_progress.target_language,
+                    'current_level': user_progress.current_level
+                }
+            
             return render_template('dashboard.html', 
                                  email=email,
-                                 progress_level=progress_level)
+                                 user_progress=progress_data)
+        
+        @self.app.route('/exercises')
+        @login_required
+        def exercises():
+            """Exercises page for practicing languages."""
+            from progress.progress_manager import ProgressManager
+            
+            email = session.get('email', 'User')
+            user_id = session.get('user_id')
+            
+            # Get user's most recent progress to know what they're learning
+            progress_mgr = ProgressManager()
+            user_progress = progress_mgr.get_user_progress(user_id) if user_id else None
+            
+            # Prepare progress data for template
+            progress_data = None
+            if user_progress:
+                progress_data = {
+                    'input_language': user_progress.input_language,
+                    'target_language': user_progress.target_language,
+                    'current_level': user_progress.current_level,
+                    'progress_in_level': user_progress.progress_in_level
+                }
+            
+            return render_template('exercises.html', 
+                                 email=email,
+                                 user_progress=progress_data)

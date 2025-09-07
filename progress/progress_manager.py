@@ -1,0 +1,171 @@
+# Progress Manager for Spralingua
+# Handles all database operations for language learning progress
+
+from database import db
+from models.user_progress import UserProgress
+from sqlalchemy.exc import IntegrityError
+
+class ProgressManager:
+    """Manages user progress tracking for language pairs"""
+    
+    def __init__(self):
+        """Initialize the ProgressManager"""
+        self.db = db
+    
+    def get_user_progress(self, user_id, input_language=None, target_language=None):
+        """
+        Get user's progress for a specific language pair or most recent
+        
+        Args:
+            user_id: The user's ID
+            input_language: Optional specific input language
+            target_language: Optional specific target language
+        
+        Returns:
+            UserProgress object or None
+        """
+        try:
+            query = UserProgress.query.filter_by(user_id=user_id)
+            
+            if input_language and target_language:
+                # Get specific language pair
+                progress = query.filter_by(
+                    input_language=input_language.lower(),
+                    target_language=target_language.lower()
+                ).first()
+            else:
+                # Get most recently accessed progress
+                progress = query.order_by(UserProgress.last_accessed.desc()).first()
+            
+            return progress
+        except Exception as e:
+            print(f"Error getting user progress: {e}")
+            return None
+    
+    def save_progress(self, user_id, input_language, target_language, current_level):
+        """
+        Save or update user's progress for a language pair
+        
+        Args:
+            user_id: The user's ID
+            input_language: The input language
+            target_language: The target language
+            current_level: The current level (A1, A2, B1, B2)
+        
+        Returns:
+            Tuple (success: bool, result: dict)
+        """
+        try:
+            # Check if progress already exists for this language pair
+            existing = self.get_user_progress(user_id, input_language, target_language)
+            
+            if existing:
+                # Update existing progress
+                existing.update_progress(new_level=current_level)
+                self.db.session.commit()
+                
+                return True, {
+                    'message': 'Progress updated successfully',
+                    'progress': existing.to_dict()
+                }
+            else:
+                # Create new progress record
+                new_progress = UserProgress(
+                    user_id=user_id,
+                    input_language=input_language,
+                    target_language=target_language,
+                    current_level=current_level
+                )
+                
+                self.db.session.add(new_progress)
+                self.db.session.commit()
+                
+                return True, {
+                    'message': 'Progress saved successfully',
+                    'progress': new_progress.to_dict()
+                }
+                
+        except IntegrityError as e:
+            self.db.session.rollback()
+            return False, {'error': 'Database integrity error'}
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"Error saving progress: {e}")
+            return False, {'error': 'Failed to save progress'}
+    
+    def get_all_user_pairs(self, user_id):
+        """
+        Get all language pairs for a user
+        
+        Args:
+            user_id: The user's ID
+        
+        Returns:
+            List of UserProgress objects
+        """
+        try:
+            progress_records = UserProgress.query.filter_by(user_id=user_id)\
+                .order_by(UserProgress.last_accessed.desc()).all()
+            return progress_records
+        except Exception as e:
+            print(f"Error getting all user pairs: {e}")
+            return []
+    
+    def delete_progress(self, user_id, input_language, target_language):
+        """
+        Delete a specific progress record
+        
+        Args:
+            user_id: The user's ID
+            input_language: The input language
+            target_language: The target language
+        
+        Returns:
+            Tuple (success: bool, message: str)
+        """
+        try:
+            progress = self.get_user_progress(user_id, input_language, target_language)
+            
+            if progress:
+                self.db.session.delete(progress)
+                self.db.session.commit()
+                return True, 'Progress deleted successfully'
+            else:
+                return False, 'Progress record not found'
+                
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"Error deleting progress: {e}")
+            return False, 'Failed to delete progress'
+    
+    def update_progress_in_level(self, user_id, input_language, target_language, progress_percentage):
+        """
+        Update the progress percentage within a level
+        
+        Args:
+            user_id: The user's ID
+            input_language: The input language
+            target_language: The target language
+            progress_percentage: Progress within the level (0-100)
+        
+        Returns:
+            Tuple (success: bool, result: dict)
+        """
+        try:
+            progress = self.get_user_progress(user_id, input_language, target_language)
+            
+            if progress:
+                progress.update_progress(progress_in_level=min(100, max(0, progress_percentage)))
+                self.db.session.commit()
+                
+                return True, {
+                    'message': 'Progress updated',
+                    'progress': progress.to_dict()
+                }
+            else:
+                return False, {'error': 'Progress record not found'}
+                
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"Error updating progress in level: {e}")
+            return False, {'error': 'Failed to update progress'}

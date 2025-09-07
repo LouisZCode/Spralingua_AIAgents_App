@@ -173,24 +173,93 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Handle continue button click
-    continueBtn.addEventListener('click', function() {
+    continueBtn.addEventListener('click', async function() {
         if (selectedInput && selectedTarget && selectedLevel) {
-            // Save selections to session/database (will be implemented later)
-            console.log('Selections:', {
-                input: selectedInput,
-                target: selectedTarget,
-                level: selectedLevel
-            });
-
-            // For now, just show an alert
-            alert(`Great! You'll be learning ${selectedTarget} from ${selectedInput} at ${selectedLevel} level.\n\nThis feature will be implemented soon!`);
+            // Disable button during save
+            continueBtn.disabled = true;
+            continueBtn.textContent = typeof translationManager !== 'undefined' ? 
+                'Saving...' : 'Saving...';
+            
+            try {
+                // Send selections to backend
+                const response = await fetch('/api/save-progress', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        input_language: selectedInput,
+                        target_language: selectedTarget,
+                        current_level: selectedLevel
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Redirect to exercises page
+                    window.location.href = '/exercises';
+                } else {
+                    // Show error message
+                    alert('Failed to save progress: ' + (result.error || 'Unknown error'));
+                    // Re-enable button
+                    continueBtn.disabled = false;
+                    continueBtn.textContent = typeof translationManager !== 'undefined' ? 
+                        translationManager.getText('continue_btn') : 'Continue';
+                }
+            } catch (error) {
+                console.error('Error saving progress:', error);
+                alert('Network error. Please try again.');
+                // Re-enable button
+                continueBtn.disabled = false;
+                continueBtn.textContent = typeof translationManager !== 'undefined' ? 
+                    translationManager.getText('continue_btn') : 'Continue';
+            }
         }
     });
 
-    // Load previous selections if they exist (to be implemented with backend)
+    // Load previous selections if they exist
     function loadPreviousSelections() {
-        // This will be connected to backend later
-        // For now, we'll just leave it empty
+        // Check if saved progress exists from backend
+        if (window.savedProgress) {
+            const { input_language, target_language, current_level } = window.savedProgress;
+            
+            // Pre-select input language
+            if (input_language) {
+                const inputCard = document.querySelector(`#input-languages .language-card[data-lang="${input_language}"]`);
+                if (inputCard) {
+                    inputCard.classList.add('selected');
+                    selectedInput = input_language;
+                    
+                    // Update page language
+                    if (typeof translationManager !== 'undefined') {
+                        translationManager.setLanguage(input_language);
+                    }
+                }
+            }
+            
+            // Pre-select target language
+            if (target_language) {
+                const targetCard = document.querySelector(`#target-languages .language-card[data-lang="${target_language}"]`);
+                if (targetCard) {
+                    targetCard.classList.add('selected');
+                    selectedTarget = target_language;
+                }
+            }
+            
+            // Pre-select level
+            if (current_level) {
+                const levelCard = document.querySelector(`#level-selection .level-card[data-level="${current_level}"]`);
+                if (levelCard) {
+                    levelCard.classList.add('selected');
+                    selectedLevel = current_level;
+                }
+            }
+            
+            // Update displays
+            updateSelectionDisplay();
+            checkContinueButton();
+        }
     }
 
     // Initialize
