@@ -1,6 +1,6 @@
 /**
- * Minimal ChatInterface wrapper for VoiceInput integration
- * Provides just enough interface to support voice-input.js from GTA-V2
+ * ChatInterface wrapper for Voice Input/Output integration
+ * Bridges GTA-V2 voice systems with Spralingua's chat functionality
  */
 class ChatInterface {
     constructor() {
@@ -8,6 +8,22 @@ class ChatInterface {
         this.sendButton = document.getElementById('send-button');
         this.voiceToggleButton = document.getElementById('voice-btn');
         this.isProcessingVoice = false;
+        
+        // Initialize VoiceOutput for TTS
+        this.voiceOutput = null;
+        this.initializeVoiceOutput();
+    }
+    
+    /**
+     * Initialize VoiceOutput system
+     */
+    initializeVoiceOutput() {
+        if (typeof VoiceOutput !== 'undefined') {
+            this.voiceOutput = new VoiceOutput(this);
+            console.log('[CHAT WRAPPER] VoiceOutput initialized');
+        } else {
+            console.warn('[CHAT WRAPPER] VoiceOutput not available');
+        }
     }
     
     /**
@@ -75,6 +91,66 @@ class ChatInterface {
      */
     getIsProcessingVoice() {
         return this.isProcessingVoice;
+    }
+    
+    /**
+     * Play TTS for assistant response
+     * @param {string} text - Text to speak
+     * @param {string} character - Character name for voice selection
+     */
+    async playAssistantResponse(text, character) {
+        if (!this.voiceOutput) {
+            console.warn('[CHAT WRAPPER] VoiceOutput not initialized');
+            return;
+        }
+        
+        try {
+            console.log('[CHAT WRAPPER] Playing TTS for:', character);
+            
+            // Set avatar to speaking state
+            if (window.avatarController && window.avatarController.isReady()) {
+                window.avatarController.setState('speaking');
+            }
+            
+            // Play the speech
+            await this.voiceOutput.speak(text);
+            
+            // Return avatar to idle state
+            if (window.avatarController && window.avatarController.isReady()) {
+                window.avatarController.setState('idle');
+            }
+            
+        } catch (error) {
+            console.error('[CHAT WRAPPER] Error playing TTS:', error);
+            // Ensure avatar returns to idle even on error
+            if (window.avatarController && window.avatarController.isReady()) {
+                window.avatarController.setState('idle');
+            }
+        }
+    }
+    
+    /**
+     * Handle TTS loading state
+     * Called by VoiceOutput when TTS starts/ends loading
+     */
+    showTTSLoading() {
+        console.log('[CHAT WRAPPER] TTS loading...');
+        // Could show a loading indicator if needed
+    }
+    
+    hideTTSLoading() {
+        console.log('[CHAT WRAPPER] TTS loading complete');
+        // Hide loading indicator if shown
+    }
+    
+    /**
+     * Set avatar state - called by VoiceOutput
+     * @param {string} state - Avatar state (idle, thinking, speaking)
+     */
+    setAvatarState(state) {
+        if (window.avatarController && window.avatarController.isReady()) {
+            window.avatarController.setState(state);
+        }
     }
 }
 

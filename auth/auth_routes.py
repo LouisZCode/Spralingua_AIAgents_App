@@ -323,3 +323,50 @@ class AuthRoutes:
             except Exception as e:
                 print(f"Error clearing conversation: {e}")
                 return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/casual-chat/tts', methods=['POST'])
+        @login_required
+        def casual_chat_tts():
+            """Text-to-speech endpoint for casual chat using Minimax."""
+            try:
+                from minimax_client import minimax_client
+                
+                # Parse request data
+                data = request.get_json()
+                
+                if not data or 'text' not in data:
+                    return jsonify({'error': 'Text is required'}), 400
+                
+                text = data.get('text', '').strip()
+                if not text:
+                    return jsonify({'error': 'Text cannot be empty'}), 400
+                
+                # Extract optional parameters
+                character = data.get('character')  # 'harry' or 'sally'
+                voice_id = data.get('voice_id')
+                speed = data.get('speed')
+                volume = data.get('vol')
+                pitch = data.get('pitch')
+                
+                print(f"[TTS REQUEST] Character: {character}, Text length: {len(text)}")
+                
+                # Use Minimax client to synthesize speech
+                success, result = minimax_client.synthesize_speech(
+                    text=text,
+                    character=character,
+                    voice_id=voice_id,
+                    speed=speed,
+                    volume=volume,
+                    pitch=pitch
+                )
+                
+                if success:
+                    # Return the result dict directly (matching GTA-V2)
+                    return jsonify(result)
+                else:
+                    # Return error
+                    return jsonify(result), 500
+                    
+            except Exception as e:
+                print(f"Error in TTS endpoint: {e}")
+                return jsonify({'error': str(e)}), 500

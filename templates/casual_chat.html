@@ -187,8 +187,10 @@
 <script src="{{ url_for('static', filename='js/listening-mode.js') }}?v={{ timestamp }}"></script>
 <!-- Load timed recording UI for voice input -->
 <script src="{{ url_for('static', filename='js/timed-recording-ui.js') }}?v={{ timestamp }}"></script>
-<!-- Load chat wrapper for voice input integration -->
+<!-- Load chat wrapper for voice input/output integration -->
 <script src="{{ url_for('static', filename='js/chat-wrapper.js') }}?v={{ timestamp }}"></script>
+<!-- Load voice output system for TTS -->
+<script src="{{ url_for('static', filename='js/voice-output.js') }}?v={{ timestamp }}"></script>
 <!-- Load voice input system from GTA-V2 -->
 <script src="{{ url_for('static', filename='js/voice-input.js') }}?v={{ timestamp }}"></script>
 
@@ -234,7 +236,7 @@
     let listeningModeManager = null; // Will be initialized after character selection
     let avatarController = null; // Will be initialized after character selection
     
-    // Configuration objects for voice input system
+    // Configuration objects for voice input/output system
     const CHAT_CONFIG = {
         placeholders: {
             default: "Type a message or click the microphone to speak..."
@@ -259,6 +261,25 @@
     
     const LANGUAGE_SELECTOR_CONFIG = {
         currentLanguage: 'de' // Default to German
+    };
+    
+    // Voice output configuration for TTS
+    const VOICE_CONFIG = {
+        harry: {
+            voice_id: 'male-qn-qingse',     // Cheerful male voice
+            speed: 1.2,
+            pitch: 0,
+            volume: 1.0
+        },
+        sally: {
+            voice_id: 'female-shaonv',      // Thoughtful female voice
+            speed: 1.0,
+            pitch: -2,
+            volume: 0.9
+        },
+        ttsEndpoint: '/api/casual-chat/tts',
+        ttsTimeout: 30000,  // 30 seconds timeout
+        enableTTS: true      // Can be toggled on/off
     };
     
     // Global variables for voice system
@@ -348,6 +369,11 @@
                 
                 // Initialize voice input system after character selection
                 initializeVoiceSystem();
+                
+                // Initialize volume controls after voice system is ready
+                setTimeout(() => {
+                    initializeVolumeControls();
+                }, 800);
             }, 300);
         }
         
@@ -374,6 +400,76 @@
                 
                 console.log('[CASUAL CHAT] Voice system initialized successfully');
             }, 500); // Give DOM time to update
+        }
+        
+        // Initialize volume controls for TTS
+        function initializeVolumeControls() {
+            const volumeSlider = document.getElementById('volume-slider');
+            const volumePercentage = document.getElementById('volume-percentage');
+            const muteBtn = document.getElementById('mute-btn');
+            
+            if (!volumeSlider || !muteBtn) {
+                console.warn('[VOLUME] Volume controls not found in DOM');
+                return;
+            }
+            
+            // Wait for VoiceOutput to be initialized
+            if (!chatInterface || !chatInterface.voiceOutput) {
+                console.warn('[VOLUME] VoiceOutput not initialized yet, retrying...');
+                setTimeout(initializeVolumeControls, 500);
+                return;
+            }
+            
+            const voiceOutput = chatInterface.voiceOutput;
+            console.log('[VOLUME] Initializing volume controls');
+            
+            // Set initial slider value from saved preference (inverted for vertical slider)
+            const savedVolume = voiceOutput.getVolume();
+            const invertedValue = 100 - Math.round(savedVolume * 100);
+            volumeSlider.value = invertedValue;
+            volumePercentage.textContent = `${Math.round(savedVolume * 100)}%`;
+            
+            // Update mute button state
+            const updateMuteButton = (isMuted) => {
+                const volumeIcon = muteBtn.querySelector('.volume-icon');
+                if (volumeIcon) {
+                    volumeIcon.textContent = isMuted ? '🔇' : '🔊';
+                }
+                muteBtn.classList.toggle('muted', isMuted);
+            };
+            
+            updateMuteButton(voiceOutput.isMutedState());
+            
+            // Volume slider event
+            volumeSlider.addEventListener('input', function() {
+                // Invert the value so 100% is at top, 0% at bottom
+                const displayValue = parseInt(this.value);
+                const actualVolume = (100 - displayValue) / 100;
+                
+                voiceOutput.setVolume(actualVolume);
+                volumePercentage.textContent = `${100 - displayValue}%`;
+                
+                // If unmuted and volume > 0, ensure unmuted
+                if (actualVolume > 0 && voiceOutput.isMutedState()) {
+                    voiceOutput.toggleMute();
+                    updateMuteButton(false);
+                }
+            });
+            
+            // Mute button event
+            muteBtn.addEventListener('click', function() {
+                const isMuted = voiceOutput.toggleMute();
+                updateMuteButton(isMuted);
+                
+                // Visual feedback
+                if (isMuted) {
+                    volumeSlider.classList.add('muted');
+                } else {
+                    volumeSlider.classList.remove('muted');
+                }
+            });
+            
+            console.log('[VOLUME] Volume controls initialized successfully');
         }
         
         // Get DOM elements for later use
@@ -414,9 +510,31 @@
                 // Add assistant response to chat
                 addMessageToChat(data.response, 'assistant');
                 
-                // Set avatar back to idle state after response
-                if (avatarController && avatarController.isReady()) {
-                    avatarController.setState('idle');
+                // Play TTS if voice output is enabled
+                if (VOICE_CONFIG.enableTTS && chatInterface && chatInterface.voiceOutput) {
+                    try {
+                        // Configure voice for current character
+                        const voiceSettings = VOICE_CONFIG[selectedCharacter.id] || {};
+                        window.VOICE_CONFIG = {
+                            ...voiceSettings,
+                            ttsEndpoint: VOICE_CONFIG.ttsEndpoint,
+                            character: selectedCharacter.id
+                        };
+                        
+                        // Play the response with TTS
+                        await chatInterface.playAssistantResponse(data.response, selectedCharacter.id);
+                    } catch (error) {
+                        console.error('TTS playback error:', error);
+                        // Fallback to idle state on error
+                        if (avatarController && avatarController.isReady()) {
+                            avatarController.setState('idle');
+                        }
+                    }
+                } else {
+                    // No TTS, just set avatar to idle
+                    if (avatarController && avatarController.isReady()) {
+                        avatarController.setState('idle');
+                    }
                 }
                 
                 // Update progress bar
