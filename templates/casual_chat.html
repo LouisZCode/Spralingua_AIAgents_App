@@ -1,0 +1,634 @@
+{% extends "base.html" %}
+
+{% block title %}Casual Conversation Practice - Spralingua{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/casual_chat.css') }}?v={{ timestamp }}">
+{% endblock %}
+
+{% block content %}
+    <!-- Welcome Screen Overlay -->
+    <div id="welcome-overlay" class="welcome-overlay">
+        <div class="welcome-content">
+            <h1 class="welcome-title">Casual Conversation Practice</h1>
+            <p class="welcome-subtitle">Practice everyday conversations in a relaxed setting. Let's chat about daily life, hobbies, and interests!</p>
+            <button id="start-btn" class="btn-start">
+                Start Chatting
+            </button>
+        </div>
+    </div>
+    
+    <!-- Character Selection Overlay -->
+    <div id="character-selection-overlay" class="character-selection-overlay" style="display: none;">
+        <div class="character-selection-content">
+            <h2 class="selection-title">Choose Your Conversation Partner</h2>
+            <p class="selection-subtitle">Select who you'd like to practice with today:</p>
+            
+            <div class="character-grid">
+                <!-- Harry Card -->
+                <div class="character-card" data-character="harry">
+                    <div class="character-preview">
+                        <div class="character-placeholder">
+                            <span class="placeholder-emoji">🏂</span>
+                        </div>
+                    </div>
+                    <h3 class="character-name">Happy Harry</h3>
+                    <p class="character-description">Cheerful snowboard instructor who loves parties and sports</p>
+                    <button class="select-character-btn">Chat with Harry</button>
+                </div>
+                
+                <!-- Sally Card -->
+                <div class="character-card" data-character="sally">
+                    <div class="character-preview">
+                        <div class="character-placeholder">
+                            <span class="placeholder-emoji">📚</span>
+                        </div>
+                    </div>
+                    <h3 class="character-name">Sad Sally</h3>
+                    <p class="character-description">Thoughtful librarian who finds beauty in melancholy</p>
+                    <button class="select-character-btn">Chat with Sally</button>
+                </div>
+            </div>
+            
+            <!-- Random Selection Button -->
+            <div class="random-selection">
+                <button id="random-character-btn" class="btn-random">
+                    🎲 Surprise Me!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Back Navigation -->
+    <div class="back-nav-container" id="back-nav" style="display: none;">
+        <a href="{{ url_for('exercises') }}" class="back-nav-button">
+            <span class="back-arrow">←</span>
+            <span data-translate="back_to_exercises">Back to Exercises</span>
+        </a>
+    </div>
+
+    <!-- Main wrapper to contain chat and feedback vertically -->
+    <div class="main-wrapper">
+        <div class="chat-container conversation-mode">
+            <div class="chat-header">
+                <div class="header-title">
+                    <h1>Casual Conversation Practice</h1>
+                    <p class="instructor-name">AI Chat Partner</p>
+                </div>
+            </div>
+
+            <div class="avatar-section">
+                <div id="avatar-container" class="avatar-container">
+                    <!-- Lottie animation container -->
+                    <div id="avatar-lottie" style="width: 100%; height: 100%; display: none;"></div>
+                    
+                    <!-- Placeholder shown when no animation is loaded -->
+                    <div id="avatar-placeholder" class="avatar-placeholder">
+                        <div class="placeholder-icon">💬</div>
+                        <div class="placeholder-text">Chat Partner</div>
+                    </div>
+                </div>
+                
+                <!-- Volume Control -->
+                <div class="volume-control" id="volume-control">
+                    <button class="volume-mute-btn" id="volume-mute-btn" title="Mute/Unmute">
+                        <span class="volume-icon">🔊</span>
+                    </button>
+                    <div class="volume-slider-container">
+                        <input type="range" class="volume-slider" id="volume-slider" 
+                               min="0" max="100" value="70" step="1"
+                               orient="vertical" title="Volume">
+                        <div class="volume-percentage" id="volume-percentage">70%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar (below avatar section) -->
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">0/6 messages sent</div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message assistant-message" id="scenario-message">
+                    <div class="message-content">
+                        <!-- Scenario will be set dynamically based on character selection -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container voice-only">
+                <div class="voice-only-wrapper">
+                    <div class="voice-only-controls input-group">
+                        <button type="button" id="voice-btn" class="btn btn-voice btn-voice-large" title="Click to speak">
+                            🎤
+                        </button>
+                    </div>
+                </div>
+                <!-- Hidden form and input for compatibility -->
+                <form id="chat-form" class="chat-form" style="display: none;">
+                    <textarea 
+                        id="message-input" 
+                        class="message-input" 
+                        style="display: none;"
+                    ></textarea>
+                    <button type="submit" id="send-btn" class="btn btn-primary" style="display: none;">
+                        <span class="btn-text">Send</span>
+                        <span class="btn-loading" style="display: none;">...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Feedback Panel for Language Learning -->
+        <div class="feedback-container" id="feedback-container">
+            <div class="feedback-panel hint-panel" id="hint-panel" style="display: none;">
+                <div class="feedback-header hint-header">
+                    <h4>💡 Language Hint</h4>
+                </div>
+                <div class="feedback-content hint-content" id="hint-content">
+                    <!-- Dynamic hints will be inserted here -->
+                </div>
+            </div>
+            
+            <div class="feedback-panel overview-panel" id="overview-panel" style="display: none;">
+                <div class="feedback-header overview-header">
+                    <h3>📊 Your Progress Overview</h3>
+                    <span class="response-count" id="response-count">After 5 responses</span>
+                </div>
+                <div class="feedback-content overview-content" id="overview-content">
+                    <!-- Overview feedback will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End of main wrapper -->
+
+    <div id="error-message" class="error-message" style="display: none;">
+        <div class="error-content">
+            <h3>Connection Error</h3>
+            <p>Unable to connect to the server. Please check your internet connection and try again.</p>
+            <button id="error-close" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block lottie %}
+<!-- Lottie/Bodymovin library for avatar animations -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load avatar controller for Lottie animations -->
+<script src="{{ url_for('static', filename='js/avatar.js') }}?v={{ timestamp }}"></script>
+<!-- Load listening-mode.js for blur/reveal feature -->
+<script src="{{ url_for('static', filename='js/listening-mode.js') }}?v={{ timestamp }}"></script>
+<!-- Load timed recording UI for voice input -->
+<script src="{{ url_for('static', filename='js/timed-recording-ui.js') }}?v={{ timestamp }}"></script>
+<!-- Load chat wrapper for voice input integration -->
+<script src="{{ url_for('static', filename='js/chat-wrapper.js') }}?v={{ timestamp }}"></script>
+<!-- Load voice input system from GTA-V2 -->
+<script src="{{ url_for('static', filename='js/voice-input.js') }}?v={{ timestamp }}"></script>
+
+<script>
+    // Character Configurations
+    const CHARACTERS = {
+        harry: {
+            id: 'harry',
+            name: 'Happy Harry',
+            description: 'Cheerful snowboard instructor who loves parties and sports',
+            scenario: `You're walking down a busy street in Berlin when you bump into Happy Harry, your friendly snowboard instructor from last winter. His face lights up with recognition.
+            
+            "Hey! Wie geht's dir denn? Lange nicht gesehen!" he exclaims with a big smile.
+            
+            Start the conversation by saying hello...`,
+            animations: {
+                idle: '/static/animations/harry-idle.json',
+                thinking: '/static/animations/harry-thinking.json',
+                speaking: '/static/animations/harry-speaking.json',
+                listening: '/static/animations/harry-idle.json' // Use idle as fallback
+            }
+        },
+        sally: {
+            id: 'sally',
+            name: 'Sad Sally',
+            description: 'Thoughtful librarian who finds beauty in melancholy',
+            scenario: `You're walking through a quiet park in Berlin when you notice Sad Sally sitting on a bench, reading a book. She's the thoughtful librarian from your local library. She looks up and recognizes you with a gentle, melancholic smile.
+            
+            "Ach, hallo..." she says softly, closing her book. "Schön dich zu sehen... wie geht's dir denn?"
+            
+            Start the conversation by greeting her...`,
+            animations: {
+                idle: '/static/animations/sally-idle.json',
+                thinking: '/static/animations/sally-thinking.json',
+                speaking: '/static/animations/sally-speaking.json',
+                listening: '/static/animations/sally-idle.json' // Use idle as fallback
+            }
+        }
+    };
+    
+    // Selected character (will be set by selection screen)
+    let selectedCharacter = null;
+    let listeningModeManager = null; // Will be initialized after character selection
+    let avatarController = null; // Will be initialized after character selection
+    
+    // Configuration objects for voice input system
+    const CHAT_CONFIG = {
+        placeholders: {
+            default: "Type a message or click the microphone to speak..."
+        }
+    };
+    
+    const VOICE_INPUT_CONFIG = {
+        language: 'de-DE', // German language for speech recognition
+        continuous: false,
+        interimResults: true,
+        maxAlternatives: 1,
+        silenceTimeout: 1500,
+        maxRecordingTime: 60000, // 1 minute max recording
+        enableTimedRecording: true,
+        timedRecordingDuration: 60000,
+        enableChunkAccumulation: true,
+        chunkAccumulationTimeout: 1500,
+        showTranscriptInInput: true,
+        autoSubmitOnStop: false, // Don't auto-submit, let user review
+        debug: true
+    };
+    
+    const LANGUAGE_SELECTOR_CONFIG = {
+        currentLanguage: 'de' // Default to German
+    };
+    
+    // Global variables for voice system
+    let chatInterface = null;
+    let voiceInput = null;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle start button - shows character selection
+        const startBtn = document.getElementById('start-btn');
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+        const characterOverlay = document.getElementById('character-selection-overlay');
+        
+        startBtn.addEventListener('click', function() {
+            welcomeOverlay.style.opacity = '0';
+            setTimeout(() => {
+                welcomeOverlay.style.display = 'none';
+                characterOverlay.style.display = 'flex';
+            }, 300);
+        });
+        
+        // Handle character selection
+        const characterCards = document.querySelectorAll('.character-card');
+        characterCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const character = this.getAttribute('data-character');
+                initializeCharacter(character);
+            });
+        });
+        
+        // Handle random character selection
+        const randomBtn = document.getElementById('random-character-btn');
+        randomBtn.addEventListener('click', function() {
+            const characterKeys = Object.keys(CHARACTERS);
+            const randomIndex = Math.floor(Math.random() * characterKeys.length);
+            const randomCharacter = characterKeys[randomIndex];
+            initializeCharacter(randomCharacter);
+        });
+        
+        // Initialize character and show chat interface
+        function initializeCharacter(character) {
+            selectedCharacter = CHARACTERS[character];
+            console.log(`Selected character: ${selectedCharacter.name}`);
+            
+            // Initialize ListeningModeManager for blur/reveal feature
+            listeningModeManager = new ListeningModeManager({
+                enabled: true,
+                mode: 'always', // Show reveal button immediately
+                buttonText: `📖 Let me read what ${selectedCharacter.name.split(' ')[1]} said`,
+                blurIntensity: 8,
+                trackUsage: true
+            });
+            console.log('ListeningModeManager initialized for', selectedCharacter.name);
+            
+            // Initialize AvatarController with character-specific animations
+            avatarController = new AvatarController('avatar-container', selectedCharacter.animations);
+            const avatarInitialized = avatarController.init('avatar-container');
+            console.log(`Avatar initialization for ${selectedCharacter.name}:`, avatarInitialized ? 'SUCCESS' : 'FAILED');
+            
+            if (avatarInitialized) {
+                // Start with idle state
+                avatarController.setState('idle');
+                console.log(`${selectedCharacter.name} avatar set to idle state`);
+            }
+            
+            // Update instructor name
+            const instructorName = document.querySelector('.instructor-name');
+            if (instructorName) {
+                instructorName.textContent = selectedCharacter.name;
+            }
+            
+            // Update scenario message
+            const scenarioMessage = document.querySelector('#scenario-message .message-content');
+            if (scenarioMessage) {
+                scenarioMessage.textContent = selectedCharacter.scenario;
+            }
+            
+            // Hide character selection overlay
+            const characterOverlay = document.getElementById('character-selection-overlay');
+            characterOverlay.style.opacity = '0';
+            setTimeout(() => {
+                characterOverlay.style.display = 'none';
+                // Show back button
+                const backNav = document.getElementById('back-nav');
+                if (backNav) {
+                    backNav.style.display = 'block';
+                }
+                
+                // Initialize voice input system after character selection
+                initializeVoiceSystem();
+            }, 300);
+        }
+        
+        // Initialize voice input system
+        function initializeVoiceSystem() {
+            console.log('[CASUAL CHAT] Initializing voice system...');
+            
+            // Wait a bit for DOM to fully update after showing chat interface
+            setTimeout(() => {
+                // Check if button exists
+                const voiceBtn = document.getElementById('voice-btn');
+                if (!voiceBtn) {
+                    console.error('[CASUAL CHAT] Voice button not found in DOM');
+                    return;
+                }
+                
+                console.log('[CASUAL CHAT] Voice button found, initializing voice system');
+                
+                // Initialize ChatInterface wrapper
+                chatInterface = new ChatInterface();
+                
+                // Initialize VoiceInput with just chatInterface (as GTA-V2 expects)
+                voiceInput = new VoiceInput(chatInterface);
+                
+                console.log('[CASUAL CHAT] Voice system initialized successfully');
+            }, 500); // Give DOM time to update
+        }
+        
+        // Get DOM elements for later use
+        const messageInput = document.getElementById('message-input');
+        const chatMessages = document.getElementById('chat-messages');
+        
+        // Function to send message to API (made global for voice input)
+        window.sendMessage = async function(message) {
+            // Add user message to chat (visual feedback)
+            addMessageToChat(message, 'user');
+            
+            // Update progress bar
+            updateProgress();
+            
+            // Set avatar to thinking state while waiting for response
+            if (avatarController && avatarController.isReady()) {
+                avatarController.setState('thinking');
+            }
+            
+            try {
+                const response = await fetch('/api/casual-chat/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        character: selectedCharacter ? selectedCharacter.id : 'harry'
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const data = await response.json();
+                
+                // Add assistant response to chat
+                addMessageToChat(data.response, 'assistant');
+                
+                // Set avatar back to idle state after response
+                if (avatarController && avatarController.isReady()) {
+                    avatarController.setState('idle');
+                }
+                
+                // Update progress bar
+                if (data.message_count) {
+                    const progressFill = document.getElementById('progress-fill');
+                    const progressText = document.getElementById('progress-text');
+                    const percentage = (data.message_count / data.total_messages_required) * 100;
+                    
+                    progressFill.style.width = `${percentage}%`;
+                    progressText.textContent = `${data.message_count}/${data.total_messages_required} messages sent`;
+                    
+                    // Check if complete
+                    if (data.message_count >= data.total_messages_required) {
+                        progressText.textContent = 'Conversation complete! Great job!';
+                        document.getElementById('progress-container').classList.add('complete');
+                        
+                        // Disable further input
+                        voiceBtn.disabled = true;
+                        voiceBtn.innerHTML = '✅';
+                    }
+                }
+                
+                // Show hint if available
+                if (data.hint) {
+                    showHint(data.hint);
+                }
+                
+                // Show comprehensive feedback if available
+                if (data.comprehensive_feedback) {
+                    showComprehensiveFeedback(data.comprehensive_feedback, data.message_count);
+                }
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showError('Failed to send message. Please try again.');
+            }
+        }
+        
+        // Function to add message to chat display
+        function addMessageToChat(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = message;
+            
+            // Apply blur to assistant messages using ListeningModeManager
+            if (sender === 'assistant' && listeningModeManager && listeningModeManager.isEnabled()) {
+                // Add content to message div first
+                messageDiv.appendChild(contentDiv);
+                
+                // Apply blur effect and get wrapper with reveal button
+                const messageIndex = chatMessages.querySelectorAll('.assistant-message').length;
+                const blurredWrapper = listeningModeManager.applyBlurToMessage(contentDiv, messageIndex);
+                
+                // Clear the message div and add the blurred wrapper
+                messageDiv.innerHTML = '';
+                messageDiv.appendChild(blurredWrapper);
+                
+                chatMessages.appendChild(messageDiv);
+            } else {
+                // Normal message display for user messages or when blur is disabled
+                messageDiv.appendChild(contentDiv);
+                chatMessages.appendChild(messageDiv);
+            }
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Function to show error
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            const errorContent = errorDiv.querySelector('p');
+            errorContent.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        // Track progress locally
+        let messageCount = 0;
+        function updateProgress() {
+            messageCount++;
+        }
+        
+        // Function to show language hint
+        function showHint(hintData) {
+            const hintPanel = document.getElementById('hint-panel');
+            const hintContent = document.getElementById('hint-content');
+            
+            if (hintPanel && hintContent) {
+                // Format hint content
+                let hintHTML = '';
+                if (hintData.phrase) {
+                    hintHTML += `<strong>Phrase:</strong> "${hintData.phrase}"<br>`;
+                }
+                if (hintData.hint) {
+                    hintHTML += `<strong>Tip:</strong> ${hintData.hint}`;
+                }
+                
+                hintContent.innerHTML = hintHTML;
+                hintPanel.style.display = 'block';
+            }
+        }
+        
+        // Function to show comprehensive feedback
+        function showComprehensiveFeedback(feedbackData, messageCount) {
+            const overviewPanel = document.getElementById('overview-panel');
+            const overviewContent = document.getElementById('overview-content');
+            const responseCount = document.getElementById('response-count');
+            
+            if (overviewPanel && overviewContent) {
+                let feedbackHTML = '';
+                
+                // Show top mistakes
+                if (feedbackData.top_mistakes && feedbackData.top_mistakes.length > 0) {
+                    feedbackHTML += '<div class="feedback-section"><h4>Common Mistakes:</h4><ul>';
+                    feedbackData.top_mistakes.forEach(mistake => {
+                        feedbackHTML += `<li>
+                            <strong>Error:</strong> "${mistake.error}"<br>
+                            <strong>Correction:</strong> "${mistake.correction}"<br>
+                            <em>${mistake.explanation}</em>
+                        </li>`;
+                    });
+                    feedbackHTML += '</ul></div>';
+                }
+                
+                // Show strengths
+                if (feedbackData.strengths && feedbackData.strengths.length > 0) {
+                    feedbackHTML += '<div class="feedback-section"><h4>Your Strengths:</h4><ul>';
+                    feedbackData.strengths.forEach(strength => {
+                        feedbackHTML += `<li>${strength}</li>`;
+                    });
+                    feedbackHTML += '</ul></div>';
+                }
+                
+                // Show focus areas
+                if (feedbackData.focus_areas && feedbackData.focus_areas.length > 0) {
+                    feedbackHTML += '<div class="feedback-section"><h4>Areas to Focus On:</h4><ul>';
+                    feedbackData.focus_areas.forEach(area => {
+                        feedbackHTML += `<li>${area}</li>`;
+                    });
+                    feedbackHTML += '</ul></div>';
+                }
+                
+                // Show overall feedback
+                if (feedbackData.overall_feedback) {
+                    feedbackHTML += `<div class="feedback-section"><h4>Overall:</h4><p>${feedbackData.overall_feedback}</p></div>`;
+                }
+                
+                overviewContent.innerHTML = feedbackHTML;
+                if (responseCount) {
+                    responseCount.textContent = `After ${messageCount} responses`;
+                }
+                overviewPanel.style.display = 'block';
+            }
+        }
+        
+        // Placeholder for volume control
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumePercentage = document.getElementById('volume-percentage');
+        if (volumeSlider && volumePercentage) {
+            volumeSlider.addEventListener('input', function() {
+                const displayValue = parseInt(this.value);
+                volumePercentage.textContent = `${displayValue}%`;
+            });
+        }
+        
+        // Error message close button
+        const errorClose = document.getElementById('error-close');
+        if (errorClose) {
+            errorClose.addEventListener('click', function() {
+                document.getElementById('error-message').style.display = 'none';
+            });
+        }
+        
+        // Session Management: Clear conversation when leaving page
+        // This prevents the 6-message counter from persisting between sessions
+        window.addEventListener('beforeunload', function() {
+            console.log('[SESSION] Clearing casual chat session on page unload');
+            
+            // Send async request to clear session (fire and forget)
+            // Using sendBeacon for reliability during page unload
+            if (navigator.sendBeacon) {
+                const clearData = JSON.stringify({ action: 'clear' });
+                navigator.sendBeacon('/api/casual-chat/clear', new Blob([clearData], {type: 'application/json'}));
+            } else {
+                // Fallback to fetch (less reliable during unload)
+                fetch('/api/casual-chat/clear', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'clear' }),
+                    keepalive: true  // Helps request complete during unload
+                }).catch(() => {
+                    // Silently fail - page is unloading anyway
+                });
+            }
+        });
+        
+        // Also clear when navigating away via back button
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('[SESSION] Page hidden - clearing session for clean state');
+                fetch('/api/casual-chat/clear', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'clear' })
+                }).catch(() => {
+                    // Silently fail
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

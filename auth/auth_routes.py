@@ -1,6 +1,6 @@
 # Authentication Routes for Spralingua
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
@@ -170,3 +170,156 @@ class AuthRoutes:
             return render_template('exercises.html', 
                                  email=email,
                                  user_progress=progress_data)
+        
+        @self.app.route('/casual-chat')
+        @login_required
+        def casual_chat():
+            """Casual chat conversation practice page."""
+            email = session.get('email', 'User')
+            return render_template('casual_chat.html', email=email)
+        
+        @self.app.route('/api/test-claude', methods=['GET'])
+        def test_claude():
+            """Test Claude API connection."""
+            try:
+                # Import Claude client
+                import os
+                from claude_client import ClaudeClient
+                from prompt_manager import PromptManager
+                
+                # Initialize Claude client
+                claude = ClaudeClient()
+                
+                # Test with a simple message
+                response = claude.send_message(
+                    "Say 'Hello! Claude is working!' in German.",
+                    "You are a helpful assistant. Respond briefly."
+                )
+                
+                return jsonify({
+                    'success': True,
+                    'response': response,
+                    'message': 'Claude API is connected!'
+                })
+                
+            except Exception as e:
+                return jsonify({
+                    'success': False,
+                    'error': str(e),
+                    'message': 'Failed to connect to Claude API'
+                }), 500
+        
+        @self.app.route('/api/casual-chat/chat', methods=['POST'])
+        @login_required
+        def casual_chat_api():
+            """Chat API endpoint for casual chat conversation practice."""
+            try:
+                import os
+                from claude_client import ClaudeClient
+                from prompt_manager import PromptManager
+                from feedback_generator import generate_language_hint, generate_comprehensive_feedback
+                
+                # Get request data
+                data = request.get_json()
+                message = data.get('message', '')
+                character = data.get('character', 'harry')  # Default to Harry
+                
+                if not message:
+                    return jsonify({'error': 'No message provided'}), 400
+                
+                # Initialize or get Claude client from session
+                if 'claude_client' not in session:
+                    session['claude_client'] = True
+                    # Create new client for this session
+                    claude = ClaudeClient()
+                    # Store in app context for this request
+                    self.app.claude_clients = getattr(self.app, 'claude_clients', {})
+                    session_id = session.get('_id', id(session))
+                    self.app.claude_clients[session_id] = claude
+                else:
+                    # Retrieve existing client
+                    self.app.claude_clients = getattr(self.app, 'claude_clients', {})
+                    session_id = session.get('_id', id(session))
+                    if session_id not in self.app.claude_clients:
+                        claude = ClaudeClient()
+                        self.app.claude_clients[session_id] = claude
+                    else:
+                        claude = self.app.claude_clients[session_id]
+                
+                # Load the appropriate prompt file based on character
+                if character == 'sally':
+                    prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
+                else:
+                    prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
+                
+                # Load prompts
+                prompt_manager = PromptManager(prompt_file)
+                system_prompt = prompt_manager.get_prompt('casual_chat_prompt', '')
+                
+                # Track message count in session
+                if 'casual_chat_messages' not in session:
+                    session['casual_chat_messages'] = []
+                
+                # Add current message to history
+                session['casual_chat_messages'].append(message)
+                message_count = len(session['casual_chat_messages'])
+                
+                # Send message to Claude with character prompt
+                response = claude.send_message(message, system_prompt)
+                
+                # Prepare response data
+                response_data = {
+                    'response': response,
+                    'message_count': message_count,
+                    'total_messages_required': 6
+                }
+                
+                # Generate language hint for each message (except the last)
+                if message_count < 6:
+                    hint_data = generate_language_hint(message, prompt_manager, claude, 'intermediate')
+                    response_data['hint'] = hint_data
+                
+                # Generate comprehensive feedback after 5 messages
+                if message_count == 5:
+                    feedback_data = generate_comprehensive_feedback(
+                        session['casual_chat_messages'], 
+                        prompt_manager,
+                        claude, 
+                        'intermediate'
+                    )
+                    response_data['comprehensive_feedback'] = feedback_data
+                
+                # Mark as complete after 6 messages
+                if message_count >= 6:
+                    response_data['module_completed'] = True
+                    # Clear session for next conversation
+                    session['casual_chat_messages'] = []
+                
+                session.modified = True
+                return jsonify(response_data)
+                
+            except Exception as e:
+                print(f"Error in casual chat API: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/casual-chat/clear', methods=['POST'])
+        @login_required
+        def clear_casual_chat():
+            """Clear casual chat conversation history."""
+            try:
+                # Clear message history
+                if 'casual_chat_messages' in session:
+                    session['casual_chat_messages'] = []
+                
+                # Clear Claude client
+                if hasattr(self.app, 'claude_clients'):
+                    session_id = session.get('_id', id(session))
+                    if session_id in self.app.claude_clients:
+                        self.app.claude_clients[session_id].clear_conversation_history()
+                
+                session.modified = True
+                return jsonify({'status': 'success', 'message': 'Conversation cleared'})
+                
+            except Exception as e:
+                print(f"Error clearing conversation: {e}")
+                return jsonify({'error': str(e)}), 500

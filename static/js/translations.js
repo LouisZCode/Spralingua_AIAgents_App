@@ -35,6 +35,8 @@ const translations = {
         
         // Buttons
         continue_btn: "Continue",
+        back_to_dashboard: "Back to Language Selection",
+        back_to_exercises: "Back to Exercises",
         
         // Selection Display
         learning_display: "Learning {target} from {input} at {level} level",
@@ -77,6 +79,8 @@ const translations = {
         
         // Buttons
         continue_btn: "Weiter",
+        back_to_dashboard: "Zurück zur Sprachauswahl",
+        back_to_exercises: "Zurück zu Übungen",
         
         // Selection Display
         learning_display: "Lerne {target} von {input} auf {level} Niveau",
@@ -119,6 +123,8 @@ const translations = {
         
         // Buttons
         continue_btn: "Continuar",
+        back_to_dashboard: "Volver a Selección de Idioma",
+        back_to_exercises: "Volver a Ejercicios",
         
         // Selection Display
         learning_display: "Aprendiendo {target} desde {input} en nivel {level}",
@@ -161,6 +167,8 @@ const translations = {
         
         // Buttons
         continue_btn: "Continuar",
+        back_to_dashboard: "Voltar para Seleção de Idioma",
+        back_to_exercises: "Voltar para Exercícios",
         
         // Selection Display
         learning_display: "Aprendendo {target} de {input} no nível {level}",

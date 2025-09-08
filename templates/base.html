@@ -34,6 +34,9 @@
     <!-- Global translation system -->
     <script src="{{ url_for('static', filename='js/translations.js') }}?v={{ timestamp }}"></script>
     
+    <!-- Lottie/Bodymovin for avatar animations (only loaded where needed) -->
+    {% block lottie %}{% endblock %}
+    
     <!-- Page-specific scripts -->
     {% block scripts %}{% endblock %}
 </body>
