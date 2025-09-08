@@ -107,10 +107,8 @@ class ChatInterface {
         try {
             console.log('[CHAT WRAPPER] Playing TTS for:', character);
             
-            // Set avatar to speaking state
-            if (window.avatarController && window.avatarController.isReady()) {
-                window.avatarController.setState('speaking');
-            }
+            // Avatar will change to speaking when audio actually starts playing
+            // (handled by voice-output.js onplay event)
             
             // Play the speech
             await this.voiceOutput.speak(text);

@@ -70,9 +70,9 @@ class ListeningModeManager {
             this.setupAdaptiveReveal(button, messageIndex);
         }
         
-        // Add button and message to wrapper
-        wrapper.appendChild(button);
+        // Add message first, then button (so button overlays on top)
         wrapper.appendChild(messageElement);
+        wrapper.appendChild(button);
         
         // Track message for analytics
         this.revealStats.totalMessages++;

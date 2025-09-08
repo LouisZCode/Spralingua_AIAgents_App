@@ -280,10 +280,7 @@ class VoiceOutput {
                 this.currentUtterance = utterance;
                 this.isPlaying = true;
                 
-                // Update avatar to speaking state
-                if (this.chatInterface.setAvatarState) {
-                    this.chatInterface.setAvatarState('speaking');
-                }
+                // Avatar state will be handled by onstart event
                 
                 speechSynthesis.speak(utterance);
                 
@@ -326,10 +323,7 @@ class VoiceOutput {
                 
                 this.isPlaying = true;
                 
-                // Update avatar to speaking state
-                if (this.chatInterface.setAvatarState) {
-                    this.chatInterface.setAvatarState('speaking');
-                }
+                // Avatar state will be handled by onstart event
                 
                 // Set up event handlers
                 audio.onplay = () => this.handleAudioStart();
@@ -358,6 +352,11 @@ class VoiceOutput {
     handleAudioStart() {
         console.log('🎵 Audio started');
         
+        // Change avatar to speaking when audio actually starts
+        if (window.avatarController && window.avatarController.isReady()) {
+            window.avatarController.setState('speaking');
+        }
+        
         // Dispatch custom event for UI updates
         const event = new CustomEvent('voiceOutputStateChange', {
             detail: { state: 'speaking', isPlaying: true }
@@ -374,8 +373,8 @@ class VoiceOutput {
         this.currentAudio = null;
         
         // Return avatar to idle state
-        if (this.chatInterface.setAvatarState) {
-            this.chatInterface.setAvatarState('idle');
+        if (window.avatarController && window.avatarController.isReady()) {
+            window.avatarController.setState('idle');
         }
         
         // Dispatch custom event
@@ -400,8 +399,8 @@ class VoiceOutput {
         this.currentAudio = null;
         
         // Return avatar to idle state
-        if (this.chatInterface.setAvatarState) {
-            this.chatInterface.setAvatarState('idle');
+        if (window.avatarController && window.avatarController.isReady()) {
+            window.avatarController.setState('idle');
         }
         
         // Show error to user
@@ -421,6 +420,11 @@ class VoiceOutput {
     handleSpeechStart(utterance) {
         console.log('🎤 Speech started');
         
+        // Change avatar to speaking when browser TTS starts
+        if (window.avatarController && window.avatarController.isReady()) {
+            window.avatarController.setState('speaking');
+        }
+        
         // Dispatch custom event for UI updates
         const event = new CustomEvent('voiceOutputStateChange', {
             detail: { state: 'speaking', isPlaying: true }
@@ -437,8 +441,8 @@ class VoiceOutput {
         this.currentUtterance = null;
         
         // Return avatar to idle state
-        if (this.chatInterface.setAvatarState) {
-            this.chatInterface.setAvatarState('idle');
+        if (window.avatarController && window.avatarController.isReady()) {
+            window.avatarController.setState('idle');
         }
         
         // Dispatch custom event
@@ -463,8 +467,8 @@ class VoiceOutput {
         this.currentUtterance = null;
         
         // Return avatar to idle state
-        if (this.chatInterface.setAvatarState) {
-            this.chatInterface.setAvatarState('idle');
+        if (window.avatarController && window.avatarController.isReady()) {
+            window.avatarController.setState('idle');
         }
         
         // Show error to user

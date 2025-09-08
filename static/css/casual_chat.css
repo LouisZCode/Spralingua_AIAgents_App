@@ -490,6 +490,18 @@
     max-width: 70%;
 }
 
+/* Center the scenario/placeholder message */
+#scenario-message {
+    text-align: center;
+    display: flex;
+    justify-content: center;
+}
+
+#scenario-message .message-content {
+    max-width: 600px;
+    display: inline-block;
+}
+
 /* Recording state for mic button */
 .btn-voice-large.recording {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -766,14 +778,18 @@
     position: relative;
     width: 100%;
     margin-bottom: 1rem;
+    min-height: 60px; /* Ensure space for overlay button */
 }
 
 /* Reveal button */
 .reveal-text-btn {
-    display: block;
-    margin: 0.75rem auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #5DADE2 0%, #2E86DE 100%);
     color: white;
     border: none;
     border-radius: 25px;
@@ -781,18 +797,18 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(93, 173, 226, 0.3);
     animation: fadeIn 0.3s ease-in;
 }
 
 .reveal-text-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translate(-50%, -50%) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(93, 173, 226, 0.4);
+    background: linear-gradient(135deg, #2E86DE 0%, #5DADE2 100%);
 }
 
 .reveal-text-btn:active {
-    transform: translateY(0);
+    transform: translate(-50%, -50%) translateY(0);
 }
 
 /* Animation for button appearance */
@@ -844,4 +860,99 @@
 
 .btn-voice.recording:hover {
     transform: scale(1.05);
+}
+
+/* ===============================
+   Focused Exchange Display System
+   =============================== */
+
+/* Fade out upward animation */
+@keyframes fadeOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+}
+
+/* Fade in animation for new messages */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Container for the current exchange only */
+.message-exchange {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+/* Centered message style (for both user and assistant) */
+.message-centered {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    animation: fadeInDown 0.5s ease-out;
+}
+
+.message-centered .message-content {
+    display: inline-block;
+    max-width: 100%;
+    text-align: left;
+    margin: 0 auto;
+}
+
+/* User message centered styling */
+.message-centered.user-message .message-content {
+    background: #e5e7eb;
+    color: var(--text-primary);
+    padding: 1rem 1.5rem;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Assistant message centered styling */
+.message-centered.assistant-message .message-content {
+    background: var(--primary-gradient);
+    color: white !important;
+    padding: 1rem 1.5rem;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Message that's fading out */
+.message-fading-out {
+    animation: fadeOutUp 0.5s ease-out forwards;
+    pointer-events: none;
+}
+
+/* Hide scenario message after first input */
+.scenario-hidden {
+    display: none;
+}
+
+/* Ensure blur wrapper works with centered layout */
+.message-centered .message-blur-wrapper {
+    display: inline-block;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.message-centered .reveal-text-btn {
+    margin-top: 1rem;
 }

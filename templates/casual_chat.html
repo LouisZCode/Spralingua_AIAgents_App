@@ -201,11 +201,7 @@
             id: 'harry',
             name: 'Happy Harry',
             description: 'Cheerful snowboard instructor who loves parties and sports',
-            scenario: `You're walking down a busy street in Berlin when you bump into Happy Harry, your friendly snowboard instructor from last winter. His face lights up with recognition.
-            
-            "Hey! Wie geht's dir denn? Lange nicht gesehen!" he exclaims with a big smile.
-            
-            Start the conversation by saying hello...`,
+            scenario: `placeholder`,
             animations: {
                 idle: '/static/animations/harry-idle.json',
                 thinking: '/static/animations/harry-thinking.json',
@@ -234,7 +230,102 @@
     // Selected character (will be set by selection screen)
     let selectedCharacter = null;
     let listeningModeManager = null; // Will be initialized after character selection
-    let avatarController = null; // Will be initialized after character selection
+    window.avatarController = null; // Will be initialized after character selection (global for voice system access)
+    
+    // Message Exchange Display System
+    class MessageExchangeDisplay {
+        constructor(containerId) {
+            this.container = document.getElementById(containerId);
+            this.currentExchange = { user: null, assistant: null };
+            this.isFirstMessage = true;
+            this.useExchangeMode = true; // Can be toggled to fall back to chat mode
+        }
+        
+        showUserMessage(text) {
+            // Hide placeholder on first message
+            if (this.isFirstMessage) {
+                const scenarioMessage = document.getElementById('scenario-message');
+                if (scenarioMessage) {
+                    scenarioMessage.classList.add('scenario-hidden');
+                }
+                this.isFirstMessage = false;
+            }
+            
+            // Fade out previous exchange if exists
+            if (this.currentExchange.user || this.currentExchange.assistant) {
+                this.fadeOutCurrentExchange();
+            }
+            
+            // Wait for fade out to complete, then show new user message
+            setTimeout(() => {
+                // Clear container
+                this.container.innerHTML = '';
+                
+                // Add container class for centered layout
+                this.container.classList.add('message-exchange');
+                
+                // Create user message
+                const userDiv = document.createElement('div');
+                userDiv.className = 'message message-centered user-message';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = text;
+                
+                userDiv.appendChild(contentDiv);
+                this.container.appendChild(userDiv);
+                
+                this.currentExchange.user = userDiv;
+                this.currentExchange.assistant = null;
+            }, this.currentExchange.user ? 500 : 0); // Wait for fade if there's previous content
+        }
+        
+        showAssistantMessage(text, useBlur = true) {
+            // Create assistant message
+            const assistantDiv = document.createElement('div');
+            assistantDiv.className = 'message message-centered assistant-message';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = text;
+            
+            // Apply blur if listening mode is enabled
+            if (useBlur && listeningModeManager && listeningModeManager.isEnabled()) {
+                assistantDiv.appendChild(contentDiv);
+                const messageIndex = 0; // Always 0 since we only show one exchange
+                const blurredWrapper = listeningModeManager.applyBlurToMessage(contentDiv, messageIndex);
+                assistantDiv.innerHTML = '';
+                assistantDiv.appendChild(blurredWrapper);
+            } else {
+                assistantDiv.appendChild(contentDiv);
+            }
+            
+            this.container.appendChild(assistantDiv);
+            this.currentExchange.assistant = assistantDiv;
+        }
+        
+        fadeOutCurrentExchange() {
+            // Add fading class to current messages
+            if (this.currentExchange.user) {
+                this.currentExchange.user.classList.add('message-fading-out');
+            }
+            if (this.currentExchange.assistant) {
+                this.currentExchange.assistant.classList.add('message-fading-out');
+            }
+        }
+        
+        isEnabled() {
+            return this.useExchangeMode;
+        }
+        
+        toggle() {
+            this.useExchangeMode = !this.useExchangeMode;
+            return this.useExchangeMode;
+        }
+    }
+    
+    // Initialize message exchange display
+    let messageExchangeDisplay = null;
     
     // Configuration objects for voice input/output system
     const CHAT_CONFIG = {
@@ -323,6 +414,10 @@
             selectedCharacter = CHARACTERS[character];
             console.log(`Selected character: ${selectedCharacter.name}`);
             
+            // Initialize MessageExchangeDisplay for focused conversation view
+            messageExchangeDisplay = new MessageExchangeDisplay('chat-messages');
+            console.log('MessageExchangeDisplay initialized');
+            
             // Initialize ListeningModeManager for blur/reveal feature
             listeningModeManager = new ListeningModeManager({
                 enabled: true,
@@ -334,13 +429,13 @@
             console.log('ListeningModeManager initialized for', selectedCharacter.name);
             
             // Initialize AvatarController with character-specific animations
-            avatarController = new AvatarController('avatar-container', selectedCharacter.animations);
-            const avatarInitialized = avatarController.init('avatar-container');
+            window.avatarController = new AvatarController('avatar-container', selectedCharacter.animations);
+            const avatarInitialized = window.avatarController.init('avatar-container');
             console.log(`Avatar initialization for ${selectedCharacter.name}:`, avatarInitialized ? 'SUCCESS' : 'FAILED');
             
             if (avatarInitialized) {
                 // Start with idle state
-                avatarController.setState('idle');
+                window.avatarController.setState('idle');
                 console.log(`${selectedCharacter.name} avatar set to idle state`);
             }
             
@@ -485,8 +580,8 @@
             updateProgress();
             
             // Set avatar to thinking state while waiting for response
-            if (avatarController && avatarController.isReady()) {
-                avatarController.setState('thinking');
+            if (window.avatarController && window.avatarController.isReady()) {
+                window.avatarController.setState('thinking');
             }
             
             try {
@@ -526,14 +621,14 @@
                     } catch (error) {
                         console.error('TTS playback error:', error);
                         // Fallback to idle state on error
-                        if (avatarController && avatarController.isReady()) {
-                            avatarController.setState('idle');
+                        if (window.avatarController && window.avatarController.isReady()) {
+                            window.avatarController.setState('idle');
                         }
                     }
                 } else {
                     // No TTS, just set avatar to idle
-                    if (avatarController && avatarController.isReady()) {
-                        avatarController.setState('idle');
+                    if (window.avatarController && window.avatarController.isReady()) {
+                        window.avatarController.setState('idle');
                     }
                 }
                 
@@ -575,35 +670,45 @@
         
         // Function to add message to chat display
         function addMessageToChat(message, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}-message`;
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'message-content';
-            contentDiv.textContent = message;
-            
-            // Apply blur to assistant messages using ListeningModeManager
-            if (sender === 'assistant' && listeningModeManager && listeningModeManager.isEnabled()) {
-                // Add content to message div first
-                messageDiv.appendChild(contentDiv);
-                
-                // Apply blur effect and get wrapper with reveal button
-                const messageIndex = chatMessages.querySelectorAll('.assistant-message').length;
-                const blurredWrapper = listeningModeManager.applyBlurToMessage(contentDiv, messageIndex);
-                
-                // Clear the message div and add the blurred wrapper
-                messageDiv.innerHTML = '';
-                messageDiv.appendChild(blurredWrapper);
-                
-                chatMessages.appendChild(messageDiv);
+            // Use MessageExchangeDisplay if enabled
+            if (messageExchangeDisplay && messageExchangeDisplay.isEnabled()) {
+                if (sender === 'user') {
+                    messageExchangeDisplay.showUserMessage(message);
+                } else if (sender === 'assistant') {
+                    messageExchangeDisplay.showAssistantMessage(message, true);
+                }
             } else {
-                // Normal message display for user messages or when blur is disabled
-                messageDiv.appendChild(contentDiv);
-                chatMessages.appendChild(messageDiv);
+                // Fall back to original chat display
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.textContent = message;
+                
+                // Apply blur to assistant messages using ListeningModeManager
+                if (sender === 'assistant' && listeningModeManager && listeningModeManager.isEnabled()) {
+                    // Add content to message div first
+                    messageDiv.appendChild(contentDiv);
+                    
+                    // Apply blur effect and get wrapper with reveal button
+                    const messageIndex = chatMessages.querySelectorAll('.assistant-message').length;
+                    const blurredWrapper = listeningModeManager.applyBlurToMessage(contentDiv, messageIndex);
+                    
+                    // Clear the message div and add the blurred wrapper
+                    messageDiv.innerHTML = '';
+                    messageDiv.appendChild(blurredWrapper);
+                    
+                    chatMessages.appendChild(messageDiv);
+                } else {
+                    // Normal message display for user messages or when blur is disabled
+                    messageDiv.appendChild(contentDiv);
+                    chatMessages.appendChild(messageDiv);
+                }
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
             }
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
         // Function to show error
