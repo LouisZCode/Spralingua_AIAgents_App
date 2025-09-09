@@ -74,6 +74,11 @@
                 <div class="header-title">
                     <h1>Casual Conversation Practice</h1>
                     <p class="instructor-name">AI Chat Partner</p>
+                    {% if language_display_name %}
+                    <p class="language-indicator" style="color: #667eea; font-size: 0.9em; margin-top: 5px;">
+                        🎯 Practicing: {{ language_display_name }}
+                    </p>
+                    {% endif %}
                 </div>
             </div>
 
@@ -181,6 +186,32 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Define configuration BEFORE loading JS files -->
+<script>
+    // Configuration objects for voice input/output system - MUST be defined before loading JS files
+    window.VOICE_INPUT_CONFIG = {
+        language: '{{ speech_code|default("de-DE") }}', // Dynamic language from user's selection
+        continuous: false,
+        interimResults: true,
+        maxAlternatives: 1,
+        silenceTimeout: 1500,
+        maxRecordingTime: 60000, // 1 minute max recording
+        enableTimedRecording: true,
+        timedRecordingDuration: 60000,
+        enableChunkAccumulation: true,
+        chunkAccumulationTimeout: 1500,
+        showTranscriptInInput: true,
+        autoSubmitOnStop: false, // Don't auto-submit, let user review
+        debug: true
+    };
+    
+    // Log the configuration to verify it's correct
+    console.log('[LANGUAGE CONFIG] Target language: {{ target_language }}');
+    console.log('[LANGUAGE CONFIG] Speech recognition code: {{ speech_code }}');
+    console.log('[LANGUAGE CONFIG] Display name: {{ language_display_name }}');
+    console.log('[LANGUAGE CONFIG] VOICE_INPUT_CONFIG.language:', window.VOICE_INPUT_CONFIG.language);
+</script>
+
 <!-- Load avatar controller for Lottie animations -->
 <script src="{{ url_for('static', filename='js/avatar.js') }}?v={{ timestamp }}"></script>
 <!-- Load listening-mode.js for blur/reveal feature -->
@@ -334,21 +365,7 @@
         }
     };
     
-    const VOICE_INPUT_CONFIG = {
-        language: 'de-DE', // German language for speech recognition
-        continuous: false,
-        interimResults: true,
-        maxAlternatives: 1,
-        silenceTimeout: 1500,
-        maxRecordingTime: 60000, // 1 minute max recording
-        enableTimedRecording: true,
-        timedRecordingDuration: 60000,
-        enableChunkAccumulation: true,
-        chunkAccumulationTimeout: 1500,
-        showTranscriptInInput: true,
-        autoSubmitOnStop: false, // Don't auto-submit, let user review
-        debug: true
-    };
+    // VOICE_INPUT_CONFIG is now defined at the top of scripts block before JS files are loaded
     
     const LANGUAGE_SELECTOR_CONFIG = {
         currentLanguage: 'de' // Default to German
@@ -376,6 +393,11 @@
     // Global variables for voice system
     let chatInterface = null;
     let voiceInput = null;
+    
+    // Log the language configuration for debugging
+    console.log('[LANGUAGE CONFIG] Target language: {{ target_language|default("not set") }}');
+    console.log('[LANGUAGE CONFIG] Speech recognition code: {{ speech_code|default("not set") }}');
+    console.log('[LANGUAGE CONFIG] Display name: {{ language_display_name|default("not set") }}');
     
     document.addEventListener('DOMContentLoaded', function() {
         // Handle start button - shows character selection

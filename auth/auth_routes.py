@@ -175,8 +175,36 @@ class AuthRoutes:
         @login_required
         def casual_chat():
             """Casual chat conversation practice page."""
+            from progress.progress_manager import ProgressManager
+            from language.language_mapper import LanguageMapper
+            
             email = session.get('email', 'User')
-            return render_template('casual_chat.html', email=email)
+            user_id = session.get('user_id')
+            
+            # Get user's current language progress
+            progress_mgr = ProgressManager()
+            user_progress = progress_mgr.get_user_progress(user_id) if user_id else None
+            
+            # Check if user has selected languages
+            if not user_progress:
+                flash('Please select your languages first to start practicing!', 'warning')
+                return redirect(url_for('dashboard'))
+            
+            # Map target language to speech recognition code
+            target_language = user_progress.target_language
+            speech_code = LanguageMapper.get_speech_code(target_language)
+            display_name = LanguageMapper.get_display_name(target_language)
+            
+            # If somehow the language isn't supported, redirect
+            if not speech_code:
+                flash('Language configuration error. Please select your languages again.', 'error')
+                return redirect(url_for('dashboard'))
+            
+            return render_template('casual_chat.html', 
+                                 email=email,
+                                 target_language=target_language,
+                                 speech_code=speech_code,
+                                 language_display_name=display_name)
         
         @self.app.route('/api/test-claude', methods=['GET'])
         def test_claude():

@@ -3,7 +3,21 @@
 class VoiceInput {
     constructor(chatInterface) {
         this.chatInterface = chatInterface;
-        this.language = this.getDefaultLanguage(); // Smart default based on page
+        
+        // Voice input configuration (module-specific overrides)
+        this.voiceInputConfig = window.VOICE_INPUT_CONFIG || {};
+        console.log('🎙️ Voice Input Config:', this.voiceInputConfig);
+        
+        // Check VOICE_INPUT_CONFIG for language first, then fall back to default
+        if (window.VOICE_INPUT_CONFIG && window.VOICE_INPUT_CONFIG.language) {
+            this.language = window.VOICE_INPUT_CONFIG.language;
+            console.log('🎙️ Using language from VOICE_INPUT_CONFIG:', this.language);
+        } else {
+            // No language configured - show error instead of using default
+            console.error('❌ No language configured for microphone! VOICE_INPUT_CONFIG.language is missing.');
+            this.language = null; // Don't set a default
+        }
+        
         this.isSupported = this.checkSupport();
         this.isRecording = false;
         this.recognition = null;
@@ -18,10 +32,6 @@ class VoiceInput {
             maxAlternatives: 3,          // Multiple interpretations
             confidenceThreshold: 0.7     // Minimum confidence to accept
         };
-        
-        // Voice input configuration (module-specific overrides)
-        this.voiceInputConfig = window.VOICE_INPUT_CONFIG || {};
-        console.log('🎙️ Voice Input Config:', this.voiceInputConfig);
         
         // Apply module-specific overrides
         this.applyVoiceInputConfig();
@@ -189,6 +199,16 @@ class VoiceInput {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
         
+        // Check if language is configured
+        if (!this.language) {
+            console.error('❌ Cannot setup speech recognition: No language configured');
+            // Show error to user
+            if (this.chatInterface && this.chatInterface.showError) {
+                this.chatInterface.showError('Microphone error: No language selected. Please refresh the page.');
+            }
+            return;
+        }
+        
         // Configure recognition
         this.recognition.lang = this.language;
         this.recognition.continuous = this.config.continuous;
@@ -201,7 +221,7 @@ class VoiceInput {
         this.recognition.onerror = (event) => this.handleError(event);
         this.recognition.onend = () => this.handleEnd();
         
-        console.log(`🎤 Speech recognition configured for ${this.supportedLanguages[this.language]}`);
+        console.log(`🎤 Speech recognition configured for language: ${this.language}`);
     }
     
     /**
