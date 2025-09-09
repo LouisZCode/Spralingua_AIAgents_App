@@ -31,6 +31,11 @@ bcrypt.init_app(app)
 # Import models after db initialization
 from models.user import User
 from models.user_progress import UserProgress
+from models.topic_definition import TopicDefinition
+from models.exercise_type import ExerciseType
+from models.topic_exercise import TopicExercise
+from models.topic_progress import TopicProgress
+from models.test_progress import TestProgress
 
 # Initialize authentication
 from auth import AuthManager

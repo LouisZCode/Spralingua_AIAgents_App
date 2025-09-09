@@ -246,15 +246,42 @@ class AuthRoutes:
                     else:
                         claude = self.app.claude_clients[session_id]
                 
-                # Load the appropriate prompt file based on character
-                if character == 'sally':
-                    prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
-                else:
-                    prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
+                # Feature flag for dynamic prompt system
+                USE_DYNAMIC_PROMPTS = True  # Enable new system
                 
-                # Load prompts
-                prompt_manager = PromptManager(prompt_file)
-                system_prompt = prompt_manager.get_prompt('casual_chat_prompt', '')
+                system_prompt = None
+                user_context = {}
+                
+                # Try to use dynamic prompt system if enabled and user is logged in
+                if USE_DYNAMIC_PROMPTS and 'user_id' in session:
+                    try:
+                        from prompts.conversation_prompt_builder import ConversationPromptBuilder
+                        prompt_builder = ConversationPromptBuilder()
+                        dynamic_prompt, context = prompt_builder.build_prompt(
+                            session['user_id'], 
+                            character
+                        )
+                        
+                        if dynamic_prompt:
+                            system_prompt = dynamic_prompt
+                            user_context = context
+                            print(f"[INFO] Using dynamic prompt for user {session['user_id']}")
+                            print(f"[INFO] Context: {context.get('input_language')} -> {context.get('target_language')}, Level: {context.get('level')}, Topic: {context.get('topic_title')}")
+                    except Exception as e:
+                        print(f"[WARNING] Dynamic prompt failed, falling back: {e}")
+                
+                # Fallback to static prompts if dynamic system not available
+                if not system_prompt:
+                    # Load the appropriate prompt file based on character
+                    if character == 'sally':
+                        prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
+                    else:
+                        prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
+                    
+                    # Load prompts
+                    prompt_manager = PromptManager(prompt_file)
+                    system_prompt = prompt_manager.get_prompt('casual_chat_prompt', '')
+                    print(f"[INFO] Using static prompt for character: {character}")
                 
                 # Track message count in session
                 if 'casual_chat_messages' not in session:
@@ -274,18 +301,42 @@ class AuthRoutes:
                     'total_messages_required': 6
                 }
                 
+                # Determine the level for feedback (from context or default)
+                feedback_level = user_context.get('level', 'A1').lower()
+                # Map database levels to feedback levels
+                level_map = {'a1': 'beginner', 'a2': 'elementary', 'b1': 'intermediate', 'b2': 'upper-intermediate'}
+                feedback_level = level_map.get(feedback_level.lower(), 'intermediate')
+                
                 # Generate language hint for each message (except the last)
                 if message_count < 6:
-                    hint_data = generate_language_hint(message, prompt_manager, claude, 'intermediate')
+                    # Need to reload prompt_manager for feedback if using dynamic system
+                    if USE_DYNAMIC_PROMPTS and 'user_id' in session and user_context:
+                        # Use static prompt manager for feedback generation
+                        if character == 'sally':
+                            prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
+                        else:
+                            prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
+                        prompt_manager = PromptManager(prompt_file)
+                    
+                    hint_data = generate_language_hint(message, prompt_manager, claude, feedback_level)
                     response_data['hint'] = hint_data
                 
                 # Generate comprehensive feedback after 5 messages
                 if message_count == 5:
+                    # Need to reload prompt_manager for feedback if using dynamic system
+                    if USE_DYNAMIC_PROMPTS and 'user_id' in session and user_context:
+                        # Use static prompt manager for feedback generation
+                        if character == 'sally':
+                            prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
+                        else:
+                            prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
+                        prompt_manager = PromptManager(prompt_file)
+                    
                     feedback_data = generate_comprehensive_feedback(
                         session['casual_chat_messages'], 
                         prompt_manager,
                         claude, 
-                        'intermediate'
+                        feedback_level
                     )
                     response_data['comprehensive_feedback'] = feedback_data
                 
