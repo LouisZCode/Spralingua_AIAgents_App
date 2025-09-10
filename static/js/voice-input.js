@@ -138,6 +138,16 @@ class VoiceInput {
         console.log('🎤 Microphone button configured');
     }
     
+    /**
+     * Refresh microphone button handler after DOM changes
+     * Public method called by ChatInterface after DOM restoration
+     */
+    refreshMicrophoneButton() {
+        console.log('🔄 [VOICE INPUT] Refreshing microphone button handler...');
+        this.setupMicrophoneButton();
+        console.log('✅ [VOICE INPUT] Microphone button handler restored');
+    }
+    
     // Send button methods removed - using GTA-V2's simpler approach
     
     /**

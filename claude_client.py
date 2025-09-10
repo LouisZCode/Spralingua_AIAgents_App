@@ -77,13 +77,13 @@ class ClaudeClient:
             return assistant_message
             
         except Exception as e:
-            print(f"❌ [CLAUDE CLIENT] Error sending message: {e}")
+            print(f"[ERROR] [CLAUDE CLIENT] Error sending message: {e}")
             raise e
     
     def clear_conversation_history(self):
         """Clear the conversation history."""
         self.conversation_history = []
-        print("🧹 [CLAUDE CLIENT] Conversation history cleared")
+        print("[CLAUDE CLIENT] Conversation history cleared")
     
     def get_conversation_history(self) -> List[Dict[str, str]]:
         """Get the current conversation history."""
@@ -92,12 +92,12 @@ class ClaudeClient:
     def set_model(self, model: str):
         """Change the Claude model being used."""
         self.model = model
-        print(f"🔄 [CLAUDE CLIENT] Model changed to: {model}")
+        print(f"[INFO] [CLAUDE CLIENT] Model changed to: {model}")
     
     def set_temperature(self, temperature: float):
         """Change the temperature setting."""
         self.temperature = temperature
-        print(f"🌡️ [CLAUDE CLIENT] Temperature changed to: {temperature}")
+        print(f"[TEMP] [CLAUDE CLIENT] Temperature changed to: {temperature}")
     
     def set_tools_enabled(self, enabled: bool):
         """

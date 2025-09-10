@@ -151,6 +151,27 @@ class ChatInterface {
             window.avatarController.setState(state);
         }
     }
+    
+    /**
+     * Refresh DOM element references after UI changes
+     * Called when timed recording UI restores the DOM
+     */
+    refreshElementReferences() {
+        console.log('[CHAT WRAPPER] Refreshing DOM element references...');
+        
+        // Re-acquire DOM elements
+        this.messageInput = document.getElementById('message-input');
+        this.sendButton = document.getElementById('send-button');
+        this.voiceToggleButton = document.getElementById('voice-btn');
+        
+        // Tell VoiceInput to refresh its button handler
+        if (window.voiceInput && typeof window.voiceInput.refreshMicrophoneButton === 'function') {
+            console.log('[CHAT WRAPPER] Requesting VoiceInput to refresh microphone button...');
+            window.voiceInput.refreshMicrophoneButton();
+        }
+        
+        console.log('[CHAT WRAPPER] DOM refresh completed');
+    }
 }
 
 // Export for use in other scripts

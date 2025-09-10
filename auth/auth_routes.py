@@ -390,11 +390,13 @@ class AuthRoutes:
                 if 'casual_chat_messages' in session:
                     session['casual_chat_messages'] = []
                 
-                # Clear Claude client
+                # Clear Claude client marker from session
+                if 'claude_client' in session:
+                    session.pop('claude_client', None)
+                
+                # Clear all claude clients from app context (they'll be recreated as needed)
                 if hasattr(self.app, 'claude_clients'):
-                    session_id = session.get('_id', id(session))
-                    if session_id in self.app.claude_clients:
-                        self.app.claude_clients[session_id].clear_conversation_history()
+                    self.app.claude_clients = {}
                 
                 session.modified = True
                 return jsonify({'status': 'success', 'message': 'Conversation cleared'})

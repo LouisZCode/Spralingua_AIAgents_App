@@ -63,4 +63,4 @@ class PromptManager:
     def reload_prompts(self) -> None:
         """Reload prompts from the YAML file."""
         self.load_prompts()
-        print(f"✅ [PROMPT MANAGER] Reloaded prompts from {self.prompt_file}")
+        print(f"[SUCCESS] [PROMPT MANAGER] Reloaded prompts from {self.prompt_file}")

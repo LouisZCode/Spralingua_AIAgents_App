@@ -648,9 +648,24 @@
         });
         
         // Initialize character and show chat interface
-        function initializeCharacter(character) {
+        async function initializeCharacter(character) {
             selectedCharacter = CHARACTERS[character];
             console.log(`Selected character: ${selectedCharacter.name}`);
+            
+            // Clear any existing session first
+            try {
+                await fetch('/api/casual-chat/clear', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action: 'clear' })
+                });
+                console.log('[SESSION] Cleared previous session on character selection');
+            } catch (error) {
+                console.warn('[SESSION] Could not clear previous session:', error);
+            }
+            
+            // Reset local message counter
+            messageCount = 0;
             
             // Initialize MessageExchangeDisplay for focused conversation view
             messageExchangeDisplay = new MessageExchangeDisplay('chat-messages');
@@ -730,6 +745,9 @@
                 
                 // Initialize VoiceInput with just chatInterface (as GTA-V2 expects)
                 voiceInput = new VoiceInput(chatInterface);
+                
+                // Make voiceInput globally accessible for refresh
+                window.voiceInput = voiceInput;
                 
                 console.log('[CASUAL CHAT] Voice system initialized successfully');
             }, 500); // Give DOM time to update
@@ -814,8 +832,25 @@
             // Add user message to chat (visual feedback)
             addMessageToChat(message, 'user');
             
-            // Update progress bar
-            updateProgress();
+            // Update progress bar IMMEDIATELY with local counter
+            messageCount++;
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const percentage = (messageCount / 6) * 100;
+            
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = `${messageCount}/6 messages sent`;
+            
+            // Check if complete
+            if (messageCount >= 6) {
+                progressText.textContent = 'Conversation complete! Great job!';
+                document.getElementById('progress-container').classList.add('complete');
+                const voiceBtn = document.getElementById('voice-btn');
+                if (voiceBtn) {
+                    voiceBtn.disabled = true;
+                    voiceBtn.innerHTML = '✅';
+                }
+            }
             
             // Set avatar to thinking state while waiting for response
             if (window.avatarController && window.avatarController.isReady()) {
@@ -870,24 +905,10 @@
                     }
                 }
                 
-                // Update progress bar
-                if (data.message_count) {
-                    const progressFill = document.getElementById('progress-fill');
-                    const progressText = document.getElementById('progress-text');
-                    const percentage = (data.message_count / data.total_messages_required) * 100;
-                    
-                    progressFill.style.width = `${percentage}%`;
-                    progressText.textContent = `${data.message_count}/${data.total_messages_required} messages sent`;
-                    
-                    // Check if complete
-                    if (data.message_count >= data.total_messages_required) {
-                        progressText.textContent = 'Conversation complete! Great job!';
-                        document.getElementById('progress-container').classList.add('complete');
-                        
-                        // Disable further input
-                        voiceBtn.disabled = true;
-                        voiceBtn.innerHTML = '✅';
-                    }
+                // Note: Progress bar is already updated immediately when message is sent
+                // We can use the backend count for validation if needed
+                if (data.message_count && data.message_count !== messageCount) {
+                    console.warn(`[PROGRESS] Local count (${messageCount}) differs from backend (${data.message_count})`);
                 }
                 
                 // Show hint if available
@@ -959,9 +980,6 @@
         
         // Track progress locally
         let messageCount = 0;
-        function updateProgress() {
-            messageCount++;
-        }
         
         // Function to show language hint
         function showHint(hintData) {
