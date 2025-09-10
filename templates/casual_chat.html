@@ -4,6 +4,224 @@
 
 {% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/casual_chat.css') }}?v={{ timestamp }}">
+<style>
+    /* Updated voice controls layout for microphone + send button */
+    .voice-only-wrapper {
+        position: relative;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .voice-only-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+    }
+    
+    .btn-voice-large {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        border: none;
+        z-index: 10;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-voice-large:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        color: white !important;
+        transform: scale(1.05);
+    }
+    
+    #send-btn {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        margin-top: 0.5rem;
+    }
+    
+    #send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    #send-btn:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* =================== Timed Recording UI Styles (from GTA-V2) =================== */
+    
+    .timed-recording-container {
+        position: relative;
+        padding: 2rem;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+        border-radius: 12px;
+        text-align: center;
+        animation: pulse-recording 2s ease-in-out infinite;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+    }
+    
+    /* Circular timer styles */
+    .timed-recording-container.circular-style .circular-timer {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+    }
+    
+    .circular-timer svg {
+        transform: rotate(-90deg);
+        width: 100%;
+        height: 100%;
+    }
+    
+    .timer-circle-progress {
+        transition: stroke-dashoffset 0.1s linear;
+    }
+    
+    .timer-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 28px;
+        font-weight: bold;
+        color: white;
+        font-family: 'Inter', -apple-system, sans-serif;
+    }
+    
+    /* Recording status */
+    .recording-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: white;
+        font-size: 16px;
+        opacity: 0.95;
+    }
+    
+    .recording-dot {
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 50%;
+        animation: recording-blink 1.5s ease-in-out infinite;
+    }
+    
+    .recording-label {
+        font-weight: 500;
+    }
+    
+    /* Stop button */
+    .stop-recording-button {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 12px 24px;
+        background: white;
+        color: #ff6b6b;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stop-recording-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        background: #f8f9fa;
+    }
+    
+    .stop-recording-button:active {
+        transform: translateY(0);
+    }
+    
+    /* Disabled state for stop button */
+    .stop-recording-button:disabled,
+    .stop-recording-button[disabled] {
+        background: #e0e0e0 !important;
+        color: #999 !important;
+        cursor: not-allowed !important;
+        opacity: 0.6 !important;
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .stop-recording-button:disabled:hover,
+    .stop-recording-button[disabled]:hover {
+        background: #e0e0e0 !important;
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        cursor: not-allowed !important;
+    }
+    
+    .stop-icon {
+        font-size: 20px;
+    }
+    
+    /* Animations */
+    @keyframes pulse-recording {
+        0% {
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+        }
+        50% {
+            box-shadow: 0 4px 30px rgba(255, 107, 107, 0.5);
+        }
+        100% {
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
+        }
+    }
+    
+    @keyframes recording-blink {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.3;
+        }
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .timed-recording-container {
+            padding: 1.5rem;
+            min-height: 180px;
+        }
+        
+        .circular-timer {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .timer-text {
+            font-size: 24px;
+        }
+        
+        .stop-recording-button {
+            padding: 10px 20px;
+            font-size: 14px;
+        }
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -139,10 +357,6 @@
                         class="message-input" 
                         style="display: none;"
                     ></textarea>
-                    <button type="submit" id="send-btn" class="btn btn-primary" style="display: none;">
-                        <span class="btn-text">Send</span>
-                        <span class="btn-loading" style="display: none;">...</span>
-                    </button>
                 </form>
             </div>
         </div>
@@ -191,17 +405,19 @@
     // Configuration objects for voice input/output system - MUST be defined before loading JS files
     window.VOICE_INPUT_CONFIG = {
         language: '{{ speech_code|default("de-DE") }}', // Dynamic language from user's selection
-        continuous: false,
-        interimResults: true,
-        maxAlternatives: 1,
-        silenceTimeout: 1500,
-        maxRecordingTime: 60000, // 1 minute max recording
-        enableTimedRecording: true,
-        timedRecordingDuration: 60000,
-        enableChunkAccumulation: true,
-        chunkAccumulationTimeout: 1500,
-        showTranscriptInInput: true,
-        autoSubmitOnStop: false, // Don't auto-submit, let user review
+        recording_mode: 'timed',          // Enable timed recording mode
+        max_duration: 30000,              // 30 seconds instead of 60
+        show_visual_timer: true,          // Show the circular timer
+        timer_style: 'circular',          // Visual style of timer
+        accumulate_transcript: true,      // Collect all speech segments
+        auto_restart_on_silence: true,    // Keep recording during pauses
+        stop_button_text: "I'm Done Speaking",
+        auto_submit_mode: 'always',       // Auto-submit when done
+        show_transcript: false,           // Don't show transcript
+        allow_editing: false,             // No editing allowed
+        show_transcript_preview: false,   // No preview during recording
+        // Manual send button removed - using GTA-V2's simpler approach
+        confidence_override: 0.6,         // Slightly lower for natural conversation
         debug: true
     };
     

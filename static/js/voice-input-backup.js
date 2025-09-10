@@ -24,7 +24,6 @@ class VoiceInput {
         this.audioLevel = 0;
         this.languageSelector = null; // Language selector integration
         this.microphoneButton = null; // Microphone button reference
-        this.sendButton = null; // Send button reference for manual send
         
         // Base configuration
         this.config = {
@@ -114,7 +113,6 @@ class VoiceInput {
         
         this.setupRecognition();
         this.setupMicrophoneButton();
-        // Send button removed - using GTA-V2's simpler approach
         this.initializeLanguageSelector();
         console.log('✅ VoiceInput initialized successfully');
     }
@@ -137,8 +135,6 @@ class VoiceInput {
         
         console.log('🎤 Microphone button configured');
     }
-    
-    // Send button methods removed - using GTA-V2's simpler approach
     
     /**
      * Handle microphone button click - show language selector or start recording
@@ -268,25 +264,20 @@ class VoiceInput {
         
         // Initialize timed UI if TimedRecordingUI is available
         if (typeof TimedRecordingUI !== 'undefined') {
-            // Use the voice-only-wrapper as container for better positioning
-            const inputArea = document.querySelector('.voice-only-wrapper');
+            const inputArea = document.querySelector('.chat-input-container');
             if (inputArea) {
                 console.log('📱 Initializing TimedRecordingUI with container:', inputArea);
-                
-                // Timer will replace the voice wrapper content
-                console.log('🎤 Voice controls will be replaced by timer UI');
-                
                 this.timedRecordingUI = new TimedRecordingUI(inputArea, {
-                    duration: this.voiceInputConfig.max_duration || 30000,  // Default to 30 seconds
+                    duration: this.voiceInputConfig.max_duration || 60000,
                     style: this.voiceInputConfig.timer_style || 'circular',
-                    stopButtonText: this.voiceInputConfig.stop_button_text || "Stop Recording",
+                    stopButtonText: this.voiceInputConfig.stop_button_text || "I'm Done Speaking",
                     onStop: () => this.stopTimedRecording(),
                     onTimeout: () => this.handleRecordingTimeout(),
                     showTranscriptPreview: this.voiceInputConfig.show_transcript_preview || false
                 });
                 this.timedRecordingUI.show();
             } else {
-                console.error('❌ Could not find .voice-only-wrapper element for timer UI');
+                console.error('❌ Could not find .chat-input-container element for timer UI');
             }
         } else {
             console.warn('⚠️ TimedRecordingUI not loaded, falling back to standard recording');
@@ -308,7 +299,7 @@ class VoiceInput {
             this.recognition.start();
             
             // Set timeout for maximum duration
-            const maxDuration = this.voiceInputConfig.max_duration || 30000;  // Default to 30 seconds
+            const maxDuration = this.voiceInputConfig.max_duration || 60000;
             this.recordingTimeout = setTimeout(() => {
                 this.handleRecordingTimeout();
             }, maxDuration);
@@ -417,9 +408,6 @@ class VoiceInput {
                 console.log('🎭 Hiding timer UI after transcript processing...');
                 this.timedRecordingUI.hide();
                 this.timedRecordingUI = null;
-                
-                // Voice wrapper content will be restored by TimedRecordingUI.hide()
-                console.log('🎤 Voice controls restored');
                 
                 // Refresh ChatInterface DOM references after UI restoration
                 console.log('🔄 Preparing to refresh DOM references...');
@@ -539,30 +527,10 @@ class VoiceInput {
     // DELETE EVERYTHING BELOW THIS LINE UNTIL THE NEXT METHOD DECLARATION
     
     /**
-     * Handle recording timeout - auto-send on timer expiry
+     * Handle recording timeout
      */
     handleRecordingTimeout() {
-        console.log('⏱️ Recording timeout reached - auto-sending');
-        
-        // Check if auto-submit on timer is enabled
-        if (this.voiceInputConfig.auto_submit_mode === 'timer_only' || 
-            this.voiceInputConfig.auto_submit_mode === 'always') {
-            
-            // Check if we have any chunks to send
-            if (this.accumulatedTranscript.length > 0) {
-                const fullTranscript = this.accumulatedTranscript.join(' ');
-                console.log(`⏱️ Auto-sending on timer expiry: "${fullTranscript}"`);
-                
-                // Process the transcript (this will send it)
-                this.processContinuousTranscript(fullTranscript);
-                
-                // Clear accumulated transcript
-                this.accumulatedTranscript = [];
-                
-            }
-        }
-        
-        // Stop the recording
+        console.log('⏱️ Recording timeout reached');
         this.stopTimedRecording();
     }
     
@@ -588,12 +556,6 @@ class VoiceInput {
         // Update avatar to listening state
         if (this.chatInterface.setAvatarState) {
             this.chatInterface.setAvatarState('listening');
-        }
-        
-        // Add recording-active class to controls container for timer centering
-        const controlsContainer = document.querySelector('.voice-only-controls');
-        if (controlsContainer) {
-            controlsContainer.classList.add('recording-active');
         }
         
         // Update microphone button state
@@ -742,12 +704,6 @@ class VoiceInput {
      */
     handleEnd() {
         console.log('🔇 Voice recording ended');
-        
-        // Remove recording-active class from controls container
-        const controlsContainer = document.querySelector('.voice-only-controls');
-        if (controlsContainer) {
-            controlsContainer.classList.remove('recording-active');
-        }
         
         // Handle continuous recording mode
         if (this.continuousRecordingMode && this.autoRestartOnSilence && !this.manualStop) {

@@ -49,9 +49,10 @@ class ChatInterface {
         this.isProcessingVoice = true;
         
         try {
-            // If autoSubmitMode is 'confidence' and we have high confidence, auto-submit
-            if (config.autoSubmitMode === 'confidence' && confidence >= 0.7) {
-                console.log('[CHAT WRAPPER] Auto-submitting with high confidence');
+            // Handle different auto-submit modes
+            if (config.autoSubmitMode === 'always' || 
+                (config.autoSubmitMode === 'confidence' && confidence >= 0.7)) {
+                console.log('[CHAT WRAPPER] Auto-submitting message');
                 // Use the existing sendMessage function from casual_chat.html
                 if (typeof window.sendMessage === 'function') {
                     await window.sendMessage(transcript);
