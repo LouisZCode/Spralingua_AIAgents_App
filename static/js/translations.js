@@ -42,7 +42,37 @@ const translations = {
         learning_display: "Learning {target} from {input} at {level} level",
         
         // Error Messages (kept in English for devs)
-        same_language_error: "You cannot select the same language for both input and target!"
+        same_language_error: "You cannot select the same language for both input and target!",
+        
+        // Exercises Page
+        learning_hub: "Learning Hub",
+        learning_journey: "Your personalized language learning journey",
+        practice_modules: "Practice Modules",
+        conversation_practice: "Conversation Practice",
+        writing_practice: "Writing Practice",
+        casual_chat: "Casual Chat",
+        everyday_conversations: "Everyday conversations",
+        email_writing: "Email Writing",
+        professional_emails: "Professional emails",
+        fill_blanks: "Fill the Blanks",
+        grammar_practice: "Grammar practice",
+        ready_practice: "Ready to practice",
+        
+        // Casual Chat Page
+        casual_conversation_practice: "Casual Conversation Practice",
+        practice_everyday: "Practice everyday conversations in a relaxed setting. Let's chat about daily life, hobbies, and interests!",
+        start_chatting: "Start Chatting",
+        choose_partner: "Choose Your Conversation Partner",
+        select_practice_today: "Select who you'd like to practice with today:",
+        chat_with_harry: "Chat with Harry",
+        chat_with_sally: "Chat with Sally",
+        surprise_me: "Surprise Me!",
+        ai_chat_partner: "AI Chat Partner",
+        messages_sent: "messages sent",
+        harry_description: "Cheerful snowboard instructor who loves parties and sports",
+        sally_description: "Thoughtful librarian who finds beauty in melancholy",
+        chat_partner_placeholder: "Chat Partner",
+        practicing_label: "Practicing:"
     },
     
     german: {
@@ -86,7 +116,37 @@ const translations = {
         learning_display: "Lerne {target} von {input} auf {level} Niveau",
         
         // Error Messages
-        same_language_error: "You cannot select the same language for both input and target!"
+        same_language_error: "You cannot select the same language for both input and target!",
+        
+        // Exercises Page
+        learning_hub: "Lernzentrum",
+        learning_journey: "Deine personalisierte Sprachlernreise",
+        practice_modules: "Übungsmodule",
+        conversation_practice: "Konversationsübung",
+        writing_practice: "Schreibübung",
+        casual_chat: "Lockerer Chat",
+        everyday_conversations: "Alltagsgespräche",
+        email_writing: "E-Mail schreiben",
+        professional_emails: "Professionelle E-Mails",
+        fill_blanks: "Lücken füllen",
+        grammar_practice: "Grammatikübung",
+        ready_practice: "Bereit zum Üben",
+        
+        // Casual Chat Page
+        casual_conversation_practice: "Lockere Konversationsübung",
+        practice_everyday: "Übe Alltagsgespräche in entspannter Atmosphäre. Lass uns über das tägliche Leben, Hobbys und Interessen plaudern!",
+        start_chatting: "Chat starten",
+        choose_partner: "Wähle deinen Gesprächspartner",
+        select_practice_today: "Wähle aus, mit wem du heute üben möchtest:",
+        chat_with_harry: "Mit Harry chatten",
+        chat_with_sally: "Mit Sally chatten",
+        surprise_me: "Überrasche mich!",
+        ai_chat_partner: "KI-Chatpartner",
+        messages_sent: "Nachrichten gesendet",
+        harry_description: "Fröhlicher Snowboardlehrer, der Partys und Sport liebt",
+        sally_description: "Nachdenkliche Bibliothekarin, die Schönheit in der Melancholie findet",
+        chat_partner_placeholder: "Chatpartner",
+        practicing_label: "Übe:"
     },
     
     spanish: {
@@ -130,7 +190,37 @@ const translations = {
         learning_display: "Aprendiendo {target} desde {input} en nivel {level}",
         
         // Error Messages
-        same_language_error: "You cannot select the same language for both input and target!"
+        same_language_error: "You cannot select the same language for both input and target!",
+        
+        // Exercises Page
+        learning_hub: "Centro de Aprendizaje",
+        learning_journey: "Tu viaje personalizado de aprendizaje de idiomas",
+        practice_modules: "Módulos de Práctica",
+        conversation_practice: "Práctica de Conversación",
+        writing_practice: "Práctica de Escritura",
+        casual_chat: "Chat Casual",
+        everyday_conversations: "Conversaciones cotidianas",
+        email_writing: "Escribir Correos",
+        professional_emails: "Correos profesionales",
+        fill_blanks: "Llenar los Espacios",
+        grammar_practice: "Práctica de gramática",
+        ready_practice: "Listo para practicar",
+        
+        // Casual Chat Page
+        casual_conversation_practice: "Práctica de Conversación Casual",
+        practice_everyday: "Practica conversaciones cotidianas en un ambiente relajado. ¡Hablemos sobre la vida diaria, pasatiempos e intereses!",
+        start_chatting: "Empezar a Chatear",
+        choose_partner: "Elige tu Compañero de Conversación",
+        select_practice_today: "Selecciona con quién te gustaría practicar hoy:",
+        chat_with_harry: "Chatear con Harry",
+        chat_with_sally: "Chatear con Sally",
+        surprise_me: "¡Sorpréndeme!",
+        ai_chat_partner: "Compañero de Chat IA",
+        messages_sent: "mensajes enviados",
+        harry_description: "Alegre instructor de snowboard que ama las fiestas y los deportes",
+        sally_description: "Bibliotecaria reflexiva que encuentra belleza en la melancolía",
+        chat_partner_placeholder: "Compañero de Chat",
+        practicing_label: "Practicando:"
     },
     
     portuguese: {
@@ -174,7 +264,37 @@ const translations = {
         learning_display: "Aprendendo {target} de {input} no nível {level}",
         
         // Error Messages
-        same_language_error: "You cannot select the same language for both input and target!"
+        same_language_error: "You cannot select the same language for both input and target!",
+        
+        // Exercises Page
+        learning_hub: "Centro de Aprendizagem",
+        learning_journey: "Sua jornada personalizada de aprendizado de idiomas",
+        practice_modules: "Módulos de Prática",
+        conversation_practice: "Prática de Conversação",
+        writing_practice: "Prática de Escrita",
+        casual_chat: "Bate-papo Casual",
+        everyday_conversations: "Conversas do dia a dia",
+        email_writing: "Escrever E-mails",
+        professional_emails: "E-mails profissionais",
+        fill_blanks: "Preencher as Lacunas",
+        grammar_practice: "Prática de gramática",
+        ready_practice: "Pronto para praticar",
+        
+        // Casual Chat Page
+        casual_conversation_practice: "Prática de Conversação Casual",
+        practice_everyday: "Pratique conversas do dia a dia em um ambiente descontraído. Vamos conversar sobre a vida diária, hobbies e interesses!",
+        start_chatting: "Começar a Conversar",
+        choose_partner: "Escolha seu Parceiro de Conversa",
+        select_practice_today: "Selecione com quem você gostaria de praticar hoje:",
+        chat_with_harry: "Conversar com Harry",
+        chat_with_sally: "Conversar com Sally",
+        surprise_me: "Me Surpreenda!",
+        ai_chat_partner: "Parceiro de Chat IA",
+        messages_sent: "mensagens enviadas",
+        harry_description: "Alegre instrutor de snowboard que adora festas e esportes",
+        sally_description: "Bibliotecária reflexiva que encontra beleza na melancolia",
+        chat_partner_placeholder: "Parceiro de Chat",
+        practicing_label: "Praticando:"
     }
 };
 

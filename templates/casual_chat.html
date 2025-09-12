@@ -228,9 +228,9 @@
     <!-- Welcome Screen Overlay -->
     <div id="welcome-overlay" class="welcome-overlay">
         <div class="welcome-content">
-            <h1 class="welcome-title">Casual Conversation Practice</h1>
-            <p class="welcome-subtitle">Practice everyday conversations in a relaxed setting. Let's chat about daily life, hobbies, and interests!</p>
-            <button id="start-btn" class="btn-start">
+            <h1 class="welcome-title" data-translate="casual_conversation_practice">Casual Conversation Practice</h1>
+            <p class="welcome-subtitle" data-translate="practice_everyday">Practice everyday conversations in a relaxed setting. Let's chat about daily life, hobbies, and interests!</p>
+            <button id="start-btn" class="btn-start" data-translate="start_chatting">
                 Start Chatting
             </button>
         </div>
@@ -239,8 +239,8 @@
     <!-- Character Selection Overlay -->
     <div id="character-selection-overlay" class="character-selection-overlay" style="display: none;">
         <div class="character-selection-content">
-            <h2 class="selection-title">Choose Your Conversation Partner</h2>
-            <p class="selection-subtitle">Select who you'd like to practice with today:</p>
+            <h2 class="selection-title" data-translate="choose_partner">Choose Your Conversation Partner</h2>
+            <p class="selection-subtitle" data-translate="select_practice_today">Select who you'd like to practice with today:</p>
             
             <div class="character-grid">
                 <!-- Harry Card -->
@@ -251,8 +251,8 @@
                         </div>
                     </div>
                     <h3 class="character-name">Happy Harry</h3>
-                    <p class="character-description">Cheerful snowboard instructor who loves parties and sports</p>
-                    <button class="select-character-btn">Chat with Harry</button>
+                    <p class="character-description" data-translate="harry_description">Cheerful snowboard instructor who loves parties and sports</p>
+                    <button class="select-character-btn" data-translate="chat_with_harry">Chat with Harry</button>
                 </div>
                 
                 <!-- Sally Card -->
@@ -263,15 +263,15 @@
                         </div>
                     </div>
                     <h3 class="character-name">Sad Sally</h3>
-                    <p class="character-description">Thoughtful librarian who finds beauty in melancholy</p>
-                    <button class="select-character-btn">Chat with Sally</button>
+                    <p class="character-description" data-translate="sally_description">Thoughtful librarian who finds beauty in melancholy</p>
+                    <button class="select-character-btn" data-translate="chat_with_sally">Chat with Sally</button>
                 </div>
             </div>
             
             <!-- Random Selection Button -->
             <div class="random-selection">
                 <button id="random-character-btn" class="btn-random">
-                    🎲 Surprise Me!
+                    🎲 <span data-translate="surprise_me">Surprise Me!</span>
                 </button>
             </div>
         </div>
@@ -290,11 +290,12 @@
         <div class="chat-container conversation-mode">
             <div class="chat-header">
                 <div class="header-title">
-                    <h1>Casual Conversation Practice</h1>
-                    <p class="instructor-name">AI Chat Partner</p>
-                    {% if language_display_name %}
-                    <p class="language-indicator" style="color: #667eea; font-size: 0.9em; margin-top: 5px;">
-                        🎯 Practicing: {{ language_display_name }}
+                    <h1 data-translate="casual_conversation_practice">Casual Conversation Practice</h1>
+                    <p class="instructor-name" data-translate="ai_chat_partner">AI Chat Partner</p>
+                    {% if target_language %}
+                    <p class="language-indicator" style="color: white; font-size: 0.9em; margin-top: 5px;">
+                        🎯 <span data-translate="practicing_label">Practicing:</span> 
+                        <span data-translate="lang_{{ target_language }}">{{ target_language|capitalize }}</span>
                     </p>
                     {% endif %}
                 </div>
@@ -308,7 +309,7 @@
                     <!-- Placeholder shown when no animation is loaded -->
                     <div id="avatar-placeholder" class="avatar-placeholder">
                         <div class="placeholder-icon">💬</div>
-                        <div class="placeholder-text">Chat Partner</div>
+                        <div class="placeholder-text" data-translate="chat_partner_placeholder">Chat Partner</div>
                     </div>
                 </div>
                 
@@ -424,7 +425,7 @@
     // Log the configuration to verify it's correct
     console.log('[LANGUAGE CONFIG] Target language: {{ target_language }}');
     console.log('[LANGUAGE CONFIG] Speech recognition code: {{ speech_code }}');
-    console.log('[LANGUAGE CONFIG] Display name: {{ language_display_name }}');
+    console.log('[LANGUAGE CONFIG] Target language: {{ target_language }}');
     console.log('[LANGUAGE CONFIG] VOICE_INPUT_CONFIG.language:', window.VOICE_INPUT_CONFIG.language);
 </script>
 
@@ -613,7 +614,7 @@
     // Log the language configuration for debugging
     console.log('[LANGUAGE CONFIG] Target language: {{ target_language|default("not set") }}');
     console.log('[LANGUAGE CONFIG] Speech recognition code: {{ speech_code|default("not set") }}');
-    console.log('[LANGUAGE CONFIG] Display name: {{ language_display_name|default("not set") }}');
+    console.log('[LANGUAGE CONFIG] Target language: {{ target_language|default("not set") }}');
     
     document.addEventListener('DOMContentLoaded', function() {
         // Handle start button - shows character selection

@@ -193,7 +193,6 @@ class AuthRoutes:
             # Map target language to speech recognition code
             target_language = user_progress.target_language
             speech_code = LanguageMapper.get_speech_code(target_language)
-            display_name = LanguageMapper.get_display_name(target_language)
             
             # If somehow the language isn't supported, redirect
             if not speech_code:
@@ -203,8 +202,7 @@ class AuthRoutes:
             return render_template('casual_chat.html', 
                                  email=email,
                                  target_language=target_language,
-                                 speech_code=speech_code,
-                                 language_display_name=display_name)
+                                 speech_code=speech_code)
         
         @self.app.route('/api/test-claude', methods=['GET'])
         def test_claude():
