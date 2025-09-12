@@ -9,6 +9,7 @@ class TimedRecordingUI {
             duration: config.duration || 60000, // Default 1 minute
             style: config.style || 'circular', // 'circular' or 'linear'
             stopButtonText: config.stopButtonText || "I'm Done Speaking",
+            recordingLabel: config.recordingLabel || "Recording...",
             onStop: config.onStop || (() => {}),
             onTimeout: config.onTimeout || (() => {}),
             showTranscriptPreview: config.showTranscriptPreview || false
@@ -103,7 +104,7 @@ class TimedRecordingUI {
                 </div>
                 <div class="recording-status">
                     <span class="recording-dot"></span>
-                    <span class="recording-label">Recording...</span>
+                    <span class="recording-label">${this.config.recordingLabel}</span>
                 </div>
                 <button class="stop-recording-button" disabled>
                     <span class="stop-icon">✓</span>
@@ -128,7 +129,7 @@ class TimedRecordingUI {
                 </div>
                 <div class="recording-status">
                     <span class="recording-dot"></span>
-                    <span class="recording-label">Recording your response...</span>
+                    <span class="recording-label">${this.config.recordingLabel}</span>
                 </div>
                 <button class="stop-recording-button" disabled>
                     <span class="stop-icon">✓</span>

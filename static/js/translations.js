@@ -72,7 +72,11 @@ const translations = {
         harry_description: "Cheerful snowboard instructor who loves parties and sports",
         sally_description: "Thoughtful librarian who finds beauty in melancholy",
         chat_partner_placeholder: "Chat Partner",
-        practicing_label: "Practicing:"
+        practicing_label: "Practicing:",
+        
+        // Microphone UI
+        done_speaking: "I'm Done Speaking",
+        recording_status: "Recording..."
     },
     
     german: {
@@ -146,7 +150,11 @@ const translations = {
         harry_description: "Fröhlicher Snowboardlehrer, der Partys und Sport liebt",
         sally_description: "Nachdenkliche Bibliothekarin, die Schönheit in der Melancholie findet",
         chat_partner_placeholder: "Chatpartner",
-        practicing_label: "Übe:"
+        practicing_label: "Übe:",
+        
+        // Microphone UI
+        done_speaking: "Fertig mit Sprechen",
+        recording_status: "Aufnahme läuft..."
     },
     
     spanish: {
@@ -220,7 +228,11 @@ const translations = {
         harry_description: "Alegre instructor de snowboard que ama las fiestas y los deportes",
         sally_description: "Bibliotecaria reflexiva que encuentra belleza en la melancolía",
         chat_partner_placeholder: "Compañero de Chat",
-        practicing_label: "Practicando:"
+        practicing_label: "Practicando:",
+        
+        // Microphone UI
+        done_speaking: "Terminé de Hablar",
+        recording_status: "Grabando..."
     },
     
     portuguese: {
@@ -294,7 +306,11 @@ const translations = {
         harry_description: "Alegre instrutor de snowboard que adora festas e esportes",
         sally_description: "Bibliotecária reflexiva que encontra beleza na melancolia",
         chat_partner_placeholder: "Parceiro de Chat",
-        practicing_label: "Praticando:"
+        practicing_label: "Praticando:",
+        
+        // Microphone UI
+        done_speaking: "Terminei de Falar",
+        recording_status: "Gravando..."
     }
 };
 
@@ -372,6 +388,9 @@ class TranslationManager {
 
 // Create global instance
 const translationManager = new TranslationManager();
+
+// Make it accessible globally via window object
+window.translationManager = translationManager;
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {

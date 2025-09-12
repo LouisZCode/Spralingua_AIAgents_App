@@ -290,6 +290,7 @@ class VoiceInput {
                     duration: this.voiceInputConfig.max_duration || 30000,  // Default to 30 seconds
                     style: this.voiceInputConfig.timer_style || 'circular',
                     stopButtonText: this.voiceInputConfig.stop_button_text || "Stop Recording",
+                    recordingLabel: this.voiceInputConfig.recording_label || "Recording...",
                     onStop: () => this.stopTimedRecording(),
                     onTimeout: () => this.handleRecordingTimeout(),
                     showTranscriptPreview: this.voiceInputConfig.show_transcript_preview || false

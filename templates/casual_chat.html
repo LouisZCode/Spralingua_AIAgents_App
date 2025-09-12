@@ -412,7 +412,8 @@
         timer_style: 'circular',          // Visual style of timer
         accumulate_transcript: true,      // Collect all speech segments
         auto_restart_on_silence: true,    // Keep recording during pauses
-        stop_button_text: "I'm Done Speaking",
+        stop_button_text: "I'm Done Speaking",  // Will be updated with translation
+        recording_label: "Recording...",  // Will be updated with translation
         auto_submit_mode: 'always',       // Auto-submit when done
         show_transcript: false,           // Don't show transcript
         allow_editing: false,             // No editing allowed
@@ -421,6 +422,51 @@
         confidence_override: 0.6,         // Slightly lower for natural conversation
         debug: true
     };
+    
+    // Function to update config with translations
+    function updateVoiceConfigTranslations() {
+        console.log('[MICROPHONE UI] Attempting to update translations...');
+        console.log('[MICROPHONE UI] translationManager exists?', !!window.translationManager);
+        console.log('[MICROPHONE UI] VOICE_INPUT_CONFIG exists?', !!window.VOICE_INPUT_CONFIG);
+        
+        if (window.translationManager && window.VOICE_INPUT_CONFIG) {
+            const currentLang = window.translationManager.getCurrentLanguage();
+            const storedLang = localStorage.getItem('userLanguage');
+            console.log('[MICROPHONE UI] Current language from translationManager:', currentLang);
+            console.log('[MICROPHONE UI] localStorage userLanguage:', storedLang);
+            
+            // Debug: Check if translation exists
+            const testDoneSpeaking = window.translationManager.getText('done_speaking');
+            const testRecording = window.translationManager.getText('recording_status');
+            console.log('[MICROPHONE UI] Test getText("done_speaking"):', testDoneSpeaking);
+            console.log('[MICROPHONE UI] Test getText("recording_status"):', testRecording);
+            
+            // Check the translations object directly
+            if (window.translationManager.translations && window.translationManager.translations[currentLang]) {
+                console.log('[MICROPHONE UI] Direct translation check:', {
+                    done_speaking: window.translationManager.translations[currentLang].done_speaking,
+                    recording_status: window.translationManager.translations[currentLang].recording_status
+                });
+            }
+            
+            window.VOICE_INPUT_CONFIG.stop_button_text = testDoneSpeaking;
+            window.VOICE_INPUT_CONFIG.recording_label = testRecording;
+            
+            console.log('[MICROPHONE UI] Final config values:', {
+                stop_button_text: window.VOICE_INPUT_CONFIG.stop_button_text,
+                recording_label: window.VOICE_INPUT_CONFIG.recording_label,
+                language: currentLang
+            });
+        } else {
+            console.warn('[MICROPHONE UI] Could not update translations - manager or config not ready');
+        }
+    }
+    
+    // Update translations as soon as translationManager is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Small delay to ensure translationManager is initialized
+        setTimeout(updateVoiceConfigTranslations, 100);
+    });
     
     // Log the configuration to verify it's correct
     console.log('[LANGUAGE CONFIG] Target language: {{ target_language }}');
@@ -741,17 +787,45 @@
                 
                 console.log('[CASUAL CHAT] Voice button found, initializing voice system');
                 
-                // Initialize ChatInterface wrapper
-                chatInterface = new ChatInterface();
+                // Wait for translationManager to be fully ready
+                let attempts = 0;
+                const maxAttempts = 10;
+                const checkTranslationManager = () => {
+                    attempts++;
+                    console.log(`[CASUAL CHAT] Checking for translationManager (attempt ${attempts}/${maxAttempts})...`);
+                    
+                    if (window.translationManager) {
+                        console.log('[CASUAL CHAT] TranslationManager found! Updating voice config...');
+                        // Update translations before creating VoiceInput
+                        updateVoiceConfigTranslations();
+                        
+                        // Continue with initialization
+                        initializeVoiceInputAfterTranslations();
+                    } else if (attempts < maxAttempts) {
+                        setTimeout(checkTranslationManager, 100);
+                    } else {
+                        console.error('[CASUAL CHAT] TranslationManager not found after 10 attempts');
+                        // Continue anyway with English defaults
+                        initializeVoiceInputAfterTranslations();
+                    }
+                };
                 
-                // Initialize VoiceInput with just chatInterface (as GTA-V2 expects)
-                voiceInput = new VoiceInput(chatInterface);
-                
-                // Make voiceInput globally accessible for refresh
-                window.voiceInput = voiceInput;
-                
-                console.log('[CASUAL CHAT] Voice system initialized successfully');
+                checkTranslationManager();
+                return; // Exit here, will continue in initializeVoiceInputAfterTranslations
             }, 500); // Give DOM time to update
+        }
+        
+        function initializeVoiceInputAfterTranslations() {
+            // Initialize ChatInterface wrapper
+            chatInterface = new ChatInterface();
+            
+            // Initialize VoiceInput with just chatInterface (as GTA-V2 expects)
+            voiceInput = new VoiceInput(chatInterface);
+            
+            // Make voiceInput globally accessible for refresh
+            window.voiceInput = voiceInput;
+            
+            console.log('[CASUAL CHAT] Voice system initialized successfully');
         }
         
         // Initialize volume controls for TTS
