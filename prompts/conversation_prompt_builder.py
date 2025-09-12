@@ -1,13 +1,13 @@
 # Conversation Prompt Builder for Spralingua
-# Builds dynamic prompts by combining personality, template, and user data
+# Enhanced version with database-driven prompts and no conflicts
 
 import yaml
 import os
 from typing import Dict, Optional, Tuple
 from progress.progress_manager import ProgressManager
 from topics.topic_manager import TopicManager
+from level_rules.level_rules_manager import LevelRulesManager
 from flask import current_app
-
 
 class ConversationPromptBuilder:
     """Builds personalized conversation prompts based on user progress and character personality"""
@@ -16,14 +16,15 @@ class ConversationPromptBuilder:
         """Initialize the ConversationPromptBuilder with managers"""
         self.progress_manager = ProgressManager()
         self.topic_manager = TopicManager()
+        self.level_rules_manager = LevelRulesManager()
         self.personalities_path = os.path.join('prompts', 'personalities')
-        self.templates_path = os.path.join('prompts', 'templates')
         
         # Cache for loaded files
         self._personality_cache = {}
-        self._template_cache = None
-        self._topic_scripts_cache = None
         
+        # Feature flag for enhanced system
+        self.use_enhanced = os.environ.get('USE_ENHANCED_PROMPTS', 'true').lower() == 'true'
+    
     def build_prompt(self, user_id: int, character: str = 'harry') -> Tuple[str, Dict]:
         """
         Build a complete conversation prompt for the given user and character
@@ -36,28 +37,167 @@ class ConversationPromptBuilder:
             Tuple of (prompt_string, context_dict) where context contains user data
         """
         try:
-            # 1. Load personality
-            personality = self._load_personality(character)
-            
-            # 2. Load template
-            template = self._load_template()
-            
-            # 3. Get user context (language pair, level, topic)
-            user_context = self._get_user_context(user_id)
-            
-            # 4. Build the final prompt
-            final_prompt = self._merge_personality_and_template(
-                personality, 
-                template, 
-                user_context
-            )
-            
-            return final_prompt, user_context
+            # Use enhanced system if enabled
+            if self.use_enhanced:
+                return self._build_enhanced_prompt(user_id, character)
+            else:
+                # Fall back to legacy system (will be removed later)
+                return self._build_legacy_prompt(user_id, character)
             
         except Exception as e:
             print(f"[ERROR] ConversationPromptBuilder: {e}")
             # Return None to signal fallback to old system
             return None, None
+    
+    def _build_enhanced_prompt(self, user_id: int, character: str) -> Tuple[str, Dict]:
+        """
+        Build prompt using the enhanced database-driven system
+        NO CONFLICTS, SINGLE SOURCE OF TRUTH
+        """
+        # 1. Load character personality (minimal, character traits only)
+        personality = self._load_personality(character)
+        
+        # 2. Get user context
+        user_context = self._get_user_context(user_id)
+        
+        # 3. Get level rules from database
+        level_rules = self.level_rules_manager.get_level_rules(user_context['level'])
+        
+        # 4. Get topic-specific parameters from database
+        topic_params = self._get_topic_parameters(
+            user_context['level'],
+            user_context['topic_number'],
+            user_context['target_language']
+        )
+        
+        # 5. Build the prompt without conflicts
+        final_prompt = self._build_clean_prompt(
+            personality,
+            user_context,
+            level_rules,
+            topic_params
+        )
+        
+        return final_prompt, user_context
+    
+    def _build_clean_prompt(self, personality: Dict, context: Dict, 
+                           level_rules, topic_params: Dict) -> str:
+        """
+        Build a clean, non-redundant prompt with single source of truth
+        """
+        prompt_sections = []
+        
+        # 1. CHARACTER SECTION (from personality file only)
+        character_section = f"""## Character Profile
+{personality.get('background', '')}"""
+        
+        if personality.get('communication_style'):
+            character_section += f"""
+
+## Communication Style
+{personality.get('communication_style', '')}"""
+        
+        prompt_sections.append(character_section)
+        
+        # 2. LANGUAGE CONFIGURATION (simple, no redundancy)
+        prompt_sections.append(f"""## Language Configuration
+- Conversation Language: {context['target_language'].capitalize()}
+- Student's Native Language: {context['input_language'].capitalize()}
+- IMPORTANT: Use ONLY {context['target_language'].capitalize()} in all responses""")
+        
+        # 3. LEVEL & TOPIC (from database)
+        word_limit = topic_params.get('word_limit', 
+                                     level_rules.base_word_limit if level_rules else 40)
+        
+        prompt_sections.append(f"""## Current Learning Context
+- Level: {context['level']}
+- Topic {context['topic_number']}: {context['topic_title']}
+- Word Limit: {word_limit} words per response
+- Number of Exchanges: {topic_params.get('number_of_exchanges', 5)}""")
+        
+        # 4. LEVEL GUIDELINES (from level_rules table)
+        if level_rules:
+            prompt_sections.append(f"""## Level {context['level']} Guidelines
+{level_rules.general_guidelines}""")
+        
+        # 5. TOPIC FOCUS (from database)
+        if context.get('subtopics'):
+            subtopics_text = '\n'.join([f"  - {st}" for st in context['subtopics']])
+            prompt_sections.append(f"""## Topic Focus Areas
+{subtopics_text}""")
+        
+        # 6. OPENING PHRASE (if available for this topic)
+        opening_phrase = topic_params.get('opening_phrase')
+        if opening_phrase:
+            prompt_sections.append(f"""## Your First Message
+You MUST start with exactly: "{opening_phrase}" """)
+        
+        # 7. CONVERSATION FLOW (if defined)
+        if topic_params.get('conversation_flow'):
+            flow_text = '\n'.join([f"  {i+1}. {step}" 
+                                  for i, step in enumerate(topic_params['conversation_flow'])])
+            prompt_sections.append(f"""## Conversation Flow
+Follow this structure:
+{flow_text}""")
+        
+        # 8. VOCABULARY (if specified)
+        if topic_params.get('required_vocabulary'):
+            vocab_text = ', '.join(topic_params['required_vocabulary'][:10])  # Limit display
+            prompt_sections.append(f"""## Key Vocabulary to Use
+{vocab_text}""")
+        
+        # 9. TOPIC-SPECIFIC RULES (if any)
+        if topic_params.get('topic_specific_rules'):
+            prompt_sections.append(f"""## Topic-Specific Rules
+{topic_params['topic_specific_rules']}""")
+        
+        # 10. CORE BEHAVIORAL RULES (non-negotiable)
+        prompt_sections.append("""## Core Rules
+1. NEVER correct student errors - continue naturally
+2. Stay within the word limit per response
+3. Focus on the current topic
+4. After the specified number of exchanges, wrap up politely
+5. Always stay in character""")
+        
+        # Join all sections
+        return '\n\n'.join(prompt_sections)
+    
+    def _get_topic_parameters(self, level: str, topic_number: int, 
+                             target_language: str) -> Dict:
+        """
+        Get all topic-specific parameters from the database
+        """
+        params = {}
+        
+        # Get word limit (topic override or level default)
+        params['word_limit'] = self.topic_manager.get_topic_word_limit(level, topic_number)
+        
+        # Get opening phrase for the target language
+        params['opening_phrase'] = self.topic_manager.get_opening_phrase(
+            level, topic_number, target_language
+        )
+        
+        # Get conversation flow
+        params['conversation_flow'] = self.topic_manager.get_conversation_flow(
+            level, topic_number
+        )
+        
+        # Get required vocabulary
+        params['required_vocabulary'] = self.topic_manager.get_required_vocabulary(
+            level, topic_number
+        )
+        
+        # Get topic-specific rules
+        params['topic_specific_rules'] = self.topic_manager.get_topic_specific_rules(
+            level, topic_number
+        )
+        
+        # Get number of exchanges
+        params['number_of_exchanges'] = self.topic_manager.get_number_of_exchanges(
+            level, topic_number
+        )
+        
+        return params
     
     def _load_personality(self, character: str) -> Dict:
         """Load personality YAML for the given character"""
@@ -73,38 +213,6 @@ class ConversationPromptBuilder:
             personality_data = yaml.safe_load(file)
             self._personality_cache[character] = personality_data
             return personality_data
-    
-    def _load_template(self) -> Dict:
-        """Load the conversation template"""
-        if self._template_cache:
-            return self._template_cache
-        
-        template_file = os.path.join(self.templates_path, 'conversation_template.yaml')
-        
-        if not os.path.exists(template_file):
-            raise FileNotFoundError(f"Template file not found: {template_file}")
-        
-        with open(template_file, 'r', encoding='utf-8') as file:
-            template_data = yaml.safe_load(file)
-            self._template_cache = template_data
-            return template_data
-    
-    def _load_topic_scripts(self, level: str) -> Dict:
-        """Load topic-specific scripts for the given level"""
-        if self._topic_scripts_cache:
-            return self._topic_scripts_cache
-        
-        # For now, we only have A1 scripts
-        if level.upper() == 'A1':
-            scripts_file = os.path.join(self.templates_path, 'a1_topic_scripts.yaml')
-            
-            if os.path.exists(scripts_file):
-                with open(scripts_file, 'r', encoding='utf-8') as file:
-                    scripts_data = yaml.safe_load(file)
-                    self._topic_scripts_cache = scripts_data
-                    return scripts_data
-        
-        return {}  # Return empty dict if no scripts available
     
     def _get_user_context(self, user_id: int) -> Dict:
         """
@@ -145,10 +253,9 @@ class ConversationPromptBuilder:
                 topic_def = self.topic_manager.get_topic_definition(context['level'], current_topic_number)
                 if topic_def:
                     context['topic_title'] = self._translate_topic_title(topic_def.title_key)
-                    context['topic_key'] = topic_def.title_key  # Store the key for script lookup
+                    context['topic_key'] = topic_def.title_key
                     context['subtopics'] = topic_def.subtopics
                     context['conversation_contexts'] = topic_def.conversation_contexts
-                    context['topic_guidance'] = topic_def.llm_prompt_template
             
         except Exception as e:
             print(f"[WARNING] Could not get user context: {e}")
@@ -206,101 +313,6 @@ class ConversationPromptBuilder:
         }
         return title_map.get(title_key, title_key.replace('_', ' ').title())
     
-    def _merge_personality_and_template(self, personality: Dict, template: Dict, context: Dict) -> str:
-        """
-        Merge personality and template with user context to create final prompt
-        
-        Args:
-            personality: Character personality data
-            template: Conversation template data
-            context: User learning context
-            
-        Returns:
-            Complete prompt string ready for Claude
-        """
-        # Load topic-specific scripts if available (especially for A1)
-        topic_scripts = self._load_topic_scripts(context.get('level', 'A1'))
-        topic_script_text = ""
-        
-        # Get the specific script for this topic if available
-        if context.get('level', '').upper() == 'A1' and context.get('topic_key'):
-            script_key = f"topic_{context['topic_number']}_{context['topic_key']}"
-            if script_key in topic_scripts:
-                script_data = topic_scripts[script_key]
-                topic_script_text = f"""
-
-## ⚠️ CRITICAL: STRICT A1 TOPIC {context['topic_number']} INSTRUCTIONS ⚠️
-
-{script_data.get('opening_script', '')}
-
-THIS OVERRIDES ALL OTHER INSTRUCTIONS FOR A1 LEARNERS!
-"""
-        
-        # Build personality section
-        personality_text = f"""
-## Character Profile
-{personality.get('background', '')}
-
-## Personality Traits
-{personality.get('communication_style', '')}
-
-## Interests and Topics
-{', '.join(personality.get('interests_and_topics', []))}
-
-{personality.get('behavioral_rules', '')}
-
-{personality.get('conversation_approach', '')}
-"""
-        
-        # Get level-specific configuration
-        level_config = template.get('level_configs', {}).get(context['level'], {})
-        
-        # Get language-specific elements
-        lang_elements = template.get('language_elements', {}).get(
-            context['target_language'].lower(), 
-            {}
-        )
-        
-        # Format subtopics and contexts
-        subtopics_text = '\n  '.join([f"- {st}" for st in context.get('subtopics', [])])
-        contexts_text = '\n  '.join([f"- {ctx}" for ctx in context.get('conversation_contexts', [])])
-        
-        # Build template parameters
-        template_params = {
-            'target_language': context['target_language'].capitalize(),
-            'input_language': context['input_language'].capitalize(),
-            'level': context['level'],
-            'level_description': level_config.get('level_description', ''),
-            'word_limit': level_config.get('word_limit', 50),
-            'topic_number': context['topic_number'],
-            'topic_title': context['topic_title'],
-            'subtopics': subtopics_text,
-            'conversation_contexts': contexts_text,
-            'complexity_guidelines': level_config.get('complexity_guidelines', ''),
-            'topic_guidance': context.get('topic_guidance', '')
-        }
-        
-        # Format the conversation template
-        conversation_text = template.get('conversation_template', '').format(**template_params)
-        
-        # Combine personality and conversation template
-        final_prompt = f"""
-{personality_text}
-
----
-
-{conversation_text}
-
-## Language-Specific Elements for {context['target_language'].capitalize()}
-Greetings: {', '.join(lang_elements.get('greetings', []))}
-Reactions: {', '.join(lang_elements.get('reactions', []))}
-Fillers: {', '.join(lang_elements.get('fillers', []))}
-
-{topic_script_text}
-"""
-        
-        return final_prompt
-    
     def get_feedback_context(self, user_id: int) -> Dict:
         """
         Get context for feedback generation (language hints and comprehensive feedback)
@@ -314,3 +326,10 @@ Fillers: {', '.join(lang_elements.get('fillers', []))}
             'target_language': context.get('target_language', 'german'),
             'level': context.get('level', 'A1')
         }
+    
+    # LEGACY METHOD - Will be removed after testing
+    def _build_legacy_prompt(self, user_id: int, character: str) -> Tuple[str, Dict]:
+        """Legacy prompt builder - kept for fallback during transition"""
+        # This would contain the old implementation
+        # For now, just return None to trigger fallback
+        return None, None

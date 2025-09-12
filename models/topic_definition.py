@@ -13,6 +13,14 @@ class TopicDefinition(db.Model):
     conversation_contexts = db.Column(JSON, nullable=False)  # List of context scenarios
     llm_prompt_template = db.Column(db.Text, nullable=False)  # Natural language instructions for LLM
     
+    # New enhanced columns for database-driven prompts
+    word_limit = db.Column(db.Integer, nullable=True)  # Override level default if set
+    opening_phrases = db.Column(JSON, nullable=True)  # {german: "...", spanish: "...", etc.}
+    required_vocabulary = db.Column(JSON, nullable=True)  # List of key words/phrases
+    conversation_flow = db.Column(JSON, nullable=True)  # Structured conversation steps
+    number_of_exchanges = db.Column(db.Integer, default=5)  # Number of exchanges before ending
+    topic_specific_rules = db.Column(db.Text, nullable=True)  # Additional topic-specific guidance
+    
     # Relationships
     exercises = db.relationship('TopicExercise', backref='topic', lazy='dynamic', cascade='all, delete-orphan')
     
@@ -21,7 +29,9 @@ class TopicDefinition(db.Model):
         db.UniqueConstraint('level', 'topic_number', name='_level_topic_uc'),
     )
     
-    def __init__(self, level, topic_number, title_key, subtopics, conversation_contexts, llm_prompt_template):
+    def __init__(self, level, topic_number, title_key, subtopics, conversation_contexts, llm_prompt_template,
+                 word_limit=None, opening_phrases=None, required_vocabulary=None, conversation_flow=None,
+                 number_of_exchanges=5, topic_specific_rules=None):
         """Initialize topic definition"""
         self.level = level.upper()
         self.topic_number = topic_number
@@ -29,6 +39,13 @@ class TopicDefinition(db.Model):
         self.subtopics = subtopics
         self.conversation_contexts = conversation_contexts
         self.llm_prompt_template = llm_prompt_template
+        # New enhanced fields
+        self.word_limit = word_limit
+        self.opening_phrases = opening_phrases
+        self.required_vocabulary = required_vocabulary
+        self.conversation_flow = conversation_flow
+        self.number_of_exchanges = number_of_exchanges
+        self.topic_specific_rules = topic_specific_rules
     
     def to_dict(self):
         """Convert topic definition to dictionary"""
@@ -39,7 +56,14 @@ class TopicDefinition(db.Model):
             'title_key': self.title_key,
             'subtopics': self.subtopics,
             'conversation_contexts': self.conversation_contexts,
-            'llm_prompt_template': self.llm_prompt_template
+            'llm_prompt_template': self.llm_prompt_template,
+            # New enhanced fields
+            'word_limit': self.word_limit,
+            'opening_phrases': self.opening_phrases,
+            'required_vocabulary': self.required_vocabulary,
+            'conversation_flow': self.conversation_flow,
+            'number_of_exchanges': self.number_of_exchanges,
+            'topic_specific_rules': self.topic_specific_rules
         }
     
     def __repr__(self):

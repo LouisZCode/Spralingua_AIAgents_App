@@ -297,3 +297,138 @@ class TopicManager:
         except Exception as e:
             print(f"Error getting completed topics: {e}")
             return []
+    
+    # New enhanced methods for database-driven prompts
+    
+    def get_topic_word_limit(self, level, topic_number):
+        """
+        Get word limit for a specific topic (override or level default)
+        
+        Args:
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-12)
+        
+        Returns:
+            Word limit integer
+        """
+        try:
+            topic = self.get_topic_definition(level, topic_number)
+            if topic and topic.word_limit:
+                # Topic has specific word limit override
+                return topic.word_limit
+            
+            # Fall back to level default
+            from level_rules.level_rules_manager import LevelRulesManager
+            level_mgr = LevelRulesManager()
+            return level_mgr.get_word_limit(level)
+            
+        except Exception as e:
+            print(f"Error getting topic word limit: {e}")
+            # Ultimate fallback
+            return 40 if level.upper() == 'A1' else 50
+    
+    def get_opening_phrase(self, level, topic_number, language):
+        """
+        Get localized opening phrase for a topic
+        
+        Args:
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-12)
+            language: Target language (german, spanish, portuguese, english)
+        
+        Returns:
+            Opening phrase string or None
+        """
+        try:
+            topic = self.get_topic_definition(level, topic_number)
+            if topic and topic.opening_phrases:
+                return topic.opening_phrases.get(language.lower())
+            return None
+            
+        except Exception as e:
+            print(f"Error getting opening phrase: {e}")
+            return None
+    
+    def get_conversation_flow(self, level, topic_number):
+        """
+        Get structured conversation flow for a topic
+        
+        Args:
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-12)
+        
+        Returns:
+            List of conversation steps or empty list
+        """
+        try:
+            topic = self.get_topic_definition(level, topic_number)
+            if topic and topic.conversation_flow:
+                return topic.conversation_flow
+            return []
+            
+        except Exception as e:
+            print(f"Error getting conversation flow: {e}")
+            return []
+    
+    def get_required_vocabulary(self, level, topic_number):
+        """
+        Get required vocabulary list for a topic
+        
+        Args:
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-12)
+        
+        Returns:
+            List of vocabulary items or empty list
+        """
+        try:
+            topic = self.get_topic_definition(level, topic_number)
+            if topic and topic.required_vocabulary:
+                return topic.required_vocabulary
+            return []
+            
+        except Exception as e:
+            print(f"Error getting required vocabulary: {e}")
+            return []
+    
+    def get_topic_specific_rules(self, level, topic_number):
+        """
+        Get topic-specific rules and guidance
+        
+        Args:
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-12)
+        
+        Returns:
+            Rules text string or None
+        """
+        try:
+            topic = self.get_topic_definition(level, topic_number)
+            if topic and topic.topic_specific_rules:
+                return topic.topic_specific_rules
+            return None
+            
+        except Exception as e:
+            print(f"Error getting topic specific rules: {e}")
+            return None
+    
+    def get_number_of_exchanges(self, level, topic_number):
+        """
+        Get number of exchanges for a topic conversation
+        
+        Args:
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-12)
+        
+        Returns:
+            Number of exchanges integer
+        """
+        try:
+            topic = self.get_topic_definition(level, topic_number)
+            if topic and topic.number_of_exchanges:
+                return topic.number_of_exchanges
+            return 5  # Default
+            
+        except Exception as e:
+            print(f"Error getting number of exchanges: {e}")
+            return 5
