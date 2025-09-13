@@ -332,7 +332,9 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="progress-fill"></div>
                 </div>
-                <div class="progress-text" id="progress-text">0/6 messages sent</div>
+                <div class="progress-text" id="progress-text" data-target-language="{{ target_language }}">
+                    <!-- Will be populated by JavaScript -->
+                </div>
             </div>
 
             <div class="chat-messages" id="chat-messages">
@@ -714,6 +716,13 @@
             // Reset local message counter
             messageCount = 0;
             
+            // Reset progress text with correct language
+            const progressText = document.getElementById('progress-text');
+            if (progressText) {
+                const targetLang = progressText.dataset.targetLanguage;
+                progressText.textContent = getLocalizedCounterText(0, targetLang);
+            }
+            
             // Initialize MessageExchangeDisplay for focused conversation view
             messageExchangeDisplay = new MessageExchangeDisplay('chat-messages');
             console.log('MessageExchangeDisplay initialized');
@@ -898,6 +907,42 @@
             console.log('[VOLUME] Volume controls initialized successfully');
         }
         
+        // Helper functions for localized counter text
+        function getLocalizedCounterText(count, targetLanguage) {
+            // Wait for translationManager to be available
+            if (!window.translationManager) {
+                // Fallback to English if translation manager not ready
+                return `${count}/6 messages sent`;
+            }
+            
+            // Get the template string with placeholders
+            const template = window.translationManager.getText('messages_in_language');
+            
+            // Get localized language name (capitalized)
+            const languageName = window.translationManager.getText(`lang_${targetLanguage}`);
+            
+            // Format with actual values
+            return window.translationManager.formatString(template, {
+                count: count,
+                language: languageName
+            });
+        }
+        
+        function getLocalizedCompletionText(targetLanguage) {
+            // Wait for translationManager to be available
+            if (!window.translationManager) {
+                // Fallback to English if translation manager not ready
+                return 'Conversation complete! Great job!';
+            }
+            
+            const template = window.translationManager.getText('conversation_complete_language');
+            const languageName = window.translationManager.getText(`lang_${targetLanguage}`);
+            
+            return window.translationManager.formatString(template, {
+                language: languageName
+            });
+        }
+        
         // Get DOM elements for later use
         const messageInput = document.getElementById('message-input');
         const chatMessages = document.getElementById('chat-messages');
@@ -914,11 +959,12 @@
             const percentage = (messageCount / 6) * 100;
             
             progressFill.style.width = `${percentage}%`;
-            progressText.textContent = `${messageCount}/6 messages sent`;
+            const targetLang = progressText.dataset.targetLanguage;
+            progressText.textContent = getLocalizedCounterText(messageCount, targetLang);
             
             // Check if complete
             if (messageCount >= 6) {
-                progressText.textContent = 'Conversation complete! Great job!';
+                progressText.textContent = getLocalizedCompletionText(targetLang);
                 document.getElementById('progress-container').classList.add('complete');
                 const voiceBtn = document.getElementById('voice-btn');
                 if (voiceBtn) {
@@ -950,11 +996,26 @@
                 
                 const data = await response.json();
                 
-                // Add assistant response to chat
-                addMessageToChat(data.response, 'assistant');
+                // Store response for delayed display (will show when audio starts)
+                const assistantResponse = data.response;
+                let textDisplayed = false;
                 
                 // Play TTS if voice output is enabled
                 if (VOICE_CONFIG.enableTTS && chatInterface && chatInterface.voiceOutput) {
+                    // Set up one-time listener for audio start event
+                    const audioStartHandler = (event) => {
+                        if (event.detail.state === 'speaking' && !textDisplayed) {
+                            // Display text when audio actually starts playing
+                            addMessageToChat(assistantResponse, 'assistant');
+                            textDisplayed = true;
+                            // Remove listener after displaying text
+                            document.removeEventListener('voiceOutputStateChange', audioStartHandler);
+                        }
+                    };
+                    
+                    // Add event listener before starting TTS
+                    document.addEventListener('voiceOutputStateChange', audioStartHandler);
+                    
                     try {
                         // Configure voice for current character
                         const voiceSettings = VOICE_CONFIG[selectedCharacter.id] || {};
@@ -965,16 +1026,35 @@
                         };
                         
                         // Play the response with TTS
-                        await chatInterface.playAssistantResponse(data.response, selectedCharacter.id);
+                        await chatInterface.playAssistantResponse(assistantResponse, selectedCharacter.id);
+                        
+                        // Cleanup: if text wasn't displayed (e.g., audio failed silently), display it now
+                        if (!textDisplayed) {
+                            document.removeEventListener('voiceOutputStateChange', audioStartHandler);
+                            addMessageToChat(assistantResponse, 'assistant');
+                            textDisplayed = true;
+                        }
                     } catch (error) {
                         console.error('TTS playback error:', error);
+                        // Remove listener on error
+                        document.removeEventListener('voiceOutputStateChange', audioStartHandler);
+                        
+                        // Display text immediately as fallback if not already displayed
+                        if (!textDisplayed) {
+                            addMessageToChat(assistantResponse, 'assistant');
+                            textDisplayed = true;
+                        }
+                        
                         // Fallback to idle state on error
                         if (window.avatarController && window.avatarController.isReady()) {
                             window.avatarController.setState('idle');
                         }
                     }
                 } else {
-                    // No TTS, just set avatar to idle
+                    // No TTS enabled, display text immediately
+                    addMessageToChat(assistantResponse, 'assistant');
+                    
+                    // Set avatar to idle
                     if (window.avatarController && window.avatarController.isReady()) {
                         window.avatarController.setState('idle');
                     }
@@ -1169,6 +1249,18 @@
                 });
             }
         });
+        
+        // Initialize counter text with correct language on page load
+        setTimeout(() => {
+            const progressText = document.getElementById('progress-text');
+            if (progressText) {
+                const targetLang = progressText.dataset.targetLanguage;
+                if (targetLang) {
+                    progressText.textContent = getLocalizedCounterText(0, targetLang);
+                    console.log('[COUNTER] Initialized with language:', targetLang);
+                }
+            }
+        }, 200); // Wait for TranslationManager to be ready
         
         // Also clear when navigating away via back button
         document.addEventListener('visibilitychange', function() {
