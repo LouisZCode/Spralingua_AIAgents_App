@@ -20,7 +20,8 @@ class TopicDefinition(db.Model):
     conversation_flow = db.Column(JSON, nullable=True)  # Structured conversation steps
     number_of_exchanges = db.Column(db.Integer, default=5)  # Number of exchanges before ending
     topic_specific_rules = db.Column(db.Text, nullable=True)  # Additional topic-specific guidance
-    
+    scenario_template = db.Column(db.Text, nullable=True)  # Scenario template for conversation practice
+
     # Relationships
     exercises = db.relationship('TopicExercise', backref='topic', lazy='dynamic', cascade='all, delete-orphan')
     
@@ -31,7 +32,7 @@ class TopicDefinition(db.Model):
     
     def __init__(self, level, topic_number, title_key, subtopics, conversation_contexts, llm_prompt_template,
                  word_limit=None, opening_phrases=None, required_vocabulary=None, conversation_flow=None,
-                 number_of_exchanges=5, topic_specific_rules=None):
+                 number_of_exchanges=5, topic_specific_rules=None, scenario_template=None):
         """Initialize topic definition"""
         self.level = level.upper()
         self.topic_number = topic_number
@@ -46,6 +47,7 @@ class TopicDefinition(db.Model):
         self.conversation_flow = conversation_flow
         self.number_of_exchanges = number_of_exchanges
         self.topic_specific_rules = topic_specific_rules
+        self.scenario_template = scenario_template
     
     def to_dict(self):
         """Convert topic definition to dictionary"""
@@ -63,7 +65,8 @@ class TopicDefinition(db.Model):
             'required_vocabulary': self.required_vocabulary,
             'conversation_flow': self.conversation_flow,
             'number_of_exchanges': self.number_of_exchanges,
-            'topic_specific_rules': self.topic_specific_rules
+            'topic_specific_rules': self.topic_specific_rules,
+            'scenario_template': self.scenario_template
         }
     
     def __repr__(self):

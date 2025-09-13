@@ -449,3 +449,34 @@ class AuthRoutes:
             except Exception as e:
                 print(f"Error in TTS endpoint: {e}")
                 return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/casual-chat/scenario', methods=['GET'])
+        @login_required
+        def get_chat_scenario():
+            """Get dynamic scenario for current user's topic and language pair."""
+            try:
+                from scenarios.scenario_manager import ScenarioManager
+
+                user_id = session.get('user_id')
+                if not user_id:
+                    return jsonify({'error': 'User not authenticated'}), 401
+
+                # Get character from query params (default to harry)
+                character = request.args.get('character', 'harry')
+
+                # Initialize scenario manager
+                scenario_manager = ScenarioManager()
+
+                # Get scenario for user
+                scenario_text, context = scenario_manager.get_scenario_for_user(user_id, character)
+
+                # Return scenario and context
+                return jsonify({
+                    'scenario': scenario_text,
+                    'context': context,
+                    'status': 'success'
+                })
+
+            except Exception as e:
+                print(f"Error fetching scenario: {e}")
+                return jsonify({'error': str(e)}), 500

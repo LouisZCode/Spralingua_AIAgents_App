@@ -765,11 +765,34 @@
             if (instructorName) {
                 instructorName.textContent = selectedCharacter.name;
             }
-            
-            // Update scenario message
-            const scenarioMessage = document.querySelector('#scenario-message .message-content');
-            if (scenarioMessage) {
-                scenarioMessage.textContent = selectedCharacter.scenario;
+
+            // Fetch and update dynamic scenario
+            try {
+                const response = await fetch(`/api/casual-chat/scenario?character=${character}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[SCENARIO] Fetched dynamic scenario:', data);
+
+                    // Update scenario message with dynamic content
+                    const scenarioMessage = document.querySelector('#scenario-message .message-content');
+                    if (scenarioMessage) {
+                        scenarioMessage.textContent = data.scenario || selectedCharacter.scenario;
+                    }
+                } else {
+                    console.warn('[SCENARIO] Could not fetch dynamic scenario, using default');
+                    // Fall back to static scenario
+                    const scenarioMessage = document.querySelector('#scenario-message .message-content');
+                    if (scenarioMessage) {
+                        scenarioMessage.textContent = selectedCharacter.scenario;
+                    }
+                }
+            } catch (error) {
+                console.error('[SCENARIO] Error fetching scenario:', error);
+                // Fall back to static scenario
+                const scenarioMessage = document.querySelector('#scenario-message .message-content');
+                if (scenarioMessage) {
+                    scenarioMessage.textContent = selectedCharacter.scenario;
+                }
             }
             
             // Hide character selection overlay
@@ -853,28 +876,29 @@
         function initializeVolumeControls() {
             const volumeSlider = document.getElementById('volume-slider');
             const volumePercentage = document.getElementById('volume-percentage');
-            const muteBtn = document.getElementById('mute-btn');
+            const muteBtn = document.getElementById('volume-mute-btn');
             
             if (!volumeSlider || !muteBtn) {
                 console.warn('[VOLUME] Volume controls not found in DOM');
                 return;
             }
             
-            // Wait for VoiceOutput to be initialized
-            if (!chatInterface || !chatInterface.voiceOutput) {
+            // Get VoiceOutput instance from global singleton or chat interface
+            const voiceOutput = window.voiceOutputInstance || 
+                              (chatInterface && chatInterface.voiceOutput);
+            if (!voiceOutput) {
                 console.warn('[VOLUME] VoiceOutput not initialized yet, retrying...');
                 setTimeout(initializeVolumeControls, 500);
                 return;
             }
             
-            const voiceOutput = chatInterface.voiceOutput;
-            console.log('[VOLUME] Initializing volume controls');
+            console.log('[VOLUME] Initializing volume controls with singleton instance');
             
-            // Set initial slider value from saved preference (inverted for vertical slider)
+            // Set initial slider value from saved preference (direct mapping)
             const savedVolume = voiceOutput.getVolume();
-            const invertedValue = 100 - Math.round(savedVolume * 100);
-            volumeSlider.value = invertedValue;
-            volumePercentage.textContent = `${Math.round(savedVolume * 100)}%`;
+            const volumeValue = Math.round(savedVolume * 100);
+            volumeSlider.value = volumeValue;
+            volumePercentage.textContent = `${volumeValue}%`;
             
             // Update mute button state
             const updateMuteButton = (isMuted) => {
@@ -889,12 +913,12 @@
             
             // Volume slider event
             volumeSlider.addEventListener('input', function() {
-                // Invert the value so 100% is at top, 0% at bottom
+                // Direct mapping: bottom = 0%, top = 100%
                 const displayValue = parseInt(this.value);
-                const actualVolume = (100 - displayValue) / 100;
+                const actualVolume = displayValue / 100;
                 
                 voiceOutput.setVolume(actualVolume);
-                volumePercentage.textContent = `${100 - displayValue}%`;
+                volumePercentage.textContent = `${displayValue}%`;
                 
                 // If unmuted and volume > 0, ensure unmuted
                 if (actualVolume > 0 && voiceOutput.isMutedState()) {

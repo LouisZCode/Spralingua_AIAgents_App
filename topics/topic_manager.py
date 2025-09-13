@@ -432,3 +432,24 @@ class TopicManager:
         except Exception as e:
             print(f"Error getting number of exchanges: {e}")
             return 5
+
+    def get_scenario_template(self, level, topic_number):
+        """
+        Get scenario template for a topic
+
+        Args:
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-12)
+
+        Returns:
+            Scenario template string or None
+        """
+        try:
+            topic = self.get_topic_definition(level, topic_number)
+            if topic:
+                return topic.scenario_template
+            return None
+
+        except Exception as e:
+            print(f"Error getting scenario template: {e}")
+            return None

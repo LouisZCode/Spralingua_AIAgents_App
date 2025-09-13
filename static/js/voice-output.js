@@ -327,17 +327,15 @@ class VoiceOutput {
                 
                 // Set up event handlers
                 audio.onplay = () => this.handleAudioStart();
-                audio.onended = () => this.handleAudioEnd(resolve);
+                audio.onended = () => {
+                    // Clean up blob URL after use
+                    URL.revokeObjectURL(audioUrl);
+                    this.handleAudioEnd(resolve);
+                };
                 audio.onerror = (event) => this.handleAudioError(event, reject);
                 
                 // Start playing
                 audio.play();
-                
-                // Clean up blob URL after use
-                audio.onended = () => {
-                    URL.revokeObjectURL(audioUrl);
-                    this.handleAudioEnd(resolve);
-                };
                 
             } catch (error) {
                 console.error('Error playing audio:', error);
@@ -370,7 +368,8 @@ class VoiceOutput {
     handleAudioEnd(resolve) {
         console.log('🔇 Audio ended');
         this.isPlaying = false;
-        this.currentAudio = null;
+        // Don't null out currentAudio immediately - keep reference for potential volume changes
+        // It will be replaced when new audio starts
         
         // Return avatar to idle state
         if (window.avatarController && window.avatarController.isReady()) {
@@ -639,9 +638,10 @@ class VoiceOutput {
         // Clamp volume between 0 and 1
         this.currentVolume = Math.max(0, Math.min(1, volume));
         
-        // Apply to current audio if playing
-        if (this.currentAudio) {
+        // Apply to current audio if playing - check if audio exists and not ended
+        if (this.currentAudio && !this.currentAudio.ended) {
             this.currentAudio.volume = this.isMuted ? 0 : this.currentVolume;
+            console.log(`🔊 Applied volume to playing audio: ${Math.round(this.currentVolume * 100)}%`);
         }
         
         // Update browser TTS config
@@ -659,9 +659,10 @@ class VoiceOutput {
     toggleMute() {
         this.isMuted = !this.isMuted;
         
-        // Apply to current audio if playing
-        if (this.currentAudio) {
+        // Apply to current audio if playing - check if audio exists and not ended
+        if (this.currentAudio && !this.currentAudio.ended) {
             this.currentAudio.volume = this.isMuted ? 0 : this.currentVolume;
+            console.log(`🔇 Applied mute to playing audio: ${this.isMuted ? 'muted' : 'unmuted'}`);
         }
         
         // Update browser TTS config

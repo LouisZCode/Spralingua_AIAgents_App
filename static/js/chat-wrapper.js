@@ -19,8 +19,10 @@ class ChatInterface {
      */
     initializeVoiceOutput() {
         if (typeof VoiceOutput !== 'undefined') {
+            // Create singleton instance and expose globally
             this.voiceOutput = new VoiceOutput(this);
-            console.log('[CHAT WRAPPER] VoiceOutput initialized');
+            window.voiceOutputInstance = this.voiceOutput; // Global singleton
+            console.log('[CHAT WRAPPER] VoiceOutput initialized and exposed globally');
         } else {
             console.warn('[CHAT WRAPPER] VoiceOutput not available');
         }
