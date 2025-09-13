@@ -68,6 +68,9 @@ class ListeningModeManager {
             this.setupDelayedReveal(button, messageIndex);
         } else if (this.config.mode === 'adaptive') {
             this.setupAdaptiveReveal(button, messageIndex);
+        } else if (this.config.mode === 'audio-sync') {
+            // For audio-sync mode, use the delayed button method
+            return this.applyBlurWithDelayedButton(messageElement, messageIndex);
         }
         
         // Add message first, then button (so button overlays on top)
@@ -79,6 +82,61 @@ class ListeningModeManager {
         this.messageTimestamps.set(messageIndex, Date.now());
         
         return wrapper;
+    }
+    
+    /**
+     * Apply blur with delayed button for audio-sync mode
+     * @param {HTMLElement} messageElement - The message content element
+     * @param {number} messageIndex - Index of this message in conversation
+     * @returns {HTMLElement} The wrapper element with hidden button
+     */
+    applyBlurWithDelayedButton(messageElement, messageIndex = 0) {
+        console.log('🎵 Applying blur with delayed button (audio-sync mode)');
+        
+        // Create wrapper for button and message
+        const wrapper = document.createElement('div');
+        wrapper.className = 'message-blur-wrapper';
+        
+        // Add blur class to message content
+        messageElement.classList.add('listening-blur');
+        
+        // Create button but keep it hidden
+        const button = this.createRevealButton(messageIndex);
+        button.style.display = 'none';
+        button.dataset.delayed = 'true';
+        
+        // Store reference for later
+        wrapper.dataset.buttonRef = messageIndex;
+        
+        // Add message first, then button (so button overlays on top)
+        wrapper.appendChild(messageElement);
+        wrapper.appendChild(button);
+        
+        // Track message for analytics
+        this.revealStats.totalMessages++;
+        this.messageTimestamps.set(messageIndex, Date.now());
+        
+        return wrapper;
+    }
+    
+    /**
+     * Show the reveal button after audio ends
+     * @param {HTMLElement} wrapperElement - The wrapper containing the hidden button
+     */
+    showRevealButton(wrapperElement) {
+        const button = wrapperElement.querySelector('.reveal-text-btn');
+        if (button && button.dataset.delayed === 'true') {
+            // Update button text to localized "Read"
+            const readText = window.translationManager?.getText('read') || 'Read';
+            button.innerHTML = readText;
+            
+            // Show with animation
+            button.style.display = 'block';
+            button.classList.add('delayed-appear');
+            button.dataset.delayed = 'false';
+            
+            console.log('📖 Read button appeared after audio');
+        }
     }
     
     /**

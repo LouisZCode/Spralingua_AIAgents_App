@@ -823,6 +823,23 @@
     }
 }
 
+/* Smooth animation for delayed button appearance */
+@keyframes fadeInButton {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Class for delayed button appearance */
+.reveal-text-btn.delayed-appear {
+    animation: fadeInButton 0.5s ease-out forwards;
+}
+
 /* Keep original message styles but add blur capability */
 .message-blur-wrapper .message-content {
     color: var(--text-primary) !important; /* Ensure text is visible */

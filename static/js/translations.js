@@ -78,7 +78,10 @@ const translations = {
         
         // Microphone UI
         done_speaking: "I'm Done Speaking",
-        recording_status: "Recording..."
+        recording_status: "Recording...",
+        
+        // Listening mode
+        read: "Read"
     },
     
     german: {
@@ -158,7 +161,10 @@ const translations = {
         
         // Microphone UI
         done_speaking: "Fertig mit Sprechen",
-        recording_status: "Aufnahme läuft..."
+        recording_status: "Aufnahme läuft...",
+        
+        // Listening mode
+        read: "Lesen"
     },
     
     spanish: {
@@ -238,7 +244,10 @@ const translations = {
         
         // Microphone UI
         done_speaking: "Terminé de Hablar",
-        recording_status: "Grabando..."
+        recording_status: "Grabando...",
+        
+        // Listening mode
+        read: "Leer"
     },
     
     portuguese: {
@@ -318,7 +327,10 @@ const translations = {
         
         // Microphone UI
         done_speaking: "Terminei de Falar",
-        recording_status: "Gravando..."
+        recording_status: "Gravando...",
+        
+        // Listening mode
+        read: "Ler"
     }
 };
 

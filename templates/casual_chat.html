@@ -576,7 +576,7 @@
             }, this.currentExchange.user ? 500 : 0); // Wait for fade if there's previous content
         }
         
-        showAssistantMessage(text, useBlur = true) {
+        showAssistantMessage(text, useBlur = true, audioPlaying = false) {
             // Create assistant message
             const assistantDiv = document.createElement('div');
             assistantDiv.className = 'message message-centered assistant-message';
@@ -589,9 +589,21 @@
             if (useBlur && listeningModeManager && listeningModeManager.isEnabled()) {
                 assistantDiv.appendChild(contentDiv);
                 const messageIndex = 0; // Always 0 since we only show one exchange
-                const blurredWrapper = listeningModeManager.applyBlurToMessage(contentDiv, messageIndex);
-                assistantDiv.innerHTML = '';
-                assistantDiv.appendChild(blurredWrapper);
+                
+                // Check if we're in audio-sync mode and audio is playing
+                if (audioPlaying && listeningModeManager.config.mode === 'audio-sync') {
+                    // Use the delayed button method for audio-sync
+                    const blurredWrapper = listeningModeManager.applyBlurWithDelayedButton(contentDiv, messageIndex);
+                    assistantDiv.innerHTML = '';
+                    assistantDiv.appendChild(blurredWrapper);
+                    // Store reference for audio end handler
+                    this.pendingRevealWrapper = blurredWrapper;
+                } else {
+                    // Use standard blur method
+                    const blurredWrapper = listeningModeManager.applyBlurToMessage(contentDiv, messageIndex);
+                    assistantDiv.innerHTML = '';
+                    assistantDiv.appendChild(blurredWrapper);
+                }
             } else {
                 assistantDiv.appendChild(contentDiv);
             }
@@ -730,8 +742,8 @@
             // Initialize ListeningModeManager for blur/reveal feature
             listeningModeManager = new ListeningModeManager({
                 enabled: true,
-                mode: 'always', // Show reveal button immediately
-                buttonText: `📖 Let me read what ${selectedCharacter.name.split(' ')[1]} said`,
+                mode: 'audio-sync', // Show reveal button only after audio ends
+                buttonText: 'Read', // Will be localized in showRevealButton
                 blurIntensity: 8,
                 trackUsage: true
             });
@@ -1005,16 +1017,29 @@
                     // Set up one-time listener for audio start event
                     const audioStartHandler = (event) => {
                         if (event.detail.state === 'speaking' && !textDisplayed) {
-                            // Display text when audio actually starts playing
-                            addMessageToChat(assistantResponse, 'assistant');
+                            // Display text when audio actually starts playing (with audioPlaying=true)
+                            addMessageToChat(assistantResponse, 'assistant', true);
                             textDisplayed = true;
                             // Remove listener after displaying text
                             document.removeEventListener('voiceOutputStateChange', audioStartHandler);
                         }
                     };
                     
-                    // Add event listener before starting TTS
+                    // Set up audio end handler to show the "Read" button
+                    const audioEndHandler = (event) => {
+                        if (event.detail.state === 'idle') {
+                            // Show the "Read" button when audio ends
+                            if (messageExchangeDisplay && messageExchangeDisplay.pendingRevealWrapper) {
+                                listeningModeManager.showRevealButton(messageExchangeDisplay.pendingRevealWrapper);
+                                messageExchangeDisplay.pendingRevealWrapper = null;
+                            }
+                            document.removeEventListener('voiceOutputStateChange', audioEndHandler);
+                        }
+                    };
+                    
+                    // Add event listeners before starting TTS
                     document.addEventListener('voiceOutputStateChange', audioStartHandler);
+                    document.addEventListener('voiceOutputStateChange', audioEndHandler);
                     
                     try {
                         // Configure voice for current character
@@ -1031,13 +1056,15 @@
                         // Cleanup: if text wasn't displayed (e.g., audio failed silently), display it now
                         if (!textDisplayed) {
                             document.removeEventListener('voiceOutputStateChange', audioStartHandler);
+                            document.removeEventListener('voiceOutputStateChange', audioEndHandler);
                             addMessageToChat(assistantResponse, 'assistant');
                             textDisplayed = true;
                         }
                     } catch (error) {
                         console.error('TTS playback error:', error);
-                        // Remove listener on error
+                        // Remove listeners on error
                         document.removeEventListener('voiceOutputStateChange', audioStartHandler);
+                        document.removeEventListener('voiceOutputStateChange', audioEndHandler);
                         
                         // Display text immediately as fallback if not already displayed
                         if (!textDisplayed) {
@@ -1083,13 +1110,13 @@
         }
         
         // Function to add message to chat display
-        function addMessageToChat(message, sender) {
+        function addMessageToChat(message, sender, audioPlaying = false) {
             // Use MessageExchangeDisplay if enabled
             if (messageExchangeDisplay && messageExchangeDisplay.isEnabled()) {
                 if (sender === 'user') {
                     messageExchangeDisplay.showUserMessage(message);
                 } else if (sender === 'assistant') {
-                    messageExchangeDisplay.showAssistantMessage(message, true);
+                    messageExchangeDisplay.showAssistantMessage(message, true, audioPlaying);
                 }
             } else {
                 // Fall back to original chat display
