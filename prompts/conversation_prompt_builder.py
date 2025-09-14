@@ -77,7 +77,10 @@ class ConversationPromptBuilder:
             level_rules,
             topic_params
         )
-        
+
+        # Add number_of_exchanges to user_context for frontend use
+        user_context['number_of_exchanges'] = topic_params.get('number_of_exchanges', 5)
+
         return final_prompt, user_context
     
     def _build_clean_prompt(self, personality: Dict, context: Dict, 

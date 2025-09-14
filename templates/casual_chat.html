@@ -948,7 +948,7 @@
             // Wait for translationManager to be available
             if (!window.translationManager) {
                 // Fallback to English if translation manager not ready
-                return `${count}/6 messages sent`;
+                return `${count}/${totalMessagesRequired} messages sent`;
             }
             
             // Get the template string with placeholders
@@ -960,6 +960,7 @@
             // Format with actual values
             return window.translationManager.formatString(template, {
                 count: count,
+                total: totalMessagesRequired,
                 language: languageName
             });
         }
@@ -992,14 +993,14 @@
             messageCount++;
             const progressFill = document.getElementById('progress-fill');
             const progressText = document.getElementById('progress-text');
-            const percentage = (messageCount / 6) * 100;
+            const percentage = (messageCount / totalMessagesRequired) * 100;
             
             progressFill.style.width = `${percentage}%`;
             const targetLang = progressText.dataset.targetLanguage;
             progressText.textContent = getLocalizedCounterText(messageCount, targetLang);
             
             // Check if complete
-            if (messageCount >= 6) {
+            if (messageCount >= totalMessagesRequired) {
                 progressText.textContent = getLocalizedCompletionText(targetLang);
                 document.getElementById('progress-container').classList.add('complete');
                 const voiceBtn = document.getElementById('voice-btn');
@@ -1031,7 +1032,13 @@
                 }
                 
                 const data = await response.json();
-                
+
+                // Update total messages required from backend (dynamic from database)
+                if (data.total_messages_required) {
+                    totalMessagesRequired = data.total_messages_required;
+                    console.log(`[API] Total exchanges required: ${totalMessagesRequired}`);
+                }
+
                 // Store response for delayed display (will show when audio starts)
                 const assistantResponse = data.response;
                 let textDisplayed = false;
@@ -1186,6 +1193,7 @@
         
         // Track progress locally
         let messageCount = 0;
+        let totalMessagesRequired = 5;  // Default to 5, will be updated from API
         
         // Function to show language hint
         function showHint(hintData) {

@@ -320,11 +320,14 @@ class AuthRoutes:
                 # Send message to Claude with character prompt
                 response = claude.send_message(message, system_prompt)
                 
+                # Get number of exchanges from context (dynamic from database)
+                total_exchanges = user_context.get('number_of_exchanges', 5)  # Default to 5 if not found
+
                 # Prepare response data
                 response_data = {
                     'response': response,
                     'message_count': message_count,
-                    'total_messages_required': 6
+                    'total_messages_required': total_exchanges
                 }
                 
                 # Determine the level for feedback (from context or default)
@@ -334,7 +337,7 @@ class AuthRoutes:
                 feedback_level = level_map.get(feedback_level.lower(), 'intermediate')
                 
                 # Generate language hint for each message (except the last)
-                if message_count < 6:
+                if message_count < total_exchanges:
                     # Need to reload prompt_manager for feedback if using dynamic system
                     if USE_DYNAMIC_PROMPTS and 'user_id' in session and user_context:
                         # Use static prompt manager for feedback generation
@@ -347,8 +350,8 @@ class AuthRoutes:
                     hint_data = generate_language_hint(message, prompt_manager, claude, feedback_level)
                     response_data['hint'] = hint_data
                 
-                # Generate comprehensive feedback after 5 messages
-                if message_count == 5:
+                # Generate comprehensive feedback after the second-to-last message
+                if message_count == (total_exchanges - 1):
                     # Need to reload prompt_manager for feedback if using dynamic system
                     if USE_DYNAMIC_PROMPTS and 'user_id' in session and user_context:
                         # Use static prompt manager for feedback generation
@@ -366,8 +369,8 @@ class AuthRoutes:
                     )
                     response_data['comprehensive_feedback'] = feedback_data
                 
-                # Mark as complete after 6 messages
-                if message_count >= 6:
+                # Mark as complete after reaching the required number of exchanges
+                if message_count >= total_exchanges:
                     response_data['module_completed'] = True
                     # Clear session for next conversation
                     session['casual_chat_messages'] = []
