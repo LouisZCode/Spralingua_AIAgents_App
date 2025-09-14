@@ -81,7 +81,40 @@ const translations = {
         recording_status: "Recording...",
         
         // Listening mode
-        read: "Read"
+        read: "Read",
+
+        // Feedback UI Labels
+        feedback_phrase: "Phrase",
+        feedback_hint: "Hint",
+        feedback_error: "Error",
+        feedback_correction: "Correction",
+        feedback_explanation: "Explanation",
+        feedback_strengths: "Strengths",
+        feedback_focus_areas: "Areas to Focus",
+        feedback_overall: "Overall Feedback",
+        feedback_score: "Score",
+        feedback_top_mistakes: "Top Mistakes",
+        feedback_well_done: "Well Done",
+
+        // Feedback Categories
+        feedback_cat_grammar: "Grammar",
+        feedback_cat_vocabulary: "Vocabulary",
+        feedback_cat_tense: "Tense",
+        feedback_cat_structure: "Structure",
+        feedback_cat_gender: "Gender",
+        feedback_cat_speaking: "Speaking",
+        feedback_cat_ser_estar: "Ser vs Estar",
+        feedback_cat_contractions: "Contractions",
+        feedback_cat_articles: "Articles",
+        feedback_cat_prepositions: "Prepositions",
+
+        // Comprehensive feedback section headings
+        feedback_common_mistakes: "Common Mistakes:",
+        feedback_error_label: "Error:",
+        feedback_correction_label: "Correction:",
+        feedback_your_strengths: "Your Strengths:",
+        feedback_areas_focus: "Areas to Focus On:",
+        feedback_overall: "Overall:"
     },
     
     german: {
@@ -164,7 +197,40 @@ const translations = {
         recording_status: "Aufnahme läuft...",
         
         // Listening mode
-        read: "Lesen"
+        read: "Lesen",
+
+        // Feedback UI Labels
+        feedback_phrase: "Phrase",
+        feedback_hint: "Hinweis",
+        feedback_error: "Fehler",
+        feedback_correction: "Korrektur",
+        feedback_explanation: "Erklärung",
+        feedback_strengths: "Stärken",
+        feedback_focus_areas: "Übungsbereiche",
+        feedback_overall: "Gesamtfeedback",
+        feedback_score: "Punktzahl",
+        feedback_top_mistakes: "Hauptfehler",
+        feedback_well_done: "Gut gemacht",
+
+        // Feedback Categories
+        feedback_cat_grammar: "Grammatik",
+        feedback_cat_vocabulary: "Wortschatz",
+        feedback_cat_tense: "Zeitform",
+        feedback_cat_structure: "Satzbau",
+        feedback_cat_gender: "Geschlecht",
+        feedback_cat_speaking: "Sprechen",
+        feedback_cat_ser_estar: "Ser vs Estar",
+        feedback_cat_contractions: "Kontraktionen",
+        feedback_cat_articles: "Artikel",
+        feedback_cat_prepositions: "Präpositionen",
+
+        // Comprehensive feedback section headings
+        feedback_common_mistakes: "Häufige Fehler:",
+        feedback_error_label: "Fehler:",
+        feedback_correction_label: "Korrektur:",
+        feedback_your_strengths: "Deine Stärken:",
+        feedback_areas_focus: "Übungsbereiche:",
+        feedback_overall: "Gesamt:"
     },
     
     spanish: {
@@ -247,7 +313,40 @@ const translations = {
         recording_status: "Grabando...",
         
         // Listening mode
-        read: "Leer"
+        read: "Leer",
+
+        // Feedback UI Labels
+        feedback_phrase: "Frase",
+        feedback_hint: "Consejo",
+        feedback_error: "Error",
+        feedback_correction: "Corrección",
+        feedback_explanation: "Explicación",
+        feedback_strengths: "Fortalezas",
+        feedback_focus_areas: "Áreas de Enfoque",
+        feedback_overall: "Comentario General",
+        feedback_score: "Puntuación",
+        feedback_top_mistakes: "Errores Principales",
+        feedback_well_done: "Bien Hecho",
+
+        // Feedback Categories
+        feedback_cat_grammar: "Gramática",
+        feedback_cat_vocabulary: "Vocabulario",
+        feedback_cat_tense: "Tiempo verbal",
+        feedback_cat_structure: "Estructura",
+        feedback_cat_gender: "Género",
+        feedback_cat_speaking: "Conversación",
+        feedback_cat_ser_estar: "Ser vs Estar",
+        feedback_cat_contractions: "Contracciones",
+        feedback_cat_articles: "Artículos",
+        feedback_cat_prepositions: "Preposiciones",
+
+        // Comprehensive feedback section headings
+        feedback_common_mistakes: "Errores Comunes:",
+        feedback_error_label: "Error:",
+        feedback_correction_label: "Corrección:",
+        feedback_your_strengths: "Tus Fortalezas:",
+        feedback_areas_focus: "Áreas de Enfoque:",
+        feedback_overall: "General:"
     },
     
     portuguese: {
@@ -330,7 +429,40 @@ const translations = {
         recording_status: "Gravando...",
         
         // Listening mode
-        read: "Ler"
+        read: "Ler",
+
+        // Feedback UI Labels
+        feedback_phrase: "Frase",
+        feedback_hint: "Dica",
+        feedback_error: "Erro",
+        feedback_correction: "Correção",
+        feedback_explanation: "Explicação",
+        feedback_strengths: "Pontos Fortes",
+        feedback_focus_areas: "Áreas de Foco",
+        feedback_overall: "Feedback Geral",
+        feedback_score: "Pontuação",
+        feedback_top_mistakes: "Principais Erros",
+        feedback_well_done: "Muito Bem",
+
+        // Feedback Categories
+        feedback_cat_grammar: "Gramática",
+        feedback_cat_vocabulary: "Vocabulário",
+        feedback_cat_tense: "Tempo verbal",
+        feedback_cat_structure: "Estrutura",
+        feedback_cat_gender: "Gênero",
+        feedback_cat_speaking: "Conversação",
+        feedback_cat_ser_estar: "Ser vs Estar",
+        feedback_cat_contractions: "Contrações",
+        feedback_cat_articles: "Artigos",
+        feedback_cat_prepositions: "Preposições",
+
+        // Comprehensive feedback section headings
+        feedback_common_mistakes: "Erros Comuns:",
+        feedback_error_label: "Erro:",
+        feedback_correction_label: "Correção:",
+        feedback_your_strengths: "Seus Pontos Fortes:",
+        feedback_areas_focus: "Áreas de Foco:",
+        feedback_overall: "Geral:"
     }
 };
 

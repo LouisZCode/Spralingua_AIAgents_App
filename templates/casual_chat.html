@@ -1283,17 +1283,25 @@
             const overviewPanel = document.getElementById('overview-panel');
             const overviewContent = document.getElementById('overview-content');
             const responseCount = document.getElementById('response-count');
-            
+
             if (overviewPanel && overviewContent) {
                 let feedbackHTML = '';
-                
+
+                // Get translations
+                const commonMistakesText = translationManager.getText('feedback_common_mistakes');
+                const errorLabelText = translationManager.getText('feedback_error_label');
+                const correctionLabelText = translationManager.getText('feedback_correction_label');
+                const yourStrengthsText = translationManager.getText('feedback_your_strengths');
+                const areasFocusText = translationManager.getText('feedback_areas_focus');
+                const overallText = translationManager.getText('feedback_overall');
+
                 // Show top mistakes
                 if (feedbackData.top_mistakes && feedbackData.top_mistakes.length > 0) {
-                    feedbackHTML += '<div class="feedback-section"><h4>Common Mistakes:</h4><ul>';
+                    feedbackHTML += `<div class="feedback-section"><h4>${commonMistakesText}</h4><ul>`;
                     feedbackData.top_mistakes.forEach(mistake => {
                         feedbackHTML += `<li>
-                            <strong>Error:</strong> "${mistake.error}"<br>
-                            <strong>Correction:</strong> "${mistake.correction}"<br>
+                            <strong>${errorLabelText}</strong> "${mistake.error}"<br>
+                            <strong>${correctionLabelText}</strong> "${mistake.correction}"<br>
                             <em>${mistake.explanation}</em>
                         </li>`;
                     });
@@ -1302,16 +1310,21 @@
                 
                 // Show strengths
                 if (feedbackData.strengths && feedbackData.strengths.length > 0) {
-                    feedbackHTML += '<div class="feedback-section"><h4>Your Strengths:</h4><ul>';
+                    feedbackHTML += `<div class="feedback-section"><h4>${yourStrengthsText}</h4><ul>`;
                     feedbackData.strengths.forEach(strength => {
-                        feedbackHTML += `<li>${strength}</li>`;
+                        // Handle both object structure and simple strings for backward compatibility
+                        if (typeof strength === 'object' && strength.phrase && strength.praise) {
+                            feedbackHTML += `<li><strong>"${strength.phrase}"</strong> - ${strength.praise}</li>`;
+                        } else {
+                            feedbackHTML += `<li>${strength}</li>`;
+                        }
                     });
                     feedbackHTML += '</ul></div>';
                 }
                 
                 // Show focus areas
                 if (feedbackData.focus_areas && feedbackData.focus_areas.length > 0) {
-                    feedbackHTML += '<div class="feedback-section"><h4>Areas to Focus On:</h4><ul>';
+                    feedbackHTML += `<div class="feedback-section"><h4>${areasFocusText}</h4><ul>`;
                     feedbackData.focus_areas.forEach(area => {
                         feedbackHTML += `<li>${area}</li>`;
                     });
@@ -1320,7 +1333,7 @@
                 
                 // Show overall feedback
                 if (feedbackData.overall_feedback) {
-                    feedbackHTML += `<div class="feedback-section"><h4>Overall:</h4><p>${feedbackData.overall_feedback}</p></div>`;
+                    feedbackHTML += `<div class="feedback-section"><h4>${overallText}</h4><p>${feedbackData.overall_feedback}</p></div>`;
                 }
                 
                 overviewContent.innerHTML = feedbackHTML;

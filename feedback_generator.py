@@ -1,16 +1,17 @@
 # Feedback Generator for Casual Chat Module
-# Copied from GTA-V2 platform_routes.py
+# Enhanced with dynamic language support
 
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from prompts.feedback_prompts import FeedbackPromptBuilder
 
 def get_message_requirement(user_level):
     """
     Determine the total number of messages required based on user proficiency level.
-    
+
     Args:
         user_level: User's proficiency level (beginner, intermediate, advanced)
-        
+
     Returns:
         int: Total number of messages required for the exercise
     """
@@ -21,34 +22,39 @@ def get_message_requirement(user_level):
     }
     return requirements.get(user_level.lower() if user_level else 'intermediate', 6)
 
-def generate_language_hint(message, prompt_manager, claude_client, user_level='intermediate'):
-    """Generate a language hint based on the user's message."""
+def generate_language_hint(message, claude_client, user_level='intermediate',
+                         target_language='german', native_language='english'):
+    """
+    Generate a language hint based on the user's message.
+
+    Args:
+        message: The user's message to analyze
+        claude_client: The Claude API client
+        user_level: The user's proficiency level
+        target_language: The language being learned
+        native_language: The user's native language
+
+    Returns:
+        Dict with hint information
+    """
     print(f"[TARGET] [HINT GENERATION] Starting hint generation for message: '{message[:50]}...'")
     print(f"[TARGET] [HINT GENERATION] User level: {user_level}")
+    print(f"[TARGET] [HINT GENERATION] Target language: {target_language}, Native language: {native_language}")
     print(f"[TARGET] [HINT GENERATION] Claude client tools enabled: {getattr(claude_client, 'enable_tools', 'unknown')}")
-    
+
     try:
-        # Get the language analysis prompt
-        analysis_prompt = prompt_manager.get_prompt('language_hint_prompt', '')
-        print(f"[TARGET] [HINT GENERATION] Prompt loaded: {len(analysis_prompt)} characters")
-        if not analysis_prompt:
-            # Fallback prompt if not defined in YAML
-            analysis_prompt = """You are a German language tutor analyzing a student's German message.
-            Generate ONE brief hint (max 15 words) that guides without giving the answer.
-            Examples of good hints:
-            - "Check your verb position"
-            - "Think about the correct article"
-            - "Consider using past tense here"
-            - "Watch your adjective endings"
-            
-            Message to analyze: {message}
-            Student level: {level}
-            
-            Respond with ONLY the hint, nothing else."""
-        
+        # Get the dynamic language analysis prompt
+        feedback_builder = FeedbackPromptBuilder()
+        analysis_prompt = feedback_builder.get_hint_prompt(target_language, native_language, user_level)
+        print(f"[TARGET] [HINT GENERATION] Dynamic prompt loaded: {len(analysis_prompt)} characters")
+        print(f"[DEBUG] Target: {target_language}, Native: {native_language}")
+
         # Replace placeholders
         analysis_prompt = analysis_prompt.replace('{message}', message)
         analysis_prompt = analysis_prompt.replace('{level}', user_level)
+
+        # Debug: Show first 200 chars of the prompt to see language instruction
+        print(f"[DEBUG] Prompt preview: {analysis_prompt[:200]}...")
         
         # Get hint from Claude - pass a clear analysis request as user_input
         print(f"[TARGET] [HINT GENERATION] Calling Claude with analysis request")
@@ -57,9 +63,9 @@ def generate_language_hint(message, prompt_manager, claude_client, user_level='i
         original_tools_state = claude_client.enable_tools
         claude_client.set_tools_enabled(False)
         print(f"[TARGET] [HINT GENERATION] Temporarily disabled tools (was: {original_tools_state})")
-        
+
         hint_response = claude_client.send_message(
-            f"Analyze this German message and provide a hint: '{message}'",
+            f"Analyze this {target_language.capitalize()} message and provide a hint: '{message}'",
             analysis_prompt
         )
         
@@ -121,32 +127,32 @@ def generate_language_hint(message, prompt_manager, claude_client, user_level='i
             "hint": "Mach weiter so!"
         }
 
-def generate_comprehensive_feedback(messages, prompt_manager, claude_client, user_level='intermediate'):
-    """Generate comprehensive feedback after 5 messages."""
+def generate_comprehensive_feedback(messages, claude_client, user_level='intermediate',
+                                  target_language='german', native_language='english'):
+    """
+    Generate comprehensive feedback after practice session.
+
+    Args:
+        messages: List of user messages
+        claude_client: The Claude API client
+        user_level: The user's proficiency level
+        target_language: The language being learned
+        native_language: The user's native language
+
+    Returns:
+        Dict with comprehensive feedback
+    """
+    print(f"[COMPREHENSIVE] Starting comprehensive feedback generation")
+    print(f"[COMPREHENSIVE] Messages count: {len(messages)}")
+    print(f"[COMPREHENSIVE] Target: {target_language}, Native: {native_language}, Level: {user_level}")
+
     try:
-        # Get the comprehensive feedback prompt
-        feedback_prompt = prompt_manager.get_prompt('comprehensive_feedback_prompt', '')
-        if not feedback_prompt:
-            # Fallback prompt if not defined in YAML
-            feedback_prompt = """You are a German language tutor providing feedback after reviewing 5 student messages.
-            
-            Messages:
-            {messages}
-            
-            Student level: {level}
-            
-            Provide feedback in this JSON format:
-            {{
-                "top_mistakes": [
-                    {{"error": "what they wrote", "correction": "correct version", "explanation": "why it's wrong"}},
-                    {{"error": "another error", "correction": "correct version", "explanation": "explanation"}}
-                ],
-                "strengths": ["what they did well", "another strength"],
-                "focus_areas": ["grammar point to work on", "another area"],
-                "overall_feedback": "encouraging message about their progress"
-            }}
-            
-            Focus on the 3-5 most important corrections. Be encouraging but specific."""
+        # Get the dynamic comprehensive feedback prompt
+        feedback_builder = FeedbackPromptBuilder()
+        feedback_prompt = feedback_builder.get_comprehensive_feedback_prompt(
+            target_language, native_language, user_level
+        )
+        print(f"[COMPREHENSIVE] Prompt loaded: {len(feedback_prompt)} characters")
         
         # Format messages
         messages_text = "\n".join([f"Message {i+1}: {msg}" for i, msg in enumerate(messages)])
@@ -154,11 +160,13 @@ def generate_comprehensive_feedback(messages, prompt_manager, claude_client, use
         feedback_prompt = feedback_prompt.replace('{level}', user_level)
         
         # Get feedback from Claude - pass analysis request with correct parameter order
+        print(f"[COMPREHENSIVE] Calling Claude for feedback analysis")
         feedback_response = claude_client.send_message(
-            "Provide comprehensive feedback on these 5 German messages",
+            f"Provide comprehensive feedback on these {target_language.capitalize()} messages",
             feedback_prompt
         )
-        
+        print(f"[COMPREHENSIVE] Received response: {len(feedback_response)} characters")
+
         # Try to parse as JSON
         import json
         try:
@@ -171,8 +179,9 @@ def generate_comprehensive_feedback(messages, prompt_manager, claude_client, use
                 json_start = feedback_response.find('```') + 3
                 json_end = feedback_response.find('```', json_start)
                 feedback_response = feedback_response[json_start:json_end].strip()
-            
+
             feedback_data = json.loads(feedback_response)
+            print(f"[COMPREHENSIVE] Successfully parsed feedback JSON")
             return feedback_data
         except:
             # Fallback to structured text if JSON parsing fails

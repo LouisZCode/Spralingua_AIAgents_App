@@ -338,36 +338,36 @@ class AuthRoutes:
                 
                 # Generate language hint for each message (except the last)
                 if message_count < total_exchanges:
-                    # Need to reload prompt_manager for feedback if using dynamic system
-                    if USE_DYNAMIC_PROMPTS and 'user_id' in session and user_context:
-                        # Use static prompt manager for feedback generation
-                        if character == 'sally':
-                            prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
-                        else:
-                            prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
-                        prompt_manager = PromptManager(prompt_file)
-                    
-                    hint_data = generate_language_hint(message, prompt_manager, claude, feedback_level)
+                    # Get language pair from user context
+                    target_language = user_context.get('target_language', 'german')
+                    native_language = user_context.get('input_language', 'english')
+
+                    hint_data = generate_language_hint(
+                        message,
+                        claude,
+                        feedback_level,
+                        target_language=target_language,
+                        native_language=native_language
+                    )
                     response_data['hint'] = hint_data
                 
                 # Generate comprehensive feedback after the second-to-last message
+                print(f"[FEEDBACK CHECK] Message {message_count} of {total_exchanges} total")
                 if message_count == (total_exchanges - 1):
-                    # Need to reload prompt_manager for feedback if using dynamic system
-                    if USE_DYNAMIC_PROMPTS and 'user_id' in session and user_context:
-                        # Use static prompt manager for feedback generation
-                        if character == 'sally':
-                            prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
-                        else:
-                            prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
-                        prompt_manager = PromptManager(prompt_file)
-                    
+                    print(f"[FEEDBACK TRIGGER] Generating comprehensive feedback at message {message_count}")
+                    # Get language pair from user context
+                    target_language = user_context.get('target_language', 'german')
+                    native_language = user_context.get('input_language', 'english')
+
                     feedback_data = generate_comprehensive_feedback(
-                        session['casual_chat_messages'], 
-                        prompt_manager,
-                        claude, 
-                        feedback_level
+                        session['casual_chat_messages'],
+                        claude,
+                        feedback_level,
+                        target_language=target_language,
+                        native_language=native_language
                     )
                     response_data['comprehensive_feedback'] = feedback_data
+                    print(f"[FEEDBACK COMPLETE] Added comprehensive feedback to response")
                 
                 # Mark as complete after reaching the required number of exchanges
                 if message_count >= total_exchanges:
