@@ -155,13 +155,19 @@ class VoiceInput {
      */
     handleMicrophoneClick() {
         console.log('🎤 Microphone button clicked');
-        
+
+        // Hide inline hint when microphone is clicked
+        if (window.hintDisplay) {
+            window.hintDisplay.hide();
+            console.log('🎤 Hiding inline hint on microphone click');
+        }
+
         if (this.isRecording) {
             // Stop recording if currently recording
             this.stopRecording();
             return;
         }
-        
+
         // Show language selector if available, otherwise start recording directly
         if (this.languageSelector) {
             console.log('🌐 Showing language selector');

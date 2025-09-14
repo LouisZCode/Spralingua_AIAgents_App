@@ -346,6 +346,18 @@
             </div>
 
             <div class="chat-input-container voice-only">
+                <!-- Hint container OUTSIDE voice-only-wrapper so it doesn't get destroyed -->
+                <div class="inline-hint-container" id="inline-hint" style="display: none;">
+                    <div class="inline-hint-content" id="inline-hint-content">
+                        <!-- Dynamic hint content will be inserted here -->
+                    </div>
+                </div>
+
+                <!-- Mobile hint button (also outside) -->
+                <button class="mobile-hint-toggle" id="mobile-hint-btn" style="display: none;">
+                    💡 <span id="mobile-hint-text">Hint</span>
+                </button>
+
                 <div class="voice-only-wrapper">
                     <div class="voice-only-controls input-group">
                         <button type="button" id="voice-btn" class="btn btn-voice btn-voice-large" title="Click to speak">
@@ -481,6 +493,8 @@
 <script src="{{ url_for('static', filename='js/avatar.js') }}?v={{ timestamp }}"></script>
 <!-- Load listening-mode.js for blur/reveal feature -->
 <script src="{{ url_for('static', filename='js/listening-mode.js') }}?v={{ timestamp }}"></script>
+<!-- Load hint display manager for inline hints -->
+<script src="{{ url_for('static', filename='js/hint-display.js') }}?v={{ timestamp }}"></script>
 <!-- Load timed recording UI for voice input -->
 <script src="{{ url_for('static', filename='js/timed-recording-ui.js') }}?v={{ timestamp }}"></script>
 <!-- Load chat wrapper for voice input/output integration -->
@@ -1042,7 +1056,21 @@
                 // Store response for delayed display (will show when audio starts)
                 const assistantResponse = data.response;
                 let textDisplayed = false;
-                
+
+                // Store hint immediately if present (before setting up handlers)
+                if (data.hint) {
+                    console.log('[HINT] Received hint from backend:', data.hint);
+                    if (VOICE_CONFIG.enableTTS) {
+                        // Store hint to show after audio
+                        pendingHint = data.hint;
+                        console.log('[HINT] Stored pendingHint for display after audio ends');
+                    } else {
+                        // No TTS, show hint immediately
+                        console.log('[HINT] No TTS, showing hint immediately');
+                        showHint(data.hint);
+                    }
+                }
+
                 // Play TTS if voice output is enabled
                 if (VOICE_CONFIG.enableTTS && chatInterface && chatInterface.voiceOutput) {
                     // Set up one-time listener for audio start event
@@ -1055,15 +1083,30 @@
                             document.removeEventListener('voiceOutputStateChange', audioStartHandler);
                         }
                     };
-                    
-                    // Set up audio end handler to show the "Read" button
+
+                    // Set up audio end handler to show the "Read" button and hint
                     const audioEndHandler = (event) => {
+                        console.log('[AUDIO END HANDLER] Event received:', event.detail);
                         if (event.detail.state === 'idle') {
+                            console.log('[AUDIO END HANDLER] State is idle, processing end actions');
+
                             // Show the "Read" button when audio ends
                             if (messageExchangeDisplay && messageExchangeDisplay.pendingRevealWrapper) {
+                                console.log('[AUDIO END HANDLER] Showing reveal button');
                                 listeningModeManager.showRevealButton(messageExchangeDisplay.pendingRevealWrapper);
                                 messageExchangeDisplay.pendingRevealWrapper = null;
                             }
+
+                            // Show hint after audio ends (if available)
+                            console.log('[AUDIO END HANDLER] Checking for pendingHint:', pendingHint);
+                            if (pendingHint) {
+                                console.log('[AUDIO END HANDLER] Showing hint');
+                                showHint(pendingHint);
+                                pendingHint = null;  // Clear pending hint
+                            } else {
+                                console.log('[AUDIO END HANDLER] No pendingHint to display');
+                            }
+
                             document.removeEventListener('voiceOutputStateChange', audioEndHandler);
                         }
                     };
@@ -1124,10 +1167,7 @@
                     console.warn(`[PROGRESS] Local count (${messageCount}) differs from backend (${data.message_count})`);
                 }
                 
-                // Show hint if available
-                if (data.hint) {
-                    showHint(data.hint);
-                }
+                // Note: Hint is already handled earlier, before setting up audio handlers
                 
                 // Show comprehensive feedback if available
                 if (data.comprehensive_feedback) {
@@ -1195,11 +1235,31 @@
         let messageCount = 0;
         let totalMessagesRequired = 5;  // Default to 5, will be updated from API
         
+        // Store hint data globally for delayed display
+        let pendingHint = null;
+
         // Function to show language hint
         function showHint(hintData) {
+            console.log('[SHOW HINT] Function called with:', hintData);
+
+            // Try new inline hint display first
+            if (window.hintDisplay) {
+                console.log('[SHOW HINT] Attempting to use HintDisplay system');
+                if (window.hintDisplay.show(hintData)) {
+                    console.log('[HINT] Successfully displayed using new inline system');
+                    return;
+                } else {
+                    console.log('[HINT] HintDisplay.show() returned false');
+                }
+            } else {
+                console.log('[SHOW HINT] window.hintDisplay not available');
+            }
+
+            // Fallback to old panel system
+            console.log('[SHOW HINT] Using fallback panel system');
             const hintPanel = document.getElementById('hint-panel');
             const hintContent = document.getElementById('hint-content');
-            
+
             if (hintPanel && hintContent) {
                 // Format hint content
                 let hintHTML = '';
@@ -1209,9 +1269,12 @@
                 if (hintData.hint) {
                     hintHTML += `<strong>Tip:</strong> ${hintData.hint}`;
                 }
-                
+
                 hintContent.innerHTML = hintHTML;
                 hintPanel.style.display = 'block';
+                console.log('[SHOW HINT] Displayed in fallback panel');
+            } else {
+                console.log('[SHOW HINT] Fallback panel elements not found');
             }
         }
         

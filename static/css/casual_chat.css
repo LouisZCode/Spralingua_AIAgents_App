@@ -522,9 +522,18 @@
     background: #f9fafb;
 }
 
+.chat-input-container.voice-only {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
 .voice-only-wrapper {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
 }
 
 .voice-only-controls {
@@ -973,4 +982,91 @@
 
 .message-centered .reveal-text-btn {
     margin-top: 1rem;
+}
+
+/* =================== Inline Hint Display Styles =================== */
+
+.inline-hint-container {
+    max-width: 600px;
+    margin: 0 auto 1.5rem auto;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    animation: fadeIn 0.3s ease-in;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.inline-hint-content {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #333;
+}
+
+.inline-hint-content strong {
+    font-weight: 600;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+/* Color-coded hint backgrounds based on type */
+.hint-praise {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #b1dfbb;
+}
+
+.hint-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+    border: 1px solid #ffeaa7;
+}
+
+.hint-error {
+    background: linear-gradient(135deg, #ffe5d9 0%, #ffd6c4 100%);
+    border: 1px solid #ffcbb5;
+}
+
+/* Mobile hint button */
+.mobile-hint-toggle {
+    display: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    margin: 0 auto 1rem auto;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.mobile-hint-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.mobile-hint-toggle.expanded {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .inline-hint-container {
+        max-width: 90%;
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Hide full hint on mobile, show button instead */
+    .inline-hint-container.mobile-collapsed {
+        display: none !important;
+    }
+
+    .mobile-hint-toggle {
+        display: block;
+    }
+
+    .inline-hint-container.mobile-expanded {
+        display: block !important;
+    }
 }
