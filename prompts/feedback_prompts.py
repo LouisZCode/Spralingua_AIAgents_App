@@ -80,6 +80,11 @@ SPEECH RECOGNITION RULE:
 - Do NOT mark as error: missing question marks, periods, exclamation points, or commas
 - Only flag punctuation if the WORDS themselves indicate wrong sentence type
 
+THIS IS VOICE INPUT - CRITICAL RULE:
+The user SPOKE this message, they did NOT type it.
+DO NOT correct ANY punctuation (? ! . , : ; ¿ ¡)
+ONLY evaluate the WORDS and GRAMMAR, never punctuation.
+
 ANALYZE the message and choose ONE specific phrase that either:
 - Was used particularly well (for praise)
 - Could be improved (for helpful feedback)

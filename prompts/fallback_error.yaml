@@ -1,0 +1,5 @@
+casual_chat_prompt: |
+  ERROR: Dynamic prompt system failed.
+  The personality file should have been loaded from prompts/personalities/{character}_personality.yaml
+  Please respond only with: "ERROR - System configuration issue. The dynamic prompt system failed. Please contact support."
+  Debug info: This is the fallback prompt that should never be used in production.

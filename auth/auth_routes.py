@@ -297,18 +297,15 @@ class AuthRoutes:
                     except Exception as e:
                         print(f"[WARNING] Dynamic prompt failed, falling back: {e}")
                 
-                # Fallback to static prompts if dynamic system not available
+                # Fallback to error prompt if dynamic system not available
                 if not system_prompt:
-                    # Load the appropriate prompt file based on character
-                    if character == 'sally':
-                        prompt_file = os.path.join('prompts', 'casual_chat_sally_prompts.yaml')
-                    else:
-                        prompt_file = os.path.join('prompts', 'casual_chat_prompts.yaml')
-                    
+                    # Load single fallback error prompt for any character
+                    prompt_file = os.path.join('prompts', 'fallback_error.yaml')
+
                     # Load prompts
                     prompt_manager = PromptManager(prompt_file)
                     system_prompt = prompt_manager.get_prompt('casual_chat_prompt', '')
-                    print(f"[INFO] Using static prompt for character: {character}")
+                    print(f"[WARNING] Using fallback ERROR prompt for character: {character}")
                 
                 # Track message count in session
                 if 'casual_chat_messages' not in session:
