@@ -6,6 +6,7 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from .auth_manager import AuthManager
 from .decorators import login_required, guest_only
+import time
 
 class LoginForm(FlaskForm):
     """Login form with CSRF protection."""
@@ -319,7 +320,10 @@ class AuthRoutes:
                 
                 # Send message to Claude with character prompt
                 response = claude.send_message(message, system_prompt)
-                
+
+                # Add delay to prevent context bleeding between API calls
+                time.sleep(0.5)
+
                 # Get number of exchanges from context (dynamic from database)
                 total_exchanges = user_context.get('number_of_exchanges', 5)  # Default to 5 if not found
 
@@ -329,13 +333,11 @@ class AuthRoutes:
                     'message_count': message_count,
                     'total_messages_required': total_exchanges
                 }
-                
+
                 # Determine the level for feedback (from context or default)
-                feedback_level = user_context.get('level', 'A1').lower()
-                # Map database levels to feedback levels
-                level_map = {'a1': 'beginner', 'a2': 'elementary', 'b1': 'intermediate', 'b2': 'upper-intermediate'}
-                feedback_level = level_map.get(feedback_level.lower(), 'intermediate')
-                
+                # Use actual database level (A1, A2, B1, B2) instead of generic terms
+                feedback_level = user_context.get('level', 'A1').upper()
+
                 # Generate language hint for each message (except the last)
                 if message_count < total_exchanges:
                     # Get language pair from user context
@@ -349,12 +351,24 @@ class AuthRoutes:
                         target_language=target_language,
                         native_language=native_language
                     )
+
+                    # Normalize hint type to ensure frontend recognition
+                    if hint_data and 'type' in hint_data:
+                        hint_type = hint_data.get('type', 'warning')
+                        type_mapping = {
+                            'correction': 'error',
+                            'hint': 'warning',
+                            'suggestion': 'warning',
+                            'tip': 'warning'
+                        }
+                        hint_data['type'] = type_mapping.get(hint_type, hint_type)
+
                     response_data['hint'] = hint_data
                 
-                # Generate comprehensive feedback after the second-to-last message
+                # Generate comprehensive feedback at the last message
                 print(f"[FEEDBACK CHECK] Message {message_count} of {total_exchanges} total")
-                if message_count == (total_exchanges - 1):
-                    print(f"[FEEDBACK TRIGGER] Generating comprehensive feedback at message {message_count}")
+                if message_count == total_exchanges:
+                    print(f"[FEEDBACK TRIGGER] Generating comprehensive feedback at FINAL message {message_count}")
                     # Get language pair from user context
                     target_language = user_context.get('target_language', 'german')
                     native_language = user_context.get('input_language', 'english')

@@ -42,6 +42,9 @@ class HintDisplay {
 
     show(hintData) {
         console.log('[HINT DISPLAY] show() called with:', hintData);
+        console.log('[HINT DISPLAY] Hint type received:', hintData.type);
+        console.log('[HINT DISPLAY] Hint phrase:', hintData.phrase);
+        console.log('[HINT DISPLAY] Hint text:', hintData.hint);
         console.log('[HINT DISPLAY] Container element:', this.inlineContainer);
         console.log('[HINT DISPLAY] Content element:', this.inlineContent);
 
@@ -63,16 +66,70 @@ class HintDisplay {
             colorClass = 'hint-error';
         }
 
-        // Format hint content
+        // Get translations
+        const tm = window.translationManager;
+        const getText = tm ? (key) => tm.getText(key) : (key) => key;
+
+        // Format hint content based on type
         let hintHTML = '';
-        if (hintData.phrase) {
-            hintHTML += `<strong>Phrase:</strong> "${hintData.phrase}"<br>`;
-        }
-        if (hintData.hint) {
-            hintHTML += `<strong>Tip:</strong> ${hintData.hint}`;
+        let headerText = '';
+
+        if (hintData.type === 'praise') {
+            // Praise: Show header and praise text, no phrase
+            headerText = getText('hint_well_done');
+            hintHTML = `<div class="hint-header hint-header-praise">${headerText}</div>`;
+            if (hintData.hint) {
+                const praiseLabel = getText('hint_praise_label');
+                hintHTML += `<strong>${praiseLabel}</strong> ${hintData.hint}`;
+            }
+        } else if (hintData.type === 'warning') {
+            // Warning: Show header, phrase, and tip
+            headerText = getText('hint_warning');
+            hintHTML = `<div class="hint-header hint-header-warning">${headerText}</div>`;
+            if (hintData.phrase) {
+                const phraseLabel = getText('hint_phrase_label');
+                hintHTML += `<strong>${phraseLabel}</strong> "${hintData.phrase}"<br>`;
+            }
+            if (hintData.hint) {
+                const tipLabel = getText('hint_tip_label');
+                hintHTML += `<strong>${tipLabel}</strong> ${hintData.hint}`;
+            }
+        } else if (hintData.type === 'error') {
+            // Error: Show header, phrase, and correction
+            headerText = getText('hint_error');
+            hintHTML = `<div class="hint-header hint-header-error">${headerText}</div>`;
+            if (hintData.phrase) {
+                const phraseLabel = getText('hint_phrase_label');
+                hintHTML += `<strong>${phraseLabel}</strong> "${hintData.phrase}"<br>`;
+            }
+            if (hintData.hint) {
+                const correctionLabel = getText('hint_correction_label');
+                hintHTML += `<strong>${correctionLabel}</strong> ${hintData.hint}`;
+            }
+        } else {
+            // Fallback: If type is missing or unrecognized, show the hint anyway
+            console.warn('[HINT DISPLAY] Unknown hint type:', hintData.type);
+            console.log('[HINT DISPLAY] Full hint data:', hintData);
+
+            // Default to warning style and show whatever we have
+            colorClass = 'hint-warning';
+            if (hintData.phrase) {
+                hintHTML += `<strong>Phrase:</strong> "${hintData.phrase}"<br>`;
+            }
+            if (hintData.hint) {
+                hintHTML += `<strong>Tip:</strong> ${hintData.hint}`;
+            }
+
+            // If we have nothing to show, display a debug message
+            if (!hintHTML) {
+                hintHTML = `<em>Hint data received but no content to display</em>`;
+                console.error('[HINT DISPLAY] No displayable content in hint data:', hintData);
+            }
         }
 
         console.log('[HINT DISPLAY] Setting HTML content:', hintHTML);
+        console.log('[HINT DISPLAY] Hint type:', hintData.type);
+        console.log('[HINT DISPLAY] Full hint data:', JSON.stringify(hintData));
 
         // Set content
         this.inlineContent.innerHTML = hintHTML;

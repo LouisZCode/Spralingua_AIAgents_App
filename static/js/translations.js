@@ -96,6 +96,15 @@ const translations = {
         feedback_top_mistakes: "Top Mistakes",
         feedback_well_done: "Well Done",
 
+        // Hint Display Labels
+        hint_well_done: "Well Done!",
+        hint_warning: "Suggestion",
+        hint_error: "Correction",
+        hint_phrase_label: "Phrase:",
+        hint_praise_label: "Praise:",
+        hint_tip_label: "Tip:",
+        hint_correction_label: "Correction:",
+
         // Feedback Categories
         feedback_cat_grammar: "Grammar",
         feedback_cat_vocabulary: "Vocabulary",
@@ -211,6 +220,15 @@ const translations = {
         feedback_score: "Punktzahl",
         feedback_top_mistakes: "Hauptfehler",
         feedback_well_done: "Gut gemacht",
+
+        // Hint Display Labels
+        hint_well_done: "Gut gemacht!",
+        hint_warning: "Hinweis",
+        hint_error: "Korrektur",
+        hint_phrase_label: "Phrase:",
+        hint_praise_label: "Lob:",
+        hint_tip_label: "Tipp:",
+        hint_correction_label: "Korrektur:",
 
         // Feedback Categories
         feedback_cat_grammar: "Grammatik",
@@ -328,6 +346,15 @@ const translations = {
         feedback_top_mistakes: "Errores Principales",
         feedback_well_done: "Bien Hecho",
 
+        // Hint Display Labels
+        hint_well_done: "¡Bien Hecho!",
+        hint_warning: "Sugerencia",
+        hint_error: "Corrección",
+        hint_phrase_label: "Frase:",
+        hint_praise_label: "Elogio:",
+        hint_tip_label: "Consejo:",
+        hint_correction_label: "Corrección:",
+
         // Feedback Categories
         feedback_cat_grammar: "Gramática",
         feedback_cat_vocabulary: "Vocabulario",
@@ -443,6 +470,15 @@ const translations = {
         feedback_score: "Pontuação",
         feedback_top_mistakes: "Principais Erros",
         feedback_well_done: "Muito Bem",
+
+        // Hint Display Labels
+        hint_well_done: "Muito Bem!",
+        hint_warning: "Sugestão",
+        hint_error: "Correção",
+        hint_phrase_label: "Frase:",
+        hint_praise_label: "Elogio:",
+        hint_tip_label: "Dica:",
+        hint_correction_label: "Correção:",
 
         // Feedback Categories
         feedback_cat_grammar: "Gramática",

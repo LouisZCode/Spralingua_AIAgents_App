@@ -98,9 +98,19 @@ def generate_language_hint(message, claude_client, user_level='intermediate',
             
             # Parse the JSON
             hint_data = json.loads(hint_response)
-            
+
             # Validate structure
             if 'phrase' in hint_data and 'hint' in hint_data:
+                # Normalize hint types to recognized values
+                hint_type = hint_data.get('type', 'warning')
+                type_mapping = {
+                    'correction': 'error',
+                    'hint': 'warning',
+                    'suggestion': 'warning',
+                    'tip': 'warning'
+                }
+                hint_data['type'] = type_mapping.get(hint_type, hint_type)
+
                 print(f"[SUCCESS] [HINT GENERATION] Successfully parsed hint: {hint_data}")
                 return hint_data
             else:

@@ -1024,6 +1024,27 @@
     border: 1px solid #ffcbb5;
 }
 
+/* Hint header labels with darker colors */
+.hint-header {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.hint-header-praise {
+    color: #155724; /* Dark green */
+}
+
+.hint-header-warning {
+    color: #856404; /* Dark yellow/orange */
+}
+
+.hint-header-error {
+    color: #721c24; /* Dark orange/red */
+}
+
 /* Mobile hint button */
 .mobile-hint-toggle {
     display: none;
