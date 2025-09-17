@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Writing Practice - Spralingua</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
+    <style>
+        /* Apply Spralingua brand colors */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Writing Exercise Specific Styles */
+        .writing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            padding-top: 100px; /* Account for fixed nav */
+            min-height: 100vh;
+        }
+        
+        .writing-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .exercise-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 0.5rem;
+        }
+
+        .exercise-subtitle {
+            font-size: 1.1rem;
+            color: white;
+            opacity: 0.95;
+        }
+        
+        .writing-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-auto-rows: 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .letter-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--border-color, #e2e8f0);
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .letter-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary, #0f172a);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .letter-meta {
+            font-size: 0.875rem;
+            color: var(--text-muted, #94a3b8);
+            margin-bottom: 1.5rem;
+        }
+        
+        .letter-content {
+            background: var(--bg-secondary, #f8fafc);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+            line-height: 1.6;
+            color: var(--text-secondary, #475569);
+            white-space: pre-wrap;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .response-prompts {
+            background: var(--bg-tertiary, #f1f5f9);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            min-height: 120px;
+        }
+        
+        .response-prompts-title {
+            font-weight: 600;
+            color: var(--text-primary, #0f172a);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .response-prompts ul {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: var(--text-secondary, #475569);
+            font-size: 0.9rem;
+        }
+        
+        .response-prompts li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .writing-area-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--border-color, #e2e8f0);
+            min-height: 600px;
+        }
+        
+        .email-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary, #0f172a);
+        }
+        
+        .form-input {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color, #e2e8f0);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color, #2563eb);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .writing-textarea {
+            min-height: 400px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary, #475569);
+            border: 2px solid var(--border-color, #e2e8f0);
+        }
+        
+        .btn-ghost:hover {
+            background: var(--bg-secondary, #f8fafc);
+            border-color: var(--text-secondary, #475569);
+        }
+        
+        .character-count {
+            font-size: 0.875rem;
+            color: var(--text-muted, #94a3b8);
+            text-align: right;
+            margin-top: 0.5rem;
+        }
+        
+        .character-count.good {
+            color: var(--success-color, #10b981);
+        }
+        
+        .character-count.warning {
+            color: var(--warning-color, #f59e0b);
+        }
+        
+        .character-count.error {
+            color: var(--error-color, #ef4444);
+        }
+        
+        /* Attempt indicator */
+        .attempt-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary, #f8fafc);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary, #475569);
+            margin-bottom: 1rem;
+        }
+        
+        .attempt-indicator.attempt-1 {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .attempt-indicator.attempt-2 {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        /* Loading states */
+        .letter-content .loading-spinner {
+            margin: 2rem auto 1rem;
+            display: block;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f4f6;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        /* Exercise instructions */
+        .exercise-instructions {
+            background: var(--bg-secondary, #f8fafc);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #667eea;
+        }
+        
+        .exercise-instructions p {
+            margin: 0;
+            color: var(--text-secondary, #475569);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        /* Feedback Panel */
+        .feedback-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid var(--border-color, #e2e8f0);
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feedback-header {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+        }
+        
+        .feedback-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary, #0f172a);
+        }
+        
+        .feedback-content {
+            color: var(--text-secondary, #475569);
+            line-height: 1.6;
+        }
+        
+        .feedback-score {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color, #2563eb);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .feedback-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .feedback-section h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary, #0f172a);
+            margin-bottom: 0.5rem;
+        }
+        
+        .feedback-section p {
+            margin: 0;
+        }
+        
+        .feedback-section ul {
+            margin: 0.5rem 0 0 0;
+            padding-left: 1.5rem;
+        }
+        
+        .feedback-section li {
+            margin-bottom: 0.25rem;
+        }
+        
+        .error-summary {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .error-summary p {
+            margin: 0;
+            color: #991b1b;
+        }
+        
+        .success-note {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .success-note p {
+            margin: 0;
+            color: #065f46;
+        }
+        
+        /* Error group styles */
+        .error-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .error-group h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary, #0f172a);
+            margin-bottom: 0.75rem;
+        }
+        
+        .error-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .error-item {
+            background: var(--bg-secondary, #f8fafc);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .error-text {
+            font-weight: 600;
+            color: #dc2626;
+            font-style: italic;
+        }
+        
+        .hint-text {
+            color: var(--text-secondary, #475569);
+            font-size: 0.9rem;
+        }
+        
+        /* Comparison table for second attempt */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .comparison-table th {
+            background: var(--bg-secondary, #f8fafc);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color, #e2e8f0);
+        }
+        
+        .comparison-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color, #e2e8f0);
+            vertical-align: top;
+        }
+        
+        .comparison-table .error-col {
+            color: var(--text-primary, #0f172a);
+            background: var(--bg-primary, #ffffff);
+        }
+        
+        .comparison-table .correct-col {
+            color: var(--text-primary, #0f172a);
+            background: var(--bg-primary, #ffffff);
+        }
+        
+        /* Targeted error/correction highlighting */
+        .error-highlight {
+            background-color: #fecaca;
+            color: #dc2626;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        
+        .correction-highlight {
+            background-color: #86efac;
+            color: #065f46;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+        
+        /* Sentence-level highlighting with light backgrounds */
+        .error-sentence {
+            background-color: #fef2f2;
+            padding: 2px 4px;
+            border-radius: 3px;
+            line-height: 1.4;
+        }
+        
+        .correction-sentence {
+            background-color: #d1fae5;
+            padding: 2px 4px;
+            border-radius: 3px;
+            line-height: 1.4;
+        }
+        
+        /* Bold emphasis for specific changes within sentences */
+        .error-emphasis {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        
+        .correction-emphasis {
+            color: #065f46;
+            font-weight: 700;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .writing-main {
+                grid-template-columns: 1fr;
+            }
+            
+            .instructions-panel {
+                order: -1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .writing-container {
+                padding: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .button-group {
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    {% include 'partials/navigation.html' %}
+
+    <div class="writing-container">
+        <!-- Header -->
+        <div class="writing-header">
+            <h1 class="exercise-title">Email Writing Practice</h1>
+            <p class="exercise-subtitle">Write a response to your friend's letter in German</p>
+            <p class="exercise-subtitle" id="word-count-expectation" style="display: none;">
+                Expected length: <span id="word-range"></span> words
+            </p>
+            <div class="attempt-indicator attempt-1" id="attempt-indicator" style="display: none;">
+                <span>📝</span>
+                <span id="attempt-text">First Attempt</span>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="writing-main">
+            <!-- Letter Panel -->
+            <div class="letter-panel" id="letter-panel">
+                <!-- Letter Content (always visible for consistent sizing) -->
+                <div class="letter-display" id="letter-display">
+                    <div class="exercise-instructions">
+                        <p>You just received this email. Please answer it and address the points below.</p>
+                    </div>
+                    <div class="letter-header">
+                        <span>📨</span>
+                        <span id="letter-from">Letter from your friend</span>
+                    </div>
+                    <div class="letter-meta" id="letter-meta">Received today</div>
+                    
+                    <div class="letter-content" id="letter-content">
+                        <div class="loading-spinner"></div>
+                        <p style="text-align: center; color: var(--text-muted, #94a3b8);">Generating personalized letter...</p>
+                    </div>
+                    
+                    <div class="response-prompts">
+                        <div class="response-prompts-title">In your response, please address:</div>
+                        <ul id="response-prompts-list">
+                            <li style="color: var(--text-muted, #94a3b8);">Loading response points...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Writing Area -->
+            <div class="writing-area-container">
+                <form class="email-form" id="email-form">
+                    <!-- Body Field -->
+                    <div class="form-group">
+                        <label class="form-label" for="email-body">Message:</label>
+                        <textarea id="email-body" 
+                                  class="form-input writing-textarea" 
+                                  placeholder="Write your response here..."
+                                  required></textarea>
+                        <div class="character-count" id="character-count">
+                            <span id="char-count">0</span> / <span id="char-limit">100</span> words
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="/exercises" class="btn btn-ghost">
+                ← Back to Learning Hub
+            </a>
+            <button type="button" class="btn btn-primary" id="submit-btn">
+                <span class="btn-text">Submit Response</span>
+                <span class="loading-spinner" style="display: none;"></span>
+            </button>
+        </div>
+        
+        <!-- Feedback Panel -->
+        <div class="feedback-panel" id="feedback-panel" style="display: none;">
+            <div class="feedback-header">
+                <h3 id="feedback-title">Feedback</h3>
+            </div>
+            <div class="feedback-content" id="feedback-content">
+                <!-- Dynamic feedback content will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let currentAttempt = 0;
+        let generatedLetter = null;
+        let expectedResponseLength = 250; // Default
+        
+        // Word count functionality
+        const emailBody = document.getElementById('email-body');
+        const wordCountElement = document.getElementById('char-count');
+        const wordLimitElement = document.getElementById('char-limit');
+        const wordCountContainer = document.getElementById('character-count');
+        
+        function countWords(text) {
+            // Remove extra whitespace and split by whitespace
+            const words = text.trim().split(/\s+/);
+            // Filter out empty strings (in case of only whitespace)
+            return words.filter(word => word.length > 0).length;
+        }
+        
+        function updateWordCount() {
+            const wordCount = emailBody.value.trim() === '' ? 0 : countWords(emailBody.value);
+            wordCountElement.textContent = wordCount;
+            
+            // Update color based on word count
+            const limit = parseInt(wordLimitElement.textContent);
+            const minWords = Math.floor(limit * 0.8); // 80% of limit for words
+            const maxWords = Math.floor(limit * 1.2); // 120% of limit for words
+            
+            if (wordCount < minWords) {
+                wordCountContainer.className = 'character-count error';
+            } else if (wordCount <= limit) {
+                wordCountContainer.className = 'character-count good';
+            } else if (wordCount <= maxWords) {
+                wordCountContainer.className = 'character-count warning';
+            } else {
+                wordCountContainer.className = 'character-count error';
+            }
+        }
+        
+        emailBody.addEventListener('input', updateWordCount);
+        
+        // Generate letter on page load
+        async function generateLetter() {
+            // Hide feedback panel if visible
+            document.getElementById('feedback-panel').style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/writing-practice/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to generate letter');
+                }
+                
+                const data = await response.json();
+                generatedLetter = data.letter;
+                
+                // Update letter display (remove loading content and show actual letter)
+                const letterContent = document.getElementById('letter-content');
+                letterContent.textContent = data.letter;
+                letterContent.style.justifyContent = 'flex-start'; // Reset to normal text flow
+                document.getElementById('letter-from').textContent = `Letter from ${data.friend_name || 'your friend'}`;
+                
+                // Update response prompts
+                const promptsList = document.getElementById('response-prompts-list');
+                promptsList.innerHTML = '';
+                data.response_prompts.forEach(prompt => {
+                    const li = document.createElement('li');
+                    li.textContent = prompt;
+                    promptsList.appendChild(li);
+                });
+                
+                // Update word limit based on level
+                wordLimitElement.textContent = data.word_limit || 100;
+                updateWordCount(); // Update the count display with new limit
+                
+                // Show word count expectation
+                if (data.word_count_range) {
+                    document.getElementById('word-count-expectation').style.display = 'block';
+                    document.getElementById('word-range').textContent = data.word_count_range;
+                }
+                
+                // Update attempt indicator
+                currentAttempt = data.attempt || 1;
+                updateAttemptIndicator();
+                
+            } catch (error) {
+                console.error('Error generating letter:', error);
+                document.getElementById('letter-content').innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to generate letter. Please refresh the page.</p>';
+            }
+        }
+        
+        // Update attempt indicator
+        function updateAttemptIndicator() {
+            const indicator = document.getElementById('attempt-indicator');
+            const attemptText = document.getElementById('attempt-text');
+            
+            indicator.style.display = 'inline-flex';
+            indicator.className = `attempt-indicator attempt-${currentAttempt}`;
+            attemptText.textContent = currentAttempt === 1 ? 'First Attempt' : 'Second Attempt';
+        }
+        
+        // Submit functionality
+        document.getElementById('submit-btn').addEventListener('click', async function(e) {
+            e.preventDefault();
+            
+            // Validate that there's text in the message field
+            if (!emailBody.value.trim()) {
+                alert('Please write a response before submitting.');
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const spinner = submitBtn.querySelector('.loading-spinner');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'inline-block';
+            
+            try {
+                const response = await fetch('/api/writing-practice/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        subject: '',  // Empty subject for backend compatibility
+                        body: emailBody.value,
+                        attempt: currentAttempt
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to submit response');
+                }
+                
+                const data = await response.json();
+                
+                if (currentAttempt === 1 && data.error_groups) {
+                    // First attempt - show feedback
+                    currentAttempt = 2;
+                    updateAttemptIndicator();
+                    
+                    // Show feedback in panel
+                    showFirstAttemptFeedback(data);
+                } else if (currentAttempt === 2) {
+                    // Second attempt - show full feedback in panel
+                    showSecondAttemptFeedback(data);
+                }
+                
+            } catch (error) {
+                console.error('Error submitting response:', error);
+                alert('Failed to submit response. Please try again.');
+            } finally {
+                // Reset button state
+                submitBtn.disabled = false;
+                btnText.style.display = 'inline';
+                spinner.style.display = 'none';
+            }
+        });
+        
+        // Escape HTML for safe display
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Enhanced sentence-level diff function with bold emphasis
+        function highlightDifferences(originalText, correctedText) {
+            try {
+                // Simple word-level diff to identify changes
+                const originalWords = originalText.split(/(\s+)/);
+                const correctedWords = correctedText.split(/(\s+)/);
+                
+                // Find differences at word level
+                const differences = findWordDifferences(originalWords, correctedWords);
+                
+                // Group differences into sentence segments
+                const segments = groupIntoSentenceSegments(differences, originalWords, correctedWords);
+                
+                // Build highlighted HTML
+                return {
+                    original: buildSentenceHighlightedHTML(originalWords, segments.original, true),
+                    corrected: buildSentenceHighlightedHTML(correctedWords, segments.corrected, false)
+                };
+                
+            } catch (error) {
+                console.error('Error highlighting differences:', error);
+                // Fallback to word-level highlighting
+                return fallbackWordHighlighting(originalText, correctedText);
+            }
+        }
+        
+        // Helper function to compute Longest Common Subsequence matrix
+        function computeLCS(originalWords, correctedWords) {
+            const m = originalWords.length;
+            const n = correctedWords.length;
+            const lcs = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
+            
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (originalWords[i - 1] === correctedWords[j - 1]) {
+                        lcs[i][j] = lcs[i - 1][j - 1] + 1;
+                    } else {
+                        lcs[i][j] = Math.max(lcs[i - 1][j], lcs[i][j - 1]);
+                    }
+                }
+            }
+            
+            return lcs;
+        }
+        
+        // Helper function to find word-level differences using LCS algorithm
+        function findWordDifferences(originalWords, correctedWords) {
+            const differences = [];
+            
+            // Handle edge cases
+            if (originalWords.length === 0 && correctedWords.length === 0) {
+                return differences;
+            }
+            
+            // Compute LCS matrix for proper alignment
+            const lcs = computeLCS(originalWords, correctedWords);
+            
+            // Backtrack to find differences
+            let i = originalWords.length;
+            let j = correctedWords.length;
+            
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && originalWords[i - 1] === correctedWords[j - 1]) {
+                    // Words match - part of LCS, no difference
+                    i--;
+                    j--;
+                } else if (j > 0 && (i === 0 || lcs[i][j - 1] >= lcs[i - 1][j])) {
+                    // Insertion in corrected version
+                    differences.push({
+                        type: 'insertion',
+                        originalIndex: i,
+                        correctedIndex: j - 1,
+                        originalWord: '',
+                        correctedWord: correctedWords[j - 1]
+                    });
+                    j--;
+                } else if (i > 0) {
+                    // Deletion from original
+                    differences.push({
+                        type: 'deletion',
+                        originalIndex: i - 1,
+                        correctedIndex: j,
+                        originalWord: originalWords[i - 1],
+                        correctedWord: ''
+                    });
+                    i--;
+                }
+            }
+            
+            return differences.reverse();
+        }
+        
+        // Helper function to find sentence boundaries (periods, exclamation marks, question marks)
+        function findSentenceBoundaries(words) {
+            const boundaries = [];
+            for (let i = 0; i < words.length; i++) {
+                if (words[i].match(/[.!?]$/)) {
+                    boundaries.push(i);
+                }
+            }
+            return boundaries;
+        }
+        
+        // Helper function to group differences into sentence segments
+        function groupIntoSentenceSegments(differences, originalWords, correctedWords) {
+            if (differences.length === 0) {
+                return { original: [], corrected: [] };
+            }
+            
+            // Find sentence boundaries to prevent crossing sentences
+            const originalBoundaries = findSentenceBoundaries(originalWords);
+            const correctedBoundaries = findSentenceBoundaries(correctedWords);
+            
+            // Group consecutive differences within 3 words of each other (reduced from 6)
+            const groups = [];
+            let currentGroup = [differences[0]];
+            
+            for (let i = 1; i < differences.length; i++) {
+                const prevDiff = currentGroup[currentGroup.length - 1];
+                const currDiff = differences[i];
+                
+                // Check if we would cross a sentence boundary
+                const crossesSentenceBoundary = originalBoundaries.some(boundary => 
+                    boundary > prevDiff.originalIndex && boundary < currDiff.originalIndex
+                );
+                
+                // If differences are close (within 3 words, reduced from 6) and don't cross sentences
+                if (currDiff.originalIndex - prevDiff.originalIndex <= 3 && !crossesSentenceBoundary) {
+                    currentGroup.push(currDiff);
+                } else {
+                    groups.push(currentGroup);
+                    currentGroup = [currDiff];
+                }
+            }
+            groups.push(currentGroup);
+            
+            // Convert groups to segments with reduced expansion
+            const originalSegments = [];
+            const correctedSegments = [];
+            
+            groups.forEach(group => {
+                const firstDiff = group[0];
+                const lastDiff = group[group.length - 1];
+                
+                // Reduced expansion: 1 word before and 1 word after (instead of 2 before, 3 after)
+                const origStart = Math.max(0, firstDiff.originalIndex - 1);
+                const origEnd = Math.min(originalWords.length, lastDiff.originalIndex + 2);
+                const corrStart = Math.max(0, firstDiff.correctedIndex - 1);
+                const corrEnd = Math.min(correctedWords.length, lastDiff.correctedIndex + 2);
+                
+                // Don't expand across sentence boundaries
+                const origStartBoundary = originalBoundaries.find(b => b >= origStart && b < firstDiff.originalIndex);
+                const origEndBoundary = originalBoundaries.find(b => b > lastDiff.originalIndex && b < origEnd);
+                const corrStartBoundary = correctedBoundaries.find(b => b >= corrStart && b < firstDiff.correctedIndex);
+                const corrEndBoundary = correctedBoundaries.find(b => b > lastDiff.correctedIndex && b < corrEnd);
+                
+                const finalOrigStart = origStartBoundary !== undefined ? origStartBoundary + 1 : origStart;
+                const finalOrigEnd = origEndBoundary !== undefined ? origEndBoundary + 1 : origEnd;
+                const finalCorrStart = corrStartBoundary !== undefined ? corrStartBoundary + 1 : corrStart;
+                const finalCorrEnd = corrEndBoundary !== undefined ? corrEndBoundary + 1 : corrEnd;
+                
+                originalSegments.push({
+                    start: finalOrigStart,
+                    end: finalOrigEnd,
+                    differences: group
+                });
+                
+                correctedSegments.push({
+                    start: finalCorrStart,
+                    end: finalCorrEnd,
+                    differences: group
+                });
+            });
+            
+            return {
+                original: originalSegments,
+                corrected: correctedSegments
+            };
+        }
+        
+        // Helper function to build sentence-highlighted HTML
+        function buildSentenceHighlightedHTML(words, segments, isOriginal = true) {
+            let html = '';
+            let wordIndex = 0;
+            
+            while (wordIndex < words.length) {
+                // Check if this word is part of any segment
+                const segment = segments.find(seg => wordIndex >= seg.start && wordIndex < seg.end);
+                
+                if (segment) {
+                    // This word is part of an error segment
+                    const sentenceClass = isOriginal ? 'error-sentence' : 'correction-sentence';
+                    const emphasisClass = isOriginal ? 'error-emphasis' : 'correction-emphasis';
+                    
+                    html += `<span class="${sentenceClass}">`;
+                    
+                    // Add words in this segment
+                    for (let i = segment.start; i < segment.end && i < words.length; i++) {
+                        const word = words[i];
+                        
+                        // Check if this specific word is a difference
+                        const isDifference = segment.differences.some(diff => 
+                            (isOriginal && diff.originalIndex === i) ||
+                            (!isOriginal && diff.correctedIndex === i)
+                        );
+                        
+                        if (isDifference && !word.match(/^\s+$/)) {
+                            // This word is a specific error/correction - make it bold
+                            html += `<span class="${emphasisClass}">${escapeHtml(word)}</span>`;
+                        } else {
+                            // Normal word within error sentence
+                            html += escapeHtml(word);
+                        }
+                    }
+                    
+                    html += '</span>';
+                    wordIndex = segment.end;
+                } else {
+                    // Normal word outside any error segment
+                    html += escapeHtml(words[wordIndex]);
+                    wordIndex++;
+                }
+            }
+            
+            return html;
+        }
+        
+        // Fallback function for word-level highlighting (simplified version of old function)
+        function fallbackWordHighlighting(originalText, correctedText) {
+            const originalWords = originalText.split(/(\s+)/);
+            const correctedWords = correctedText.split(/(\s+)/);
+            let originalHtml = '';
+            let correctedHtml = '';
+            
+            // Simple word comparison for fallback
+            const maxLen = Math.max(originalWords.length, correctedWords.length);
+            for (let i = 0; i < maxLen; i++) {
+                const origWord = i < originalWords.length ? originalWords[i] : '';
+                const corrWord = i < correctedWords.length ? correctedWords[i] : '';
+                
+                if (origWord === corrWord) {
+                    originalHtml += escapeHtml(origWord);
+                    correctedHtml += escapeHtml(corrWord);
+                } else {
+                    if (origWord) originalHtml += `<span class="error-highlight">${escapeHtml(origWord)}</span>`;
+                    if (corrWord) correctedHtml += `<span class="correction-highlight">${escapeHtml(corrWord)}</span>`;
+                }
+            }
+            
+            return {
+                original: originalHtml,
+                corrected: correctedHtml
+            };
+        }
+        
+        // Show first attempt feedback in panel
+        function showFirstAttemptFeedback(data) {
+            const feedbackPanel = document.getElementById('feedback-panel');
+            const feedbackContent = document.getElementById('feedback-content');
+            const feedbackTitle = document.getElementById('feedback-title');
+            
+            feedbackTitle.textContent = 'First Attempt - Areas to Improve';
+            
+            let errorCount = 0;
+            if (data.error_groups) {
+                errorCount = (data.error_groups.grammar || []).length + 
+                            (data.error_groups.vocabulary || []).length + 
+                            (data.error_groups.spelling || []).length;
+            }
+            
+            let content = `
+                <div class="error-summary">
+                    <p>🔍 <strong>Found ${errorCount} areas to improve</strong></p>
+                </div>
+                <div class="feedback-section">
+                    <p>${data.message || 'Good effort! Here are some areas to review:'}</p>
+                    ${data.general_feedback ? `<p style="margin-top: 1rem;"><em>${data.general_feedback}</em></p>` : ''}
+                </div>
+            `;
+            
+            // Add error groups if they exist
+            if (data.error_groups) {
+                // Grammar errors
+                if (data.error_groups.grammar && data.error_groups.grammar.length > 0) {
+                    content += `
+                        <div class="error-group">
+                            <h4>📝 Grammar Issues:</h4>
+                            <ul class="error-list">
+                    `;
+                    data.error_groups.grammar.forEach(error => {
+                        content += `
+                            <li class="error-item">
+                                <span class="error-text">"${escapeHtml(error.text)}"</span>
+                                <span class="hint-text">→ ${escapeHtml(error.hint)}</span>
+                            </li>
+                        `;
+                    });
+                    content += `</ul></div>`;
+                }
+                
+                // Vocabulary errors
+                if (data.error_groups.vocabulary && data.error_groups.vocabulary.length > 0) {
+                    content += `
+                        <div class="error-group">
+                            <h4>📚 Vocabulary Improvements:</h4>
+                            <ul class="error-list">
+                    `;
+                    data.error_groups.vocabulary.forEach(error => {
+                        content += `
+                            <li class="error-item">
+                                <span class="error-text">"${escapeHtml(error.text)}"</span>
+                                <span class="hint-text">→ ${escapeHtml(error.hint)}</span>
+                            </li>
+                        `;
+                    });
+                    content += `</ul></div>`;
+                }
+                
+                // Spelling errors
+                if (data.error_groups.spelling && data.error_groups.spelling.length > 0) {
+                    content += `
+                        <div class="error-group">
+                            <h4>✏️ Spelling Corrections:</h4>
+                            <ul class="error-list">
+                    `;
+                    data.error_groups.spelling.forEach(error => {
+                        content += `
+                            <li class="error-item">
+                                <span class="error-text">"${escapeHtml(error.text)}"</span>
+                                <span class="hint-text">→ ${escapeHtml(error.hint)}</span>
+                            </li>
+                        `;
+                    });
+                    content += `</ul></div>`;
+                }
+            }
+            
+            feedbackContent.innerHTML = content;
+            feedbackPanel.style.display = 'block';
+            
+            // Smooth scroll to feedback
+            feedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Show second attempt feedback in panel
+        function showSecondAttemptFeedback(data) {
+            const feedbackPanel = document.getElementById('feedback-panel');
+            const feedbackContent = document.getElementById('feedback-content');
+            const feedbackTitle = document.getElementById('feedback-title');
+            
+            feedbackTitle.textContent = 'Exercise Complete - Your Results';
+            
+            let content = `
+                <div class="feedback-score">
+                    ${data.score}/100
+                </div>
+            `;
+            
+            if (data.improvements_from_first) {
+                content += `
+                    <div class="success-note">
+                        <p>✨ <strong>Improvements from first attempt:</strong> ${data.improvements_from_first}</p>
+                    </div>
+                `;
+            }
+            
+            content += `
+                <div class="feedback-section">
+                    <h4>📝 Overall Feedback:</h4>
+                    <p>${data.feedback}</p>
+                </div>
+            `;
+            
+            // Show side-by-side comparison if available
+            if (data.original_text && data.corrected_text) {
+                // Use diff highlighting for targeted error/correction display
+                const highlighted = highlightDifferences(data.original_text, data.corrected_text);
+                
+                content += `
+                    <div class="feedback-section">
+                        <h4>✏️ Your Text vs. Corrected Version:</h4>
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Your Version</th>
+                                    <th>Corrected Version</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="error-col">${highlighted.original.replace(/\n/g, '<br>')}</td>
+                                    <td class="correct-col">${highlighted.corrected.replace(/\n/g, '<br>')}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Show detailed explanations if available
+            if (data.explanations && data.explanations.length > 0) {
+                content += `
+                    <div class="feedback-section">
+                        <h4>📖 Key Corrections Explained:</h4>
+                        <ul class="error-list">
+                `;
+                data.explanations.forEach(explanation => {
+                    content += `
+                        <li class="error-item">
+                            <span class="error-text">"${escapeHtml(explanation.error)}"</span>
+                            <span class="hint-text">→ "${escapeHtml(explanation.correction)}"</span>
+                            <br>
+                            <small style="color: var(--text-secondary, #475569); margin-left: 1rem;">
+                                ${escapeHtml(explanation.explanation)}
+                            </small>
+                        </li>
+                    `;
+                });
+                content += `</ul></div>`;
+            }
+            
+            if (data.focus_points && data.focus_points.length > 0) {
+                content += `
+                    <div class="feedback-section">
+                        <h4>🎯 Areas to focus on:</h4>
+                        <ul>
+                            ${data.focus_points.map(point => `<li>${escapeHtml(point)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            content += `
+                <div style="text-align: center; margin-top: 2rem;">
+                    <a href="/exercises" class="btn btn-primary">
+                        Continue to Learning Hub →
+                    </a>
+                </div>
+            `;
+            
+            feedbackContent.innerHTML = content;
+            feedbackPanel.style.display = 'block';
+            
+            // Smooth scroll to feedback
+            feedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            generateLetter();
+        });
+    </script>
+</body>
+</html>

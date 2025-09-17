@@ -494,3 +494,124 @@ class AuthRoutes:
             except Exception as e:
                 print(f"Error fetching scenario: {e}")
                 return jsonify({'error': str(e)}), 500
+
+        # Email Writing Exercise Routes
+        @self.app.route('/writing-practice')
+        @login_required
+        def email_writing():
+            """Email writing exercise page."""
+            try:
+                return render_template('writing_email.html')
+            except Exception as e:
+                print(f"Error loading email writing page: {e}")
+                flash('Error loading writing exercise.', 'error')
+                return redirect(url_for('exercises'))
+
+        @self.app.route('/api/writing-practice/generate', methods=['POST'])
+        @login_required
+        def generate_email_letter():
+            """Generate a letter for the email writing exercise."""
+            try:
+                import uuid
+                from email_writing.exercise_manager import EmailExerciseManager
+
+                # Get current user
+                user_id = session.get('user_id')
+
+                # Prepare user context
+                user_context = {
+                    'user_id': user_id,
+                    'level': 'intermediate'  # Could be dynamic based on user progress
+                }
+
+                # Get or create session ID
+                session_id = session.get('email_session_id')
+                if not session_id:
+                    session_id = str(uuid.uuid4())
+                    session['email_session_id'] = session_id
+
+                # Get or create exercise session data
+                exercise_session_key = f'email_writing_{session_id}'
+                if exercise_session_key not in session:
+                    session[exercise_session_key] = {}
+                session_data = session[exercise_session_key]
+
+                # Initialize exercise manager
+                exercise_manager = EmailExerciseManager('email_writing/email_prompts.yaml')
+
+                # Process the request
+                success, result = exercise_manager.process_exercise_request(
+                    action='generate',
+                    data={},
+                    user_context=user_context,
+                    session_data=session_data
+                )
+
+                # Update session data
+                session[exercise_session_key] = session_data
+                session.modified = True
+
+                if success:
+                    return jsonify(result)
+                else:
+                    return jsonify(result), 500
+
+            except Exception as e:
+                print(f"[ERROR] Error generating letter: {e}")
+                import traceback
+                print(traceback.format_exc())
+                return jsonify({'error': f'Failed to generate letter: {str(e)}'}), 500
+
+        @self.app.route('/api/writing-practice/submit', methods=['POST'])
+        @login_required
+        def submit_email_response():
+            """Submit and evaluate a response for the email writing exercise."""
+            try:
+                from email_writing.exercise_manager import EmailExerciseManager
+
+                # Get current user
+                user_id = session.get('user_id')
+
+                # Prepare user context
+                user_context = {
+                    'user_id': user_id,
+                    'level': 'intermediate'
+                }
+
+                # Get session ID
+                session_id = session.get('email_session_id', 'default')
+
+                # Get exercise session data
+                exercise_session_key = f'email_writing_{session_id}'
+                session_data = session.get(exercise_session_key, {})
+
+                # Get request data
+                data = request.get_json()
+                if not data:
+                    return jsonify({'error': 'No data provided'}), 400
+
+                # Initialize exercise manager
+                exercise_manager = EmailExerciseManager('email_writing/email_prompts.yaml')
+
+                # Process the request
+                success, result = exercise_manager.process_exercise_request(
+                    action='evaluate',
+                    data=data,
+                    user_context=user_context,
+                    session_data=session_data
+                )
+
+                # Update session data
+                session[exercise_session_key] = session_data
+                session.modified = True
+
+                if success:
+                    return jsonify(result)
+                else:
+                    return jsonify(result), 500
+
+            except Exception as e:
+                print(f"[ERROR] Error evaluating response: {e}")
+                import traceback
+                print(traceback.format_exc())
+                return jsonify({'error': f'Failed to evaluate response: {str(e)}'}), 500
