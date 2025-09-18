@@ -8,6 +8,8 @@ from progress.progress_manager import ProgressManager
 from topics.topic_manager import TopicManager
 from level_rules.level_rules_manager import LevelRulesManager
 from flask import current_app
+from models.user import User
+from database import db
 
 class ConversationPromptBuilder:
     """Builds personalized conversation prompts based on user progress and character personality"""
@@ -102,13 +104,19 @@ class ConversationPromptBuilder:
         
         prompt_sections.append(character_section)
         
-        # 2. LANGUAGE CONFIGURATION (simple, no redundancy)
+        # 2. STUDENT INFORMATION (personalization)
+        prompt_sections.append(f"""## Student Information
+- Student Name: {context['user_name']}
+- Native Language: {context['input_language'].capitalize()}
+- Learning: {context['target_language'].capitalize()}
+- IMPORTANT: Address the student as "{context['user_name']}" naturally in conversation""")
+        
+        # 3. LANGUAGE CONFIGURATION (simple, no redundancy)
         prompt_sections.append(f"""## Language Configuration
 - Conversation Language: {context['target_language'].capitalize()}
-- Student's Native Language: {context['input_language'].capitalize()}
 - IMPORTANT: Use ONLY {context['target_language'].capitalize()} in all responses""")
         
-        # 3. LEVEL & TOPIC (from database)
+        # 4. LEVEL & TOPIC (from database)
         word_limit = topic_params.get('word_limit', 
                                      level_rules.base_word_limit if level_rules else 40)
         
@@ -118,24 +126,24 @@ class ConversationPromptBuilder:
 - Word Limit: {word_limit} words per response
 - Number of Exchanges: {topic_params.get('number_of_exchanges', 5)}""")
         
-        # 4. LEVEL GUIDELINES (from level_rules table)
+        # 5. LEVEL GUIDELINES (from level_rules table)
         if level_rules:
             prompt_sections.append(f"""## Level {context['level']} Guidelines
 {level_rules.general_guidelines}""")
         
-        # 5. TOPIC FOCUS (from database)
+        # 6. TOPIC FOCUS (from database)
         if context.get('subtopics'):
             subtopics_text = '\n'.join([f"  - {st}" for st in context['subtopics']])
             prompt_sections.append(f"""## Topic Focus Areas
 {subtopics_text}""")
         
-        # 6. OPENING PHRASE (if available for this topic)
+        # 7. OPENING PHRASE (if available for this topic)
         opening_phrase = topic_params.get('opening_phrase')
         if opening_phrase:
             prompt_sections.append(f"""## Your First Message
 You MUST start with exactly: "{opening_phrase}" """)
         
-        # 7. CONVERSATION FLOW (if defined)
+        # 8. CONVERSATION FLOW (if defined)
         if topic_params.get('conversation_flow'):
             flow_text = '\n'.join([f"  {i+1}. {step}" 
                                   for i, step in enumerate(topic_params['conversation_flow'])])
@@ -143,24 +151,25 @@ You MUST start with exactly: "{opening_phrase}" """)
 Follow this structure:
 {flow_text}""")
         
-        # 8. VOCABULARY (if specified)
+        # 9. VOCABULARY (if specified)
         if topic_params.get('required_vocabulary'):
             vocab_text = ', '.join(topic_params['required_vocabulary'][:10])  # Limit display
             prompt_sections.append(f"""## Key Vocabulary to Use
 {vocab_text}""")
         
-        # 9. TOPIC-SPECIFIC RULES (if any)
+        # 10. TOPIC-SPECIFIC RULES (if any)
         if topic_params.get('topic_specific_rules'):
             prompt_sections.append(f"""## Topic-Specific Rules
 {topic_params['topic_specific_rules']}""")
         
-        # 10. CORE BEHAVIORAL RULES (non-negotiable)
-        prompt_sections.append("""## Core Rules
-1. NEVER correct student errors - continue naturally
-2. Stay within the word limit per response
-3. Focus on the current topic
-4. After the specified number of exchanges, wrap up politely
-5. Always stay in character""")
+        # 11. CORE BEHAVIORAL RULES (non-negotiable)
+        prompt_sections.append(f"""## Core Rules
+1. Address {context['user_name']} by name naturally in conversation
+2. NEVER correct student errors - continue naturally
+3. Stay within the word limit per response
+4. Focus on the current topic
+5. After the specified number of exchanges, wrap up politely
+6. Always stay in character""")
         
         # Join all sections
         return '\n\n'.join(prompt_sections)
@@ -229,6 +238,7 @@ Follow this structure:
             - topic_details
         """
         context = {
+            'user_name': 'Student',        # Default
             'input_language': 'english',  # Default
             'target_language': 'german',   # Default
             'level': 'A1',                 # Default
@@ -239,6 +249,11 @@ Follow this structure:
         }
         
         try:
+            # Get user's name from User table
+            user = db.session.query(User).filter_by(id=user_id).first()
+            if user:
+                context['user_name'] = user.name
+            
             # Get user's progress (most recent language pair)
             user_progress = self.progress_manager.get_user_progress(user_id)
             

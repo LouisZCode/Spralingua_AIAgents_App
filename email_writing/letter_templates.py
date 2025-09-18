@@ -326,7 +326,7 @@ class LetterTemplates:
         if student_name:
             # Replace placeholder with actual student name if present
             letter = letter_data['letter'].replace('[Student Name]', student_name)
-            letter = letter_data['letter'].replace('______', student_name)
+            letter = letter.replace('______', student_name)  # Use the already modified letter
         else:
             letter = letter_data['letter']
 

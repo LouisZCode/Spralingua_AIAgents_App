@@ -69,7 +69,7 @@ class EmailExerciseManager:
                     from database import db
                     user = db.session.query(User).filter_by(id=user_id).first()
                     if user:
-                        user_name = user.email.split('@')[0]  # Use email prefix as name
+                        user_name = user.name  # Use real name from database
                 except Exception as e:
                     print(f"[WARNING] [EXERCISE MANAGER] Could not retrieve user info: {e}")
 

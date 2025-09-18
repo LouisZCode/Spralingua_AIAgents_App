@@ -22,12 +22,13 @@ class AuthManager:
             self.bcrypt = Bcrypt(current_app)
             self._initialized = True
     
-    def register_user(self, email: str, password: str) -> Tuple[bool, Dict[str, Any]]:
+    def register_user(self, email: str, name: str, password: str) -> Tuple[bool, Dict[str, Any]]:
         """
         Register a new user with the platform.
         
         Args:
             email: User's email address
+            name: User's full name
             password: Plain text password (will be hashed)
             
         Returns:
@@ -40,7 +41,7 @@ class AuthManager:
         from database import db
         
         # Validate inputs
-        is_valid, error_msg = self._validate_registration(email, password)
+        is_valid, error_msg = self._validate_registration(email, name, password)
         if not is_valid:
             return False, {'error': error_msg}
         
@@ -54,6 +55,7 @@ class AuthManager:
             # Create new user
             user = User(
                 email=email.lower(),
+                name=name.strip(),
                 password=password,  # User model handles hashing
                 progress_level=0
             )
@@ -61,12 +63,13 @@ class AuthManager:
             db.session.add(user)
             db.session.commit()
             
-            print(f"[AUTH] User registered successfully: {email}")
+            print(f"[AUTH] User registered successfully: {name} ({email})")
             
             return True, {
                 'user': user,
                 'user_id': user.id,
                 'email': user.email,
+                'name': user.name,
                 'message': 'Registration successful'
             }
             
@@ -127,11 +130,12 @@ class AuthManager:
         """
         session['user_id'] = user.id
         session['email'] = user.email
+        session['name'] = user.name
         session['authenticated'] = True
         session['login_time'] = datetime.utcnow().isoformat()
         session['progress_level'] = user.progress_level
         
-        print(f"[AUTH] User logged in: {user.email}")
+        print(f"[AUTH] User logged in: {user.name} ({user.email})")
     
     def logout_user(self, session: Dict) -> None:
         """
@@ -140,28 +144,41 @@ class AuthManager:
         Args:
             session: Flask session dict
         """
+        name = session.get('name', 'Unknown')
         email = session.get('email', 'Unknown')
         
         # Clear authentication-related session data
         session.pop('user_id', None)
         session.pop('email', None)
+        session.pop('name', None)
         session.pop('authenticated', None)
         session.pop('login_time', None)
         session.pop('progress_level', None)
         
-        print(f"[AUTH] User logged out: {email}")
+        print(f"[AUTH] User logged out: {name} ({email})")
     
-    def _validate_registration(self, email: str, password: str) -> Tuple[bool, Optional[str]]:
+    def _validate_registration(self, email: str, name: str, password: str) -> Tuple[bool, Optional[str]]:
         """
         Validate registration inputs.
         
         Args:
             email: Email address
+            name: Full name
             password: Password
             
         Returns:
             Tuple of (is_valid, error_message)
         """
+        # Validate name
+        if not name or not name.strip():
+            return False, 'Name is required'
+        
+        if len(name.strip()) < 2:
+            return False, 'Name must be at least 2 characters long'
+        
+        if len(name.strip()) > 100:
+            return False, 'Name too long (max 100 characters)'
+        
         # Validate email format
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):

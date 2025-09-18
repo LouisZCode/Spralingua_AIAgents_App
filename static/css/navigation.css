@@ -93,9 +93,10 @@
     gap: 1rem;
 }
 
-.nav-user-email {
+.nav-user-name {
     color: #666;
     font-size: 0.9rem;
+    font-weight: 500;
 }
 
 .nav-logout {

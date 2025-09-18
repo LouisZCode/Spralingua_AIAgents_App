@@ -21,6 +21,10 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(FlaskForm):
     """Registration form with CSRF protection."""
+    name = StringField('Name', validators=[
+        DataRequired(message='Name is required'),
+        Length(min=2, max=100, message='Name must be between 2 and 100 characters')
+    ])
     email = StringField('Email', validators=[
         DataRequired(),
         Email(message='Invalid email address')
@@ -93,18 +97,19 @@ class AuthRoutes:
             form = RegistrationForm()
             
             if form.validate_on_submit():
+                name = form.name.data
                 email = form.email.data
                 password = form.password.data
                 
-                # Register user
-                success, result = self.auth_manager.register_user(email, password)
+                # Register user with name
+                success, result = self.auth_manager.register_user(email, name, password)
                 
                 if success:
                     # Log the user in automatically
                     user = result.get('user')
                     self.auth_manager.login_user(user, session)
                     
-                    flash('Registration successful! Welcome to Spralingua!', 'success')
+                    flash(f'Registration successful! Welcome to Spralingua, {user.name}!', 'success')
                     return redirect(url_for('dashboard'))
                 else:
                     error_msg = result.get('error', 'Registration failed')

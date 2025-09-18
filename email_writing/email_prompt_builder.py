@@ -41,6 +41,18 @@ class EmailPromptBuilder:
 
             print(f"[DEBUG] EmailPromptBuilder: User context retrieved - languages: {user_context['input_language']} to {user_context['target_language']}, level={user_context['level']}")
 
+            # Get student name from database
+            student_name = None
+            try:
+                from models.user import User
+                from database import db
+                user = db.session.query(User).filter_by(id=user_id).first()
+                if user:
+                    student_name = user.name
+                    print(f"[DEBUG] EmailPromptBuilder: Student name retrieved: {student_name}")
+            except Exception as e:
+                print(f"[WARNING] EmailPromptBuilder: Could not retrieve student name: {e}")
+
             # Get level rules from database
             level_rules = self.level_rules_manager.get_level_rules(user_context['level'])
             print(f"[DEBUG] EmailPromptBuilder: Level rules retrieved: {bool(level_rules)}")
@@ -56,7 +68,8 @@ class EmailPromptBuilder:
             generation_prompt = self._build_letter_prompt(
                 user_context,
                 level_rules,
-                topic_params
+                topic_params,
+                student_name
             )
 
             print(f"[DEBUG] EmailPromptBuilder: Prompt built successfully, length={len(generation_prompt) if generation_prompt else 0}")
@@ -184,7 +197,7 @@ class EmailPromptBuilder:
             print(f"[ERROR] Getting topic parameters: {e}")
             return {}
 
-    def _build_letter_prompt(self, context: Dict, level_rules, topic_params: Dict) -> str:
+    def _build_letter_prompt(self, context: Dict, level_rules, topic_params: Dict, student_name: str = None) -> str:
         """Build the letter generation prompt"""
 
         target_language = context['target_language'].capitalize()
@@ -212,9 +225,15 @@ class EmailPromptBuilder:
             topic_params['subtopics']
         )
 
+        # Add student name instruction if provided
+        student_instruction = ""
+        if student_name:
+            student_instruction = f"- IMPORTANT: Address the student as '{student_name}' in the letter greeting"
+
         prompt = f"""You are creating an email writing exercise for a {native_language} speaker learning {target_language}.
 
 ## Student Context:
+- Student Name: {student_name or 'Student'}
 - Native Language: {native_language}
 - Learning: {target_language}
 - Level: {level}
@@ -227,6 +246,7 @@ class EmailPromptBuilder:
 - Complexity: {complexity} vocabulary and grammar
 - Style: Informal, friendly email from a friend
 - Topic Focus: {topic_instruction}
+{student_instruction}
 
 ## Cultural Adaptation:
 - Use culturally appropriate greeting for {target_language}
@@ -241,6 +261,8 @@ Generate 4 response prompts that:
 4. Encourage varied sentence structures
 
 ## Output Format:
+IMPORTANT: Output ONLY the letter content. NO preambles, explanations, or introductory text.
+
 Generate a complete email that:
 1. Starts with an appropriate greeting
 2. Contains {word_count} words of content
@@ -250,7 +272,10 @@ Generate a complete email that:
 
 After the letter, provide 4 bullet points for what the student should address in their response.
 
-Remember: The letter must be ENTIRELY in {target_language}."""
+Remember: 
+- The letter must be ENTIRELY in {target_language}
+- Start directly with "Dear [name]," - NO preamble text
+- Do NOT include phrases like "Here is an email writing exercise" or similar introductions"""
 
         if level_rules and level_rules.general_guidelines:
             prompt += f"\n\n## Level {level} Guidelines:\n{level_rules.general_guidelines}"

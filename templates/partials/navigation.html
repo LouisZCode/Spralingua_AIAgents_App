@@ -13,7 +13,7 @@
                 <!-- Authenticated User Menu -->
                 <a href="{{ url_for('dashboard') }}" class="nav-link" data-translate="nav_dashboard">Dashboard</a>
                 <div class="nav-user-menu">
-                    <span class="nav-user-email">{{ session.email }}</span>
+                    <span class="nav-user-name">{{ session.name }}</span>
                     <a href="{{ url_for('auth_logout') }}" class="nav-link nav-logout" data-translate="nav_logout">Logout</a>
                 </div>
             {% else %}
