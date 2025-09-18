@@ -4,22 +4,23 @@ import json
 import re
 import random
 from typing import Dict, Any, Optional, Tuple
-from prompt_manager import PromptManager
 from claude_client import ClaudeClient
 from models.user import User
+from email_writing.email_prompt_builder import EmailPromptBuilder
+from email_writing.email_feedback_builder import EmailFeedbackBuilder
+from email_writing.letter_templates import LetterTemplates
 
 
 class EmailExerciseManager:
     """Manages email writing exercise logic and AI interactions."""
 
-    def __init__(self, exercise_prompts_path: str):
+    def __init__(self):
         """
         Initialize the exercise manager.
-
-        Args:
-            exercise_prompts_path: Path to the exercise-specific prompts YAML file
         """
-        self.prompt_manager = PromptManager(exercise_prompts_path)
+        self.prompt_builder = EmailPromptBuilder()
+        self.feedback_builder = EmailFeedbackBuilder()
+        self.letter_templates = LetterTemplates()
         self.claude_client = None  # Will be initialized per request
 
     def process_exercise_request(self, action: str, data: dict, user_context: dict,
@@ -60,53 +61,42 @@ class EmailExerciseManager:
         try:
             # Get user information for personalization
             user_name = "Student"
-            user_level = "intermediate"
+            user_id = user_context.get('user_id')
 
-            if user_context and user_context.get('user_id'):
+            if user_id:
                 # Try to get user info from database
                 try:
                     from database import db
-
-                    user = db.session.query(User).filter_by(
-                        id=user_context['user_id']
-                    ).first()
-
+                    user = db.session.query(User).filter_by(id=user_id).first()
                     if user:
                         user_name = user.email.split('@')[0]  # Use email prefix as name
-                        # In Spralingua, we can use the progress_level or default to intermediate
-                        user_level = user_context.get('level', 'intermediate')
                 except Exception as e:
                     print(f"[WARNING] [EXERCISE MANAGER] Could not retrieve user info: {e}")
 
-            # Get level-specific configuration
-            level_config = self.prompt_manager.get_prompt('level_configs', {}).get(
-                user_level,
-                self.prompt_manager.get_prompt('level_configs', {}).get('intermediate', {})
-            )
+            # Build the generation prompt using the new language-aware builder
+            print(f"[DEBUG] [EXERCISE MANAGER] Building generation prompt for user_id: {user_id}")
+            generation_prompt, context = self.prompt_builder.build_generation_prompt(user_id)
+            print(f"[DEBUG] [EXERCISE MANAGER] Got prompt: {bool(generation_prompt)}, context: {bool(context)}")
 
-            # Simple topic selection for Spralingua
-            topics = [
-                {'name': 'Travel & Vacation', 'instruction': 'planning a trip or vacation'},
-                {'name': 'Work & Studies', 'instruction': 'discussing work or study experiences'},
-                {'name': 'Lifestyle Changes', 'instruction': 'talking about daily routine changes'},
-                {'name': 'Family News', 'instruction': 'sharing family events and news'},
-                {'name': 'Hobbies', 'instruction': 'discussing hobbies and free time activities'}
-            ]
-            topic = random.choice(topics)
-            topic_instruction = f"Write about {topic['instruction']}"
+            if not generation_prompt or not context:
+                print(f"[ERROR] [EXERCISE MANAGER] Could not build generation prompt for user {user_id}")
+                print(f"[ERROR] [EXERCISE MANAGER] Returning error response")
+                # Return error response directly - no fallback to German
+                return True, {
+                    'letter': 'ERROR - System configuration issue. The dynamic prompt system failed. Please contact support.',
+                    'response_prompts': ['System error occurred - Unable to generate exercise'],
+                    'expected_length': 0,
+                    'word_limit': 0,
+                    'word_count_range': '0-0',
+                    'topic': 'ERROR',
+                    'target_language': 'unknown',
+                    'native_language': 'unknown',
+                    'attempt': 1
+                }
 
-            print(f"[INFO] [EXERCISE MANAGER] Selected topic: {topic['name']} for {user_name} (level: {user_level})")
-
-            # Build the generation prompt
-            generation_prompt = self.prompt_manager.get_prompt('exercise_generation_prompt', '')
-
-            # Substitute placeholders
-            generation_prompt = generation_prompt.replace('{student_name}', user_name)
-            generation_prompt = generation_prompt.replace('{student_level}', user_level)
-            generation_prompt = generation_prompt.replace('{topic_instruction}', topic_instruction)
-            generation_prompt = generation_prompt.replace('{word_count}', level_config.get('word_count', '100-150'))
-            generation_prompt = generation_prompt.replace('{level_description}', level_config.get('level_description', 'B1-B2 level'))
-            generation_prompt = generation_prompt.replace('{level_specific_requirements}', level_config.get('requirements', ''))
+            print(f"[INFO] [EXERCISE MANAGER] Generating letter for {user_name}")
+            print(f"[INFO] [EXERCISE MANAGER] Language: {context['input_language']} -> {context['target_language']}")
+            print(f"[INFO] [EXERCISE MANAGER] Level: {context['level']}, Topic {context['topic_number']}: {context['topic_title']}")
 
             # Get Claude to generate the letter
             response = self.claude_client.send_message(
@@ -114,56 +104,55 @@ class EmailExerciseManager:
                 system_prompt=generation_prompt
             )
 
-            # Parse the full exercise from the response
-            # Try to extract letter and response prompts
-            letter = ""
-            response_prompts = []
+            # Parse the letter using the letter templates parser
+            letter_data = self.letter_templates.parse_letter_response(
+                response,
+                context['target_language']
+            )
 
-            # Look for the letter between backticks
-            letter_match = re.search(r'```\n(.*?)\n```', response, re.DOTALL)
-            if letter_match:
-                letter = letter_match.group(1).strip()
+            # Get culturally appropriate response prompts in user's native language
+            response_prompts = self.feedback_builder.get_response_prompts(
+                context['topic_number'],
+                context['input_language']  # Native language for instructions
+            )
 
-            # Look for response prompts (bullet points after the letter)
-            prompts_section = re.search(r'Antworten Sie.*?:\s*((?:•.*?\n)+)', response, re.DOTALL)
-            if prompts_section:
-                prompts_text = prompts_section.group(1)
-                # Extract each bullet point
-                prompts = re.findall(r'•\s*(.+?)(?:\n|$)', prompts_text)
-                response_prompts = [prompt.strip() for prompt in prompts if prompt.strip()]
+            # Only use Claude's prompts if we don't have proper translations
+            if not response_prompts and letter_data['response_prompts']:
+                response_prompts = letter_data['response_prompts']
 
-            # If we couldn't parse properly, use the whole response as the letter
-            if not letter:
-                letter = response
+            # Format the letter for display
+            formatted_letter = self.letter_templates.format_letter_for_display(
+                letter_data,
+                user_name
+            )
 
-            # If we didn't find prompts, use default ones
-            if not response_prompts:
-                response_prompts = [
-                    "Reaktion auf die Nachricht",
-                    "Persönliche Erfahrung oder Meinung",
-                    "Ratschlag oder Vorschlag",
-                    "Zukunftspläne oder Fragen"
-                ]
-
-            # Store the generated letter in session data
+            # Store the generated letter and context in session
             if session_data is not None:
                 session_data['generated_letter'] = response  # Store full response
-                session_data['parsed_letter'] = letter  # Store just the letter part
-                session_data['user_level'] = user_level
-                session_data['selected_topic'] = topic['name']  # Store selected topic
+                session_data['parsed_letter'] = letter_data['letter']
+                session_data['user_context'] = context  # Store full context
+                session_data['target_language'] = context['target_language']
+                session_data['native_language'] = context['input_language']
 
-            # Extract word count range
-            word_count_range = level_config.get('word_count', '100-150')
-            # Get the upper limit for the word count (e.g., "100-150" -> 150)
-            word_limit = int(word_count_range.split('-')[1]) if '-' in word_count_range else 150
+            # Determine word limit based on level
+            word_limits = {
+                'A1': 50,
+                'A2': 80,
+                'B1': 120,
+                'B2': 150
+            }
+            word_limit = word_limits.get(context['level'], 100)
+            word_count_range = f"{int(word_limit * 0.8)}-{word_limit}"
 
             return True, {
-                'letter': letter,
+                'letter': formatted_letter,
                 'response_prompts': response_prompts,
-                'expected_length': level_config.get('expected_response_length', 250),
+                'expected_length': word_limit,
                 'word_limit': word_limit,
                 'word_count_range': word_count_range,
-                'topic': topic['name'],  # Include topic in response
+                'topic': context['topic_title'],
+                'target_language': context['target_language'],
+                'native_language': context['input_language'],
                 'attempt': 1
             }
 
@@ -178,23 +167,35 @@ class EmailExerciseManager:
             attempt = data.get('attempt', 1)
             student_response = data.get('body', '')
             original_letter = session_data.get('generated_letter', '') if session_data else ''
-            user_level = session_data.get('user_level', 'intermediate') if session_data else 'intermediate'
+
+            # Get stored context from session
+            stored_context = session_data.get('user_context') if session_data else None
+
+            if not stored_context:
+                print(f"[ERROR] [EXERCISE MANAGER] No stored context for evaluation")
+                # Return error response directly - no fallback
+                return True, {
+                    'errors': [],
+                    'message': 'ERROR - System configuration issue. Unable to evaluate response.',
+                    'general_feedback': 'Please try regenerating the exercise.'
+                }
 
             if not student_response:
                 return False, {'error': 'No response provided'}
 
             if attempt == 1:
-                # First attempt - identify errors
-                evaluation_prompt = self.prompt_manager.get_prompt('evaluation_prompt_attempt1', '')
-
-                # Substitute placeholders
-                evaluation_prompt = evaluation_prompt.replace('{student_level}', user_level)
-                evaluation_prompt = evaluation_prompt.replace('{original_letter}', original_letter)
-                evaluation_prompt = evaluation_prompt.replace('{student_response}', student_response)
+                # First attempt - build evaluation prompt with language context
+                evaluation_prompt = self.prompt_builder.build_evaluation_prompt(
+                    stored_context,
+                    attempt=1,
+                    original_letter=original_letter,
+                    student_response=student_response
+                )
 
                 # Get Claude to evaluate
+                target_lang = stored_context['target_language'].capitalize()
                 response = self.claude_client.send_message(
-                    user_input="Evaluate this German response and identify errors.",
+                    user_input=f"Evaluate this {target_lang} response and identify errors.",
                     system_prompt=evaluation_prompt
                 )
 
@@ -214,19 +215,21 @@ class EmailExerciseManager:
                     }
 
             else:  # attempt == 2
-                # Second attempt - full feedback
-                evaluation_prompt = self.prompt_manager.get_prompt('evaluation_prompt_attempt2', '')
+                # Second attempt - full feedback with language context
                 first_attempt = session_data.get('first_attempt', '') if session_data else ''
 
-                # Substitute placeholders
-                evaluation_prompt = evaluation_prompt.replace('{student_level}', user_level)
-                evaluation_prompt = evaluation_prompt.replace('{original_letter}', original_letter)
-                evaluation_prompt = evaluation_prompt.replace('{first_attempt}', first_attempt)
-                evaluation_prompt = evaluation_prompt.replace('{second_attempt}', student_response)
+                evaluation_prompt = self.prompt_builder.build_evaluation_prompt(
+                    stored_context,
+                    attempt=2,
+                    original_letter=original_letter,
+                    student_response=student_response,
+                    first_attempt=first_attempt
+                )
 
                 # Get Claude to provide full feedback
+                target_lang = stored_context['target_language'].capitalize()
                 response = self.claude_client.send_message(
-                    user_input="Provide comprehensive feedback on this German response.",
+                    user_input=f"Provide comprehensive feedback on this {target_lang} response.",
                     system_prompt=evaluation_prompt
                 )
 
@@ -309,3 +312,4 @@ class EmailExerciseManager:
         except Exception as e:
             print(f"[ERROR] [EXERCISE MANAGER] Unexpected error extracting JSON: {e}")
             return None
+

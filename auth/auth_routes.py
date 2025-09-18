@@ -6,6 +6,7 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from .auth_manager import AuthManager
 from .decorators import login_required, guest_only
+from progress.progress_manager import ProgressManager
 import time
 
 class LoginForm(FlaskForm):
@@ -501,7 +502,26 @@ class AuthRoutes:
         def email_writing():
             """Email writing exercise page."""
             try:
-                return render_template('writing_email.html')
+                # Get user's language context
+                user_id = session.get('user_id')
+
+                # Get user's current language progress
+                progress_mgr = ProgressManager()
+                user_progress = progress_mgr.get_user_progress(user_id) if user_id else None
+
+                # Check if user has selected languages
+                if not user_progress:
+                    flash('Please select your languages first.', 'info')
+                    return redirect(url_for('dashboard'))
+
+                # Prepare context for template
+                context = {
+                    'input_language': user_progress.input_language,
+                    'target_language': user_progress.target_language,
+                    'current_level': user_progress.current_level
+                }
+
+                return render_template('writing_email.html', **context)
             except Exception as e:
                 print(f"Error loading email writing page: {e}")
                 flash('Error loading writing exercise.', 'error')
@@ -518,10 +538,10 @@ class AuthRoutes:
                 # Get current user
                 user_id = session.get('user_id')
 
-                # Prepare user context
+                # Prepare user context - just pass the user_id
+                # The EmailExerciseManager will fetch the full context
                 user_context = {
-                    'user_id': user_id,
-                    'level': 'intermediate'  # Could be dynamic based on user progress
+                    'user_id': user_id
                 }
 
                 # Get or create session ID
@@ -536,8 +556,8 @@ class AuthRoutes:
                     session[exercise_session_key] = {}
                 session_data = session[exercise_session_key]
 
-                # Initialize exercise manager
-                exercise_manager = EmailExerciseManager('email_writing/email_prompts.yaml')
+                # Initialize exercise manager - no YAML needed anymore
+                exercise_manager = EmailExerciseManager()
 
                 # Process the request
                 success, result = exercise_manager.process_exercise_request(
@@ -590,8 +610,8 @@ class AuthRoutes:
                 if not data:
                     return jsonify({'error': 'No data provided'}), 400
 
-                # Initialize exercise manager
-                exercise_manager = EmailExerciseManager('email_writing/email_prompts.yaml')
+                # Initialize exercise manager - no YAML needed anymore
+                exercise_manager = EmailExerciseManager()
 
                 # Process the request
                 success, result = exercise_manager.process_exercise_request(

@@ -105,6 +105,24 @@ const translations = {
         hint_tip_label: "Tip:",
         hint_correction_label: "Correction:",
 
+        // Email Writing Exercise
+        email_writing_title: "Email Writing Practice",
+        write_response_to: "Write a response to your friend's letter",
+        expected_length: "Expected length",
+        first_attempt: "First Attempt",
+        second_attempt: "Second Attempt",
+        letter_from_friend: "Letter from your friend",
+        received_today: "Received today",
+        generating_letter: "Generating personalized letter...",
+        response_instructions: "In your response, please address:",
+        message_label: "Message:",
+        write_response_here: "Write your response here...",
+        submit_response: "Submit Response",
+        back_to_hub: "Back to Learning Hub",
+        words_count: "words",
+        feedback_title: "Feedback",
+        you_received_email: "You just received this email. Please answer it and address the points below.",
+
         // Feedback Categories
         feedback_cat_grammar: "Grammar",
         feedback_cat_vocabulary: "Vocabulary",
@@ -229,6 +247,24 @@ const translations = {
         hint_praise_label: "Lob:",
         hint_tip_label: "Tipp:",
         hint_correction_label: "Korrektur:",
+
+        // Email Writing Exercise
+        email_writing_title: "E-Mail Schreibübung",
+        write_response_to: "Schreibe eine Antwort auf den Brief deines Freundes",
+        expected_length: "Erwartete Länge",
+        first_attempt: "Erster Versuch",
+        second_attempt: "Zweiter Versuch",
+        letter_from_friend: "Brief von deinem Freund",
+        received_today: "Heute erhalten",
+        generating_letter: "Personalisierter Brief wird generiert...",
+        response_instructions: "Bitte gehe in deiner Antwort auf folgende Punkte ein:",
+        message_label: "Nachricht:",
+        write_response_here: "Schreibe hier deine Antwort...",
+        submit_response: "Antwort senden",
+        back_to_hub: "Zurück zum Lernzentrum",
+        words_count: "Wörter",
+        feedback_title: "Rückmeldung",
+        you_received_email: "Du hast gerade diese E-Mail erhalten. Bitte beantworte sie und gehe auf die folgenden Punkte ein.",
 
         // Feedback Categories
         feedback_cat_grammar: "Grammatik",
@@ -355,6 +391,24 @@ const translations = {
         hint_tip_label: "Consejo:",
         hint_correction_label: "Corrección:",
 
+        // Email Writing Exercise
+        email_writing_title: "Práctica de Escritura de Correos",
+        write_response_to: "Escribe una respuesta a la carta de tu amigo",
+        expected_length: "Longitud esperada",
+        first_attempt: "Primer Intento",
+        second_attempt: "Segundo Intento",
+        letter_from_friend: "Carta de tu amigo",
+        received_today: "Recibido hoy",
+        generating_letter: "Generando carta personalizada...",
+        response_instructions: "En tu respuesta, por favor aborda:",
+        message_label: "Mensaje:",
+        write_response_here: "Escribe tu respuesta aquí...",
+        submit_response: "Enviar Respuesta",
+        back_to_hub: "Volver al Centro de Aprendizaje",
+        words_count: "palabras",
+        feedback_title: "Retroalimentación",
+        you_received_email: "Acabas de recibir este correo. Por favor respóndelo y aborda los siguientes puntos.",
+
         // Feedback Categories
         feedback_cat_grammar: "Gramática",
         feedback_cat_vocabulary: "Vocabulario",
@@ -479,6 +533,24 @@ const translations = {
         hint_praise_label: "Elogio:",
         hint_tip_label: "Dica:",
         hint_correction_label: "Correção:",
+
+        // Email Writing Exercise
+        email_writing_title: "Prática de Escrita de E-mail",
+        write_response_to: "Escreve uma resposta à carta do teu amigo",
+        expected_length: "Comprimento esperado",
+        first_attempt: "Primeira Tentativa",
+        second_attempt: "Segunda Tentativa",
+        letter_from_friend: "Carta do teu amigo",
+        received_today: "Recebido hoje",
+        generating_letter: "A gerar carta personalizada...",
+        response_instructions: "Na tua resposta, por favor aborda:",
+        message_label: "Mensagem:",
+        write_response_here: "Escreve a tua resposta aqui...",
+        submit_response: "Enviar Resposta",
+        back_to_hub: "Voltar ao Centro de Aprendizagem",
+        words_count: "palavras",
+        feedback_title: "Feedback",
+        you_received_email: "Acabaste de receber este e-mail. Por favor responde e aborda os seguintes pontos.",
 
         // Feedback Categories
         feedback_cat_grammar: "Gramática",

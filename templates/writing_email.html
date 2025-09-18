@@ -174,9 +174,11 @@
         
         .action-buttons {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
             justify-content: space-between;
-            margin-top: 2rem;
+            align-items: center;
+            margin-top: 3rem;
+            padding: 1rem 0;
         }
         
         .button-group {
@@ -199,15 +201,19 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             color: white;
             border: none;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(79, 70, 229, 0.5);
+            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
         }
         
         .btn-secondary {
@@ -223,14 +229,18 @@
         }
         
         .btn-ghost {
-            background: transparent;
-            color: var(--text-secondary, #475569);
-            border: 2px solid var(--border-color, #e2e8f0);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            font-weight: 600;
         }
         
         .btn-ghost:hover {
-            background: var(--bg-secondary, #f8fafc);
-            border-color: var(--text-secondary, #475569);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
         
         .character-count {
@@ -551,14 +561,13 @@
     <div class="writing-container">
         <!-- Header -->
         <div class="writing-header">
-            <h1 class="exercise-title">Email Writing Practice</h1>
-            <p class="exercise-subtitle">Write a response to your friend's letter in German</p>
+            <h1 class="exercise-title" data-translate="email_writing_title">Email Writing Practice</h1>
+            <p class="exercise-subtitle" data-translate="write_response_to">Write a response to your friend's letter</p>
             <p class="exercise-subtitle" id="word-count-expectation" style="display: none;">
-                Expected length: <span id="word-range"></span> words
+                <span data-translate="expected_length">Expected length</span>: <span id="word-range"></span> <span data-translate="words_count">words</span>
             </p>
             <div class="attempt-indicator attempt-1" id="attempt-indicator" style="display: none;">
-                <span>📝</span>
-                <span id="attempt-text">First Attempt</span>
+                <span id="attempt-text" data-translate="first_attempt">First Attempt</span>
             </div>
         </div>
         
@@ -569,21 +578,20 @@
                 <!-- Letter Content (always visible for consistent sizing) -->
                 <div class="letter-display" id="letter-display">
                     <div class="exercise-instructions">
-                        <p>You just received this email. Please answer it and address the points below.</p>
+                        <p data-translate="you_received_email">You just received this email. Please answer it and address the points below.</p>
                     </div>
                     <div class="letter-header">
-                        <span>📨</span>
-                        <span id="letter-from">Letter from your friend</span>
+                        <span id="letter-from" data-translate="letter_from_friend">Letter from your friend</span>
                     </div>
-                    <div class="letter-meta" id="letter-meta">Received today</div>
-                    
+                    <div class="letter-meta" id="letter-meta" data-translate="received_today">Received today</div>
+
                     <div class="letter-content" id="letter-content">
                         <div class="loading-spinner"></div>
-                        <p style="text-align: center; color: var(--text-muted, #94a3b8);">Generating personalized letter...</p>
+                        <p style="text-align: center; color: var(--text-muted, #94a3b8);" data-translate="generating_letter">Generating personalized letter...</p>
                     </div>
-                    
+
                     <div class="response-prompts">
-                        <div class="response-prompts-title">In your response, please address:</div>
+                        <div class="response-prompts-title" data-translate="response_instructions">In your response, please address:</div>
                         <ul id="response-prompts-list">
                             <li style="color: var(--text-muted, #94a3b8);">Loading response points...</li>
                         </ul>
@@ -596,13 +604,14 @@
                 <form class="email-form" id="email-form">
                     <!-- Body Field -->
                     <div class="form-group">
-                        <label class="form-label" for="email-body">Message:</label>
-                        <textarea id="email-body" 
-                                  class="form-input writing-textarea" 
+                        <label class="form-label" for="email-body" data-translate="message_label">Message:</label>
+                        <textarea id="email-body"
+                                  class="form-input writing-textarea"
                                   placeholder="Write your response here..."
+                                  data-translate-placeholder="write_response_here"
                                   required></textarea>
                         <div class="character-count" id="character-count">
-                            <span id="char-count">0</span> / <span id="char-limit">100</span> words
+                            <span id="char-count">0</span> / <span id="char-limit">100</span> <span data-translate="words_count">words</span>
                         </div>
                     </div>
                 </form>
@@ -612,26 +621,46 @@
         <!-- Action Buttons -->
         <div class="action-buttons">
             <a href="/exercises" class="btn btn-ghost">
-                ← Back to Learning Hub
+                ← <span data-translate="back_to_hub">Back to Learning Hub</span>
             </a>
             <button type="button" class="btn btn-primary" id="submit-btn">
-                <span class="btn-text">Submit Response</span>
+                <span class="btn-text" data-translate="submit_response">Submit Response</span>
                 <span class="loading-spinner" style="display: none;"></span>
             </button>
         </div>
-        
+
         <!-- Feedback Panel -->
         <div class="feedback-panel" id="feedback-panel" style="display: none;">
             <div class="feedback-header">
-                <h3 id="feedback-title">Feedback</h3>
+                <h3 id="feedback-title" data-translate="feedback_title">Feedback</h3>
             </div>
             <div class="feedback-content" id="feedback-content">
                 <!-- Dynamic feedback content will be inserted here -->
             </div>
         </div>
     </div>
-    
+
+    <!-- Include translations before other scripts -->
+    <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
+
     <script>
+        // Initialize translation system
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.translationManager) {
+                // Set language from user's input language
+                const userLanguage = '{{ input_language }}' || 'english';
+                translationManager.setLanguage(userLanguage);
+                translationManager.updatePageText();
+
+                // Update placeholders
+                const placeholders = document.querySelectorAll('[data-translate-placeholder]');
+                placeholders.forEach(element => {
+                    const key = element.getAttribute('data-translate-placeholder');
+                    element.placeholder = translationManager.getText(key);
+                });
+            }
+        });
+
         // Global variables
         let currentAttempt = 0;
         let generatedLetter = null;
@@ -694,7 +723,10 @@
                 
                 // Update letter display (remove loading content and show actual letter)
                 const letterContent = document.getElementById('letter-content');
-                letterContent.textContent = data.letter;
+                console.log('[DEBUG] Letter content before update:', letterContent.innerHTML);
+                console.log('[DEBUG] Data letter content:', data.letter);
+                letterContent.innerHTML = data.letter; // Use innerHTML to render HTML tags
+                console.log('[DEBUG] Letter content after update:', letterContent.innerHTML);
                 letterContent.style.justifyContent = 'flex-start'; // Reset to normal text flow
                 document.getElementById('letter-from').textContent = `Letter from ${data.friend_name || 'your friend'}`;
                 
@@ -734,7 +766,14 @@
             
             indicator.style.display = 'inline-flex';
             indicator.className = `attempt-indicator attempt-${currentAttempt}`;
-            attemptText.textContent = currentAttempt === 1 ? 'First Attempt' : 'Second Attempt';
+            // Use translations if available
+            if (window.translationManager) {
+                attemptText.textContent = currentAttempt === 1 ?
+                    translationManager.getText('first_attempt') :
+                    translationManager.getText('second_attempt');
+            } else {
+                attemptText.textContent = currentAttempt === 1 ? 'First Attempt' : 'Second Attempt';
+            }
         }
         
         // Submit functionality
