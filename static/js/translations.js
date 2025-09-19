@@ -141,7 +141,12 @@ const translations = {
         feedback_correction_label: "Correction:",
         feedback_your_strengths: "Your Strengths:",
         feedback_areas_focus: "Areas to Focus On:",
-        feedback_overall: "Overall:"
+        feedback_overall: "Overall:",
+
+        // Coming Soon and Correct Kevin
+        coming_soon: "Coming Soon",
+        correct_kevin: "Correct Kevin",
+        fix_mistakes: "Fix the mistakes"
     },
     
     german: {
@@ -284,7 +289,12 @@ const translations = {
         feedback_correction_label: "Korrektur:",
         feedback_your_strengths: "Deine Stärken:",
         feedback_areas_focus: "Übungsbereiche:",
-        feedback_overall: "Gesamt:"
+        feedback_overall: "Gesamt:",
+
+        // Coming Soon and Correct Kevin
+        coming_soon: "Demnächst",
+        correct_kevin: "Kevin korrigieren",
+        fix_mistakes: "Fehler korrigieren"
     },
     
     spanish: {
@@ -427,7 +437,12 @@ const translations = {
         feedback_correction_label: "Corrección:",
         feedback_your_strengths: "Tus Fortalezas:",
         feedback_areas_focus: "Áreas de Enfoque:",
-        feedback_overall: "General:"
+        feedback_overall: "General:",
+
+        // Coming Soon and Correct Kevin
+        coming_soon: "Próximamente",
+        correct_kevin: "Corrige a Kevin",
+        fix_mistakes: "Corrige los errores"
     },
     
     portuguese: {
@@ -570,7 +585,12 @@ const translations = {
         feedback_correction_label: "Correção:",
         feedback_your_strengths: "Seus Pontos Fortes:",
         feedback_areas_focus: "Áreas de Foco:",
-        feedback_overall: "Geral:"
+        feedback_overall: "Geral:",
+
+        // Coming Soon and Correct Kevin
+        coming_soon: "Em Breve",
+        correct_kevin: "Corrija o Kevin",
+        fix_mistakes: "Corrija os erros"
     }
 };
 
