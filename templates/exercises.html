@@ -25,11 +25,40 @@
             {% endif %}
         </div>
         
-        <!-- Intro section placeholder -->
-        <div class="modules-section">
-            <!-- Empty intro section for now -->
+        <!-- Progress Timeline Section -->
+        <div class="progress-section">
+            <div class="progress-container">
+                <div class="progress-header">
+                    <h3 class="progress-title">
+                        <span data-translate="current_level">Current Level</span>:
+                        <span id="current-level-display">A1</span>
+                    </h3>
+                    <div class="progress-stats">
+                        <span data-translate="topic">Topic</span>
+                        <span id="current-topic-number">1</span> / 12
+                    </div>
+                </div>
+
+                <!-- Node-based Timeline -->
+                <div class="timeline-wrapper">
+                    <div class="timeline-container">
+                        <!-- Gray baseline -->
+                        <div class="timeline-base"></div>
+                        <!-- Green progress line -->
+                        <div class="timeline-progress" id="timeline-progress"></div>
+                        <!-- Nodes will be populated by JavaScript -->
+                        <div class="timeline-nodes" id="timeline-nodes">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <!-- Progress Percentage -->
+                    <div class="progress-percentage">
+                        <span id="progress-percent">0</span>%
+                    </div>
+                </div>
+            </div>
         </div>
-        
+
         <!-- Practice Modules Grid -->
         <div class="modules-section">
             <h2 class="section-title" data-translate="practice_modules">Practice Modules</h2>
@@ -47,7 +76,10 @@
                 
                 <!-- Exercise Boxes -->
                 <div class="practice-exercises-container">
-                    <a href="{{ url_for('casual_chat') }}" class="practice-exercise-box">
+                    <a href="{{ url_for('casual_chat') }}" class="practice-exercise-box" id="casual-chat-link">
+                        <div class="exercise-completion-indicator" id="casual-chat-indicator">
+                            <span class="completion-circle"></span>
+                        </div>
                         <span class="practice-exercise-icon">☕</span>
                         <div class="practice-exercise-title" data-translate="casual_chat">Casual Chat</div>
                         <div class="practice-exercise-subtitle" data-translate="everyday_conversations">Everyday conversations</div>
@@ -74,7 +106,10 @@
                 
                 <!-- Exercise Boxes -->
                 <div class="practice-exercises-container">
-                    <a href="/writing-practice" class="practice-exercise-box">
+                    <a href="/writing-practice" class="practice-exercise-box" id="email-writing-link">
+                        <div class="exercise-completion-indicator" id="email-writing-indicator">
+                            <span class="completion-circle"></span>
+                        </div>
                         <span class="practice-exercise-icon">📧</span>
                         <div class="practice-exercise-title" data-translate="email_writing">Email Writing</div>
                         <div class="practice-exercise-subtitle" data-translate="professional_emails">Professional emails</div>
@@ -89,4 +124,718 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load user progress when page loads
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadUserProgress();
+    });
+
+    async function loadUserProgress() {
+        try {
+            // Get current language pair from localStorage (set by dashboard)
+            const inputLang = localStorage.getItem('selectedInputLanguage');
+            const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+            if (!inputLang || !targetLang) {
+                console.error('No language pair selected');
+                // Show error message and redirect to dashboard
+                showErrorMessage('Please select your languages first. Redirecting to dashboard...');
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 2000);
+                return;
+            }
+
+            // Fetch progress data
+            const response = await fetch(`/api/user-progress?input_language=${inputLang}&target_language=${targetLang}`);
+
+            if (!response.ok) {
+                console.error(`Failed to load progress: ${response.status}`);
+                // Show error message
+                showErrorMessage('Unable to load your progress. Please try again.');
+                return;
+            }
+
+            const progressData = await response.json();
+            console.log('Progress data received:', progressData);
+
+            // Check if we have valid data structure
+            if (!progressData.topics || !progressData.tests) {
+                console.error('Invalid progress data structure');
+                showErrorMessage('Invalid data received. Please try refreshing the page.');
+                return;
+            }
+
+            displayProgress(progressData);
+
+        } catch (error) {
+            console.error('Error loading progress:', error);
+            // Show error message
+            showErrorMessage('An error occurred while loading your progress. Please try again.');
+        }
+    }
+
+    function showErrorMessage(message) {
+        // Create error overlay
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-overlay';
+        errorDiv.innerHTML = `
+            <div class="error-message">
+                <p>${message}</p>
+            </div>
+        `;
+
+        // Add styles if not already present
+        if (!document.querySelector('style[data-error-styles]')) {
+            const style = document.createElement('style');
+            style.setAttribute('data-error-styles', 'true');
+            style.textContent = `
+                .error-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                }
+                .error-message {
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+                    max-width: 400px;
+                    text-align: center;
+                }
+                .error-message p {
+                    margin: 0;
+                    font-size: 1.1rem;
+                    color: #721c24;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(errorDiv);
+    }
+
+    function displayProgress(data) {
+        // Update level and topic displays
+        document.getElementById('current-level-display').textContent = data.current_level;
+        document.getElementById('current-topic-number').textContent = data.current_topic;
+
+        // Update exercise completion indicators for current topic
+        updateExerciseCompletionIndicators(data);
+
+        // Update progress percentage
+        const progressPercent = document.getElementById('progress-percent');
+        progressPercent.textContent = data.overall_progress;
+
+        // Create the node-based timeline
+        const nodesContainer = document.getElementById('timeline-nodes');
+        nodesContainer.innerHTML = '';
+
+        // Calculate positions for all 16 nodes
+        const totalNodes = 16;
+        const nodes = [];
+
+        // Build the nodes array with topics and tests in order
+        let topicIndex = 0;
+        let testIndex = 0;
+
+        for (let i = 0; i < totalNodes; i++) {
+            const position = i + 1;
+
+            // Tests are at positions 4, 8, 12, 16
+            if (position === 4 || position === 8 || position === 12 || position === 16) {
+                // This is a test position
+                const test = data.tests[testIndex];
+                if (test) {
+                    nodes.push({
+                        type: 'test',
+                        data: test,
+                        position: position
+                    });
+                    testIndex++;
+                }
+            } else {
+                // This is a topic position
+                const topic = data.topics[topicIndex];
+                if (topic) {
+                    nodes.push({
+                        type: 'topic',
+                        data: topic,
+                        position: position
+                    });
+                    topicIndex++;
+                }
+            }
+        }
+
+        // Find the current position for the progress line
+        let currentPosition = 0;
+        nodes.forEach(node => {
+            if (node.type === 'topic' && node.data.completed) {
+                currentPosition = Math.max(currentPosition, node.position);
+            } else if (node.type === 'test' && node.data.passed) {
+                currentPosition = Math.max(currentPosition, node.position);
+            }
+        });
+
+        // Update the green progress line - only show if there's actual progress
+        const progressLine = document.getElementById('timeline-progress');
+        if (currentPosition > 0) {
+            const progressWidth = (currentPosition / totalNodes) * 100;
+            progressLine.style.width = `${progressWidth}%`;
+            progressLine.style.display = 'block';
+        } else {
+            progressLine.style.display = 'none';
+        }
+
+        // Create and append each node
+        nodes.forEach(node => {
+            const nodeElement = createTimelineNode(node, totalNodes);
+            nodesContainer.appendChild(nodeElement);
+        });
+    }
+
+    function updateExerciseCompletionIndicators(data) {
+        // Find current topic data
+        const currentTopicData = data.topics.find(t => t.topic_number === data.current_topic);
+
+        if (!currentTopicData || !currentTopicData.exercises) {
+            console.log('No exercise data for current topic');
+            return;
+        }
+
+        // Update Casual Chat indicator
+        const casualChatIndicator = document.getElementById('casual-chat-indicator');
+        if (casualChatIndicator && currentTopicData.exercises.casual_chat) {
+            const status = currentTopicData.exercises.casual_chat.status;
+            updateCompletionIndicator(casualChatIndicator, status);
+        }
+
+        // Update Email Writing indicator
+        const emailWritingIndicator = document.getElementById('email-writing-indicator');
+        if (emailWritingIndicator && currentTopicData.exercises.email_writing) {
+            const status = currentTopicData.exercises.email_writing.status;
+            updateCompletionIndicator(emailWritingIndicator, status);
+        }
+    }
+
+    function updateCompletionIndicator(indicatorElement, status) {
+        const circle = indicatorElement.querySelector('.completion-circle');
+        if (!circle) return;
+
+        // Remove all status classes
+        circle.classList.remove('not-started', 'in-progress', 'completed');
+
+        // Add appropriate class and content based on status
+        switch(status) {
+            case 'completed':
+                circle.classList.add('completed');
+                circle.innerHTML = '✓';
+                break;
+            case 'in_progress':
+                circle.classList.add('in-progress');
+                circle.innerHTML = '◐';  // Half-filled circle
+                break;
+            case 'not_started':
+            default:
+                circle.classList.add('not-started');
+                circle.innerHTML = '';
+                break;
+        }
+    }
+
+    function createTimelineNode(node, totalNodes) {
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'timeline-node';
+
+        // Calculate position as percentage
+        const position = ((node.position - 1) / (totalNodes - 1)) * 100;
+        nodeDiv.style.left = `${position}%`;
+
+        if (node.type === 'topic') {
+            const topic = node.data;
+            nodeDiv.classList.add('topic-node');
+
+            // Set state classes
+            if (topic.completed) {
+                nodeDiv.classList.add('completed');
+            } else if (topic.current) {
+                nodeDiv.classList.add('current');
+                // Add the red triangle indicator above current node
+                const triangle = document.createElement('div');
+                triangle.className = 'current-indicator';
+                triangle.innerHTML = '▼';
+                nodeDiv.appendChild(triangle);
+            } else if (topic.locked) {
+                nodeDiv.classList.add('locked');
+            } else {
+                nodeDiv.classList.add('available');
+            }
+
+            // Add the circle with topic number
+            const circle = document.createElement('div');
+            circle.className = 'node-circle';
+            circle.textContent = topic.topic_number;
+            nodeDiv.appendChild(circle);
+
+            // Add tooltip
+            nodeDiv.title = `Topic ${topic.topic_number}: ${getTopicTitle(topic.title)}`;
+
+            // Add click handler if not locked
+            if (!topic.locked) {
+                nodeDiv.style.cursor = 'pointer';
+                nodeDiv.onclick = () => navigateToTopic(topic.topic_number);
+            }
+        } else if (node.type === 'test') {
+            const test = node.data;
+            nodeDiv.classList.add('test-node');
+
+            // Set state classes
+            if (test.passed) {
+                nodeDiv.classList.add('passed');
+            } else if (test.unlocked) {
+                nodeDiv.classList.add('unlocked');
+            } else {
+                nodeDiv.classList.add('locked');
+            }
+
+            // Add the circle with test emoji
+            const circle = document.createElement('div');
+            circle.className = 'node-circle test-circle';
+            circle.innerHTML = '📝';
+            nodeDiv.appendChild(circle);
+
+            // Add tooltip
+            const testNames = {
+                'checkpoint_1': 'Checkpoint Test 1',
+                'checkpoint_2': 'Checkpoint Test 2',
+                'checkpoint_3': 'Checkpoint Test 3',
+                'final': 'Final Test'
+            };
+            nodeDiv.title = testNames[test.test_type] || `Test ${test.test_number}`;
+
+            // Add click handler if unlocked
+            if (test.unlocked) {
+                nodeDiv.style.cursor = 'pointer';
+                nodeDiv.onclick = () => navigateToTest(test.test_type);
+            }
+        }
+
+        return nodeDiv;
+    }
+
+    function navigateToTopic(topicNumber) {
+        // Store the selected topic and navigate to exercises
+        localStorage.setItem('selectedTopic', topicNumber);
+        // For now, just log - implement actual navigation as needed
+        console.log(`Navigating to topic ${topicNumber}`);
+    }
+
+    function navigateToTest(testType) {
+        // Navigate to test page
+        window.location.href = `/test/${testType}`;
+    }
+
+
+
+    function getTopicTitle(titleKey) {
+        // Try to get translated title, fallback to key
+        if (window.translationManager) {
+            return window.translationManager.getText(titleKey) || titleKey;
+        }
+        return titleKey;
+    }
+
+    function updateExerciseAccessibility(progressData) {
+        // Get exercise links
+        const casualChatLink = document.getElementById('casual-chat-link');
+        const emailWritingLink = document.getElementById('email-writing-link');
+
+        // Check if there's a blocking test
+        const currentItem = progressData.current_item;
+
+        if (currentItem && currentItem.type === 'test') {
+            // User needs to complete a test before continuing
+            disableExerciseLink(casualChatLink, `Complete ${currentItem.message} first`);
+            disableExerciseLink(emailWritingLink, `Complete ${currentItem.message} first`);
+
+            // Show test notification
+            showTestNotification(currentItem);
+        } else if (currentItem && currentItem.type === 'topic') {
+            // Exercises are available for current topic
+            enableExerciseLink(casualChatLink);
+            enableExerciseLink(emailWritingLink);
+        } else if (currentItem && currentItem.type === 'completed') {
+            // Level completed - exercises can still be accessed
+            enableExerciseLink(casualChatLink);
+            enableExerciseLink(emailWritingLink);
+
+            // Check if this is B2 completion
+            if (progressData.current_level === 'B2' && progressData.overall_progress === 100) {
+                showLanguageCompletionPopup();
+            }
+        }
+    }
+
+    function disableExerciseLink(linkElement, reason) {
+        if (!linkElement) return;
+
+        linkElement.classList.add('disabled');
+        linkElement.style.pointerEvents = 'none';
+        linkElement.style.opacity = '0.5';
+        linkElement.title = reason;
+
+        // Prevent navigation
+        linkElement.onclick = function(e) {
+            e.preventDefault();
+            showBlockedMessage(reason);
+            return false;
+        };
+    }
+
+    function enableExerciseLink(linkElement) {
+        if (!linkElement) return;
+
+        linkElement.classList.remove('disabled');
+        linkElement.style.pointerEvents = 'auto';
+        linkElement.style.opacity = '1';
+        linkElement.title = '';
+        linkElement.onclick = null;  // Remove click handler
+    }
+
+    function showBlockedMessage(message) {
+        // Create temporary message
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'blocked-message';
+        msgDiv.textContent = message;
+        msgDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff6b6b;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: 600;
+            animation: fadeInOut 3s ease;
+        `;
+
+        document.body.appendChild(msgDiv);
+
+        setTimeout(() => {
+            msgDiv.remove();
+        }, 3000);
+    }
+
+    function showTestNotification(testInfo) {
+        // Create test notification banner
+        const banner = document.createElement('div');
+        banner.className = 'test-notification';
+        banner.innerHTML = `
+            <div style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                        padding: 1rem;
+                        border-radius: 10px;
+                        margin: 1rem 0;
+                        text-align: center;
+                        box-shadow: 0 4px 15px rgba(255,154,158,0.3);">
+                <h3 style="color: #721c24; margin: 0 0 0.5rem 0;">Test Required!</h3>
+                <p style="color: #721c24; margin: 0;">${testInfo.message}</p>
+                <button onclick="window.location.href='/test/${testInfo.test_type}'"
+                        style="margin-top: 1rem;
+                               padding: 0.5rem 2rem;
+                               background: white;
+                               color: #ff6b6b;
+                               border: none;
+                               border-radius: 5px;
+                               font-weight: 600;
+                               cursor: pointer;">
+                    Take Test
+                </button>
+            </div>
+        `;
+
+        // Insert after progress section
+        const progressSection = document.querySelector('.progress-section');
+        if (progressSection && !document.querySelector('.test-notification')) {
+            progressSection.insertAdjacentElement('afterend', banner);
+        }
+    }
+
+    function showLanguageCompletionPopup() {
+        // Create congratulations popup for B2 completion
+        const popup = document.createElement('div');
+        popup.className = 'level-completion-popup';
+        popup.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.5s ease;
+        `;
+
+        const targetLang = localStorage.getItem('selectedTargetLanguage') || 'the language';
+
+        popup.innerHTML = `
+            <div style="background: white;
+                        border-radius: 20px;
+                        padding: 3rem;
+                        max-width: 500px;
+                        text-align: center;
+                        position: relative;
+                        animation: slideUp 0.5s ease;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🎉🎊🏆</div>
+                <h1 style="color: #667eea;
+                           font-size: 2.5rem;
+                           margin-bottom: 1rem;
+                           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                           -webkit-background-clip: text;
+                           -webkit-text-fill-color: transparent;">
+                    Congratulations!
+                </h1>
+                <p style="font-size: 1.2rem;
+                          color: #333;
+                          margin-bottom: 1.5rem;
+                          line-height: 1.6;">
+                    You have successfully completed <strong>B2 level</strong> in ${targetLang}!
+                </p>
+                <p style="font-size: 1rem;
+                          color: #666;
+                          margin-bottom: 2rem;">
+                    You have mastered all 48 topics and passed all tests. This is an incredible achievement!
+                    You can now communicate fluently in ${targetLang}.
+                </p>
+                <div style="background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+                            padding: 1rem;
+                            border-radius: 10px;
+                            margin-bottom: 2rem;">
+                    <p style="color: white; font-weight: 600; margin: 0;">
+                        Your journey: A1 → A2 → B1 → B2 ✅
+                    </p>
+                </div>
+                <button onclick="this.closest('.level-completion-popup').remove()"
+                        style="padding: 1rem 3rem;
+                               background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                               color: white;
+                               border: none;
+                               border-radius: 8px;
+                               font-size: 1.1rem;
+                               font-weight: 600;
+                               cursor: pointer;
+                               transition: transform 0.2s;">
+                    Continue Learning
+                </button>
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+
+        // Add confetti effect
+        createConfetti();
+    }
+
+    function showLevelAdvancementPopup(fromLevel, toLevel) {
+        // Create level advancement popup (for A1->A2, A2->B1, B1->B2)
+        const popup = document.createElement('div');
+        popup.className = 'level-advancement-popup';
+        popup.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.5s ease;
+        `;
+
+        popup.innerHTML = `
+            <div style="background: white;
+                        border-radius: 20px;
+                        padding: 3rem;
+                        max-width: 500px;
+                        text-align: center;
+                        position: relative;
+                        animation: slideUp 0.5s ease;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🎯✨</div>
+                <h1 style="color: #667eea;
+                           font-size: 2rem;
+                           margin-bottom: 1rem;">
+                    Level Complete!
+                </h1>
+                <p style="font-size: 1.2rem;
+                          color: #333;
+                          margin-bottom: 1.5rem;">
+                    Congratulations on completing <strong>${fromLevel}</strong>!
+                </p>
+                <div style="display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 2rem;
+                            margin: 2rem 0;">
+                    <div style="background: #f0f0f0;
+                                padding: 1rem 2rem;
+                                border-radius: 10px;
+                                font-size: 1.5rem;
+                                font-weight: 600;
+                                color: #666;">
+                        ${fromLevel}
+                    </div>
+                    <div style="font-size: 2rem;">→</div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                padding: 1rem 2rem;
+                                border-radius: 10px;
+                                font-size: 1.5rem;
+                                font-weight: 600;
+                                color: white;">
+                        ${toLevel}
+                    </div>
+                </div>
+                <p style="font-size: 1rem;
+                          color: #666;
+                          margin-bottom: 2rem;">
+                    Ready to advance to the next level?
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <button onclick="advanceToNextLevel('${toLevel}')"
+                            style="padding: 1rem 2rem;
+                                   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                   color: white;
+                                   border: none;
+                                   border-radius: 8px;
+                                   font-weight: 600;
+                                   cursor: pointer;">
+                        Start ${toLevel}
+                    </button>
+                    <button onclick="this.closest('.level-advancement-popup').remove()"
+                            style="padding: 1rem 2rem;
+                                   background: #f0f0f0;
+                                   color: #333;
+                                   border: none;
+                                   border-radius: 8px;
+                                   font-weight: 600;
+                                   cursor: pointer;">
+                        Continue ${fromLevel}
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(popup);
+    }
+
+    function createConfetti() {
+        // Simple confetti animation
+        const colors = ['#667eea', '#764ba2', '#ffd89b', '#19547b', '#ff6b6b'];
+        const confettiCount = 100;
+
+        for (let i = 0; i < confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.style.cssText = `
+                position: fixed;
+                width: 10px;
+                height: 10px;
+                background: ${colors[Math.floor(Math.random() * colors.length)]};
+                left: ${Math.random() * 100}%;
+                top: -10px;
+                opacity: ${Math.random()};
+                transform: rotate(${Math.random() * 360}deg);
+                animation: confettiFall ${3 + Math.random() * 2}s linear;
+                z-index: 10001;
+            `;
+            document.body.appendChild(confetti);
+
+            setTimeout(() => confetti.remove(), 5000);
+        }
+    }
+
+    async function advanceToNextLevel(newLevel) {
+        // Call API to advance level
+        try {
+            const response = await fetch('/api/advance-level', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ new_level: newLevel })
+            });
+
+            if (response.ok) {
+                // Reload page to refresh progress
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error('Error advancing level:', error);
+        }
+    }
+
+    // Add CSS for animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes confettiFall {
+            to {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Modify the existing loadUserProgress function to call updateExerciseAccessibility
+    const originalLoadUserProgress = loadUserProgress;
+    loadUserProgress = async function() {
+        await originalLoadUserProgress();
+    };
+
+    // Modify displayProgress to also update exercise accessibility
+    const originalDisplayProgress = displayProgress;
+    displayProgress = function(data) {
+        originalDisplayProgress(data);
+        updateExerciseAccessibility(data);
+    };
+</script>
 {% endblock %}

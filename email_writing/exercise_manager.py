@@ -236,6 +236,8 @@ class EmailExerciseManager:
                 # Parse JSON response
                 json_response = self._extract_json_from_response(response)
                 if json_response:
+                    # Add feedback_type for score saving
+                    json_response['feedback_type'] = 'comprehensive'
                     return True, json_response
                 else:
                     # Fallback response
@@ -246,7 +248,8 @@ class EmailExerciseManager:
                         'focus_points': ['Keep practicing!', 'Review grammar rules'],
                         'score': 70,
                         'feedback': 'Good effort! Keep practicing your German writing.',
-                        'improvements_from_first': 'You made some improvements.'
+                        'improvements_from_first': 'You made some improvements.',
+                        'feedback_type': 'comprehensive'  # Required for score saving
                     }
 
         except Exception as e:

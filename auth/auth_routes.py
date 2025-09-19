@@ -313,13 +313,19 @@ class AuthRoutes:
                     system_prompt = prompt_manager.get_prompt('casual_chat_prompt', '')
                     print(f"[WARNING] Using fallback ERROR prompt for character: {character}")
                 
-                # Track message count in session
+                # Track message count and scoring in session
                 if 'casual_chat_messages' not in session:
                     session['casual_chat_messages'] = []
-                
+
+                # Initialize message scoring for this session
+                if 'casual_chat_correct' not in session:
+                    session['casual_chat_correct'] = 0
+                    session['casual_chat_total'] = 0
+
                 # Add current message to history
                 session['casual_chat_messages'].append(message)
                 message_count = len(session['casual_chat_messages'])
+                session['casual_chat_total'] = message_count  # Track total messages
                 
                 # Send message to Claude with character prompt
                 response = claude.send_message(message, system_prompt)
@@ -366,6 +372,10 @@ class AuthRoutes:
                         }
                         hint_data['type'] = type_mapping.get(hint_type, hint_type)
 
+                        # Track correctness: 'praise' and 'warning' count as correct, only 'error' is incorrect
+                        if hint_data['type'] in ['praise', 'warning']:
+                            session['casual_chat_correct'] += 1
+
                     response_data['hint'] = hint_data
                 
                 # Generate comprehensive feedback at the last message
@@ -389,8 +399,57 @@ class AuthRoutes:
                 # Mark as complete after reaching the required number of exchanges
                 if message_count >= total_exchanges:
                     response_data['module_completed'] = True
+
+                    # Calculate and save the score for this exercise
+                    if session['casual_chat_total'] > 0:
+                        score = (session['casual_chat_correct'] / session['casual_chat_total']) * 100
+
+                        # Save score using ExerciseProgressManager
+                        if 'user_id' in session:
+                            try:
+                                from progress.exercise_progress_manager import ExerciseProgressManager
+                                from progress.progress_manager import ProgressManager
+
+                                # Get user's progress record
+                                progress_manager = ProgressManager()
+                                user_id = session['user_id']
+
+                                # Get language pair from context
+                                input_lang = user_context.get('input_language', 'english')
+                                target_lang = user_context.get('target_language', 'german')
+
+                                # Get user progress ID
+                                user_progress = progress_manager.get_user_progress(
+                                    user_id, input_lang, target_lang
+                                )
+
+                                if user_progress:
+                                    # Record the exercise attempt
+                                    exercise_manager = ExerciseProgressManager()
+                                    result = exercise_manager.record_exercise_attempt(
+                                        user_progress_id=user_progress.id,
+                                        topic_number=user_progress.current_topic,
+                                        exercise_type='casual_chat',
+                                        score=score,
+                                        messages_correct=session['casual_chat_correct'],
+                                        messages_total=session['casual_chat_total']
+                                    )
+
+                                    # Add score info to response
+                                    response_data['score'] = score
+                                    response_data['messages_correct'] = session['casual_chat_correct']
+                                    response_data['messages_total'] = session['casual_chat_total']
+                                    response_data['exercise_completed'] = result.get('newly_completed', False)
+                                    response_data['topic_advanced'] = result.get('topic_advanced', False)
+
+                                    print(f"[SCORE SAVED] Casual Chat: {score:.1f}% ({session['casual_chat_correct']}/{session['casual_chat_total']} correct)")
+                            except Exception as e:
+                                print(f"[ERROR] Saving exercise score: {e}")
+
                     # Clear session for next conversation
                     session['casual_chat_messages'] = []
+                    session['casual_chat_correct'] = 0
+                    session['casual_chat_total'] = 0
                 
                 session.modified = True
                 return jsonify(response_data)
@@ -407,7 +466,13 @@ class AuthRoutes:
                 # Clear message history
                 if 'casual_chat_messages' in session:
                     session['casual_chat_messages'] = []
-                
+
+                # Clear scoring data
+                if 'casual_chat_correct' in session:
+                    session['casual_chat_correct'] = 0
+                if 'casual_chat_total' in session:
+                    session['casual_chat_total'] = 0
+
                 # Clear Claude client marker from session
                 if 'claude_client' in session:
                     session.pop('claude_client', None)
@@ -468,6 +533,130 @@ class AuthRoutes:
                     
             except Exception as e:
                 print(f"Error in TTS endpoint: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/user-progress', methods=['GET'])
+        @login_required
+        def get_user_progress():
+            """Get current user's progress for the active language pair."""
+            try:
+                from progress.progress_manager import ProgressManager
+                from progress.exercise_progress_manager import ExerciseProgressManager
+                from topics.topic_manager import TopicManager
+                from tests.test_manager import TestManager
+
+                user_id = session.get('user_id')
+                if not user_id:
+                    return jsonify({'error': 'User not authenticated'}), 401
+
+                # Get language pair from query params or session
+                input_lang = request.args.get('input_language')
+                target_lang = request.args.get('target_language')
+
+                # Initialize managers
+                progress_manager = ProgressManager()
+                exercise_manager = ExerciseProgressManager()
+                topic_manager = TopicManager()
+                test_manager = TestManager()
+
+                # Get user progress
+                user_progress = progress_manager.get_user_progress(
+                    user_id, input_lang, target_lang
+                )
+
+                if not user_progress:
+                    return jsonify({'error': 'No progress found for this language pair'}), 404
+
+                # Get all topics for the level
+                topics = topic_manager.get_all_topics_for_level(user_progress.current_level)
+
+                # Get topic progress for each topic
+                topic_progress_list = []
+                completed_topics = []
+
+                for topic in topics:
+                    # Get topic completion status
+                    topic_progress = topic_manager.get_user_topic_progress(
+                        user_progress.id, topic.topic_number
+                    )
+
+                    # Get exercise status for this topic
+                    exercise_status = exercise_manager.get_topic_exercises_status(
+                        user_progress.id, topic.topic_number
+                    )
+
+                    is_completed = topic_progress.completed if topic_progress else False
+                    is_current = (topic.topic_number == user_progress.current_topic)
+                    is_locked = (topic.topic_number > user_progress.current_topic and not is_completed)
+
+                    if is_completed:
+                        completed_topics.append(topic.topic_number)
+
+                    topic_progress_list.append({
+                        'topic_number': topic.topic_number,
+                        'title': topic.title_key,
+                        'completed': is_completed,
+                        'current': is_current,
+                        'locked': is_locked,
+                        'exercises': exercise_status['exercises']
+                    })
+
+                # Get test progress
+                test_progress_list = []
+                test_configs = [
+                    {'type': 'checkpoint_1', 'after_topic': 3, 'number': 1},
+                    {'type': 'checkpoint_2', 'after_topic': 6, 'number': 2},
+                    {'type': 'checkpoint_3', 'after_topic': 9, 'number': 3},
+                    {'type': 'final', 'after_topic': 12, 'number': 4}
+                ]
+
+                for test_config in test_configs:
+                    test_progress = test_manager.get_test_progress(
+                        user_progress.id, test_config['type']
+                    )
+
+                    # Check if test is unlocked (topics before it are complete)
+                    required_topics = list(range(
+                        test_config['after_topic'] - 2,
+                        test_config['after_topic'] + 1
+                    ))
+                    is_unlocked = all(t in completed_topics for t in required_topics)
+
+                    test_progress_list.append({
+                        'test_number': test_config['number'],
+                        'test_type': test_config['type'],
+                        'after_topic': test_config['after_topic'],
+                        'unlocked': is_unlocked,
+                        'passed': test_progress.passed if test_progress else False,
+                        'attempts': test_progress.attempts if test_progress else 0,
+                        'score': test_progress.score if test_progress else None
+                    })
+
+                # Calculate overall progress (topics + tests)
+                total_points = 16  # 12 topics + 4 tests
+                completed_points = len(completed_topics)
+
+                # Add passed tests to completed points
+                for test in test_progress_list:
+                    if test['passed']:
+                        completed_points += 1
+
+                overall_progress = int((completed_points / total_points) * 100)
+
+                return jsonify({
+                    'current_level': user_progress.current_level,
+                    'current_topic': user_progress.current_topic,
+                    'overall_progress': overall_progress,
+                    'completed_points': completed_points,
+                    'total_points': total_points,
+                    'topics': topic_progress_list,
+                    'tests': test_progress_list,
+                    'input_language': user_progress.input_language,
+                    'target_language': user_progress.target_language
+                })
+
+            except Exception as e:
+                print(f"[ERROR] Getting user progress: {e}")
                 return jsonify({'error': str(e)}), 500
 
         @self.app.route('/api/casual-chat/scenario', methods=['GET'])
@@ -631,6 +820,42 @@ class AuthRoutes:
                 session.modified = True
 
                 if success:
+                    # Save score if this was a comprehensive feedback (second attempt)
+                    if result.get('feedback_type') == 'comprehensive' and 'score' in result:
+                        try:
+                            from progress.exercise_progress_manager import ExerciseProgressManager
+                            from progress.progress_manager import ProgressManager
+
+                            # Get user's progress record
+                            progress_manager = ProgressManager()
+
+                            # Get language pair from session data (stored by exercise_manager)
+                            input_lang = session_data.get('input_language', 'english')
+                            target_lang = session_data.get('target_language', 'german')
+
+                            # Get user progress ID
+                            user_progress = progress_manager.get_user_progress(
+                                user_id, input_lang, target_lang
+                            )
+
+                            if user_progress:
+                                # Record the exercise attempt
+                                exercise_manager_db = ExerciseProgressManager()
+                                db_result = exercise_manager_db.record_exercise_attempt(
+                                    user_progress_id=user_progress.id,
+                                    topic_number=user_progress.current_topic,
+                                    exercise_type='email_writing',
+                                    score=result['score']
+                                )
+
+                                # Add progress info to response
+                                result['exercise_completed'] = db_result.get('newly_completed', False)
+                                result['topic_advanced'] = db_result.get('topic_advanced', False)
+
+                                print(f"[SCORE SAVED] Email Writing: {result['score']}%")
+                        except Exception as e:
+                            print(f"[ERROR] Saving email writing score: {e}")
+
                     return jsonify(result)
                 else:
                     return jsonify(result), 500

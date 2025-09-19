@@ -197,6 +197,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
                 
                 if (result.success) {
+                    // Save selections to localStorage for exercises page
+                    localStorage.setItem('selectedInputLanguage', selectedInput);
+                    localStorage.setItem('selectedTargetLanguage', selectedTarget);
+                    localStorage.setItem('selectedLevel', selectedLevel);
+
                     // Redirect to exercises page
                     window.location.href = '/exercises';
                 } else {
