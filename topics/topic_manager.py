@@ -453,3 +453,313 @@ class TopicManager:
         except Exception as e:
             print(f"Error getting scenario template: {e}")
             return None
+
+    def mark_topic_complete(self, user_progress_id, topic_number):
+        """
+        Mark a topic as complete and update current_topic
+
+        Args:
+            user_progress_id: The user progress ID
+            topic_number: The topic number to complete
+
+        Returns:
+            Tuple (success: bool, result: dict)
+        """
+        try:
+            # Get the topic progress
+            topic_progress = self.get_user_topic_progress(user_progress_id, topic_number)
+            if not topic_progress:
+                return False, {'error': f'Topic {topic_number} progress not found'}
+
+            # Mark as complete
+            if not topic_progress.completed:
+                topic_progress.mark_complete()
+
+            # Get user progress to update current topic
+            user_progress = UserProgress.query.get(user_progress_id)
+            if not user_progress:
+                return False, {'error': 'User progress not found'}
+
+            # Determine next topic
+            next_topic = self._determine_next_topic(user_progress_id, topic_number)
+
+            # Update current_topic if we have a next topic
+            if next_topic and next_topic['type'] == 'topic':
+                user_progress.current_topic = next_topic['topic_number']
+            elif next_topic and next_topic['type'] == 'test':
+                # Keep current topic but indicate test is needed
+                pass
+            elif next_topic and next_topic['type'] == 'completed':
+                # Level completed - keep at last topic
+                user_progress.current_topic = 12
+
+            self.db.session.commit()
+
+            return True, {
+                'topic_completed': True,
+                'current_topic': user_progress.current_topic,
+                'next_item': next_topic
+            }
+
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"Error marking topic complete: {e}")
+            return False, {'error': str(e)}
+
+    def _determine_next_topic(self, user_progress_id, completed_topic_number):
+        """
+        Determine what comes next after completing a topic
+
+        Args:
+            user_progress_id: The user progress ID
+            completed_topic_number: The topic that was just completed
+
+        Returns:
+            Dict with next item info (topic, test, or completed)
+        """
+        try:
+            # Check test gates after specific topics
+            tests = TestProgress.query.filter_by(user_progress_id=user_progress_id).all()
+
+            # After topic 4, need checkpoint_1
+            if completed_topic_number == 4:
+                checkpoint_1 = next((t for t in tests if t.test_type == 'checkpoint_1'), None)
+                if checkpoint_1 and not checkpoint_1.passed:
+                    return {
+                        'type': 'test',
+                        'test_type': 'checkpoint_1',
+                        'test_number': 1,
+                        'message': 'Complete Test 1 to unlock topics 5-8'
+                    }
+
+            # After topic 8, need checkpoint_2
+            elif completed_topic_number == 8:
+                checkpoint_2 = next((t for t in tests if t.test_type == 'checkpoint_2'), None)
+                if checkpoint_2 and not checkpoint_2.passed:
+                    return {
+                        'type': 'test',
+                        'test_type': 'checkpoint_2',
+                        'test_number': 2,
+                        'message': 'Complete Test 2 to unlock topics 9-12'
+                    }
+
+            # After topic 12, need final test
+            elif completed_topic_number == 12:
+                final_test = next((t for t in tests if t.test_type == 'final'), None)
+                if final_test and not final_test.passed:
+                    return {
+                        'type': 'test',
+                        'test_type': 'final',
+                        'test_number': 3,
+                        'message': 'Complete Final Test to advance to next level'
+                    }
+
+            # Otherwise, advance to next sequential topic
+            if completed_topic_number < 12:
+                next_topic_num = completed_topic_number + 1
+
+                # Check if next topic exists and is not gated
+                topic_progress = self.get_user_topic_progress(user_progress_id, next_topic_num)
+                if topic_progress:
+                    user_prog = UserProgress.query.get(user_progress_id)
+                    if user_prog:
+                        topic_def = self.get_topic_definition(user_prog.current_level, next_topic_num)
+                        if topic_def:
+                            return {
+                                'type': 'topic',
+                                'topic_number': next_topic_num,
+                                'title_key': topic_def.title_key
+                            }
+
+            # Check if everything is completed
+            all_topics = self.get_user_topic_progress(user_progress_id)
+            all_completed = all(tp.completed for tp in all_topics)
+
+            if all_completed:
+                final_test = next((t for t in tests if t.test_type == 'final'), None)
+                if final_test and final_test.passed:
+                    return {
+                        'type': 'completed',
+                        'message': 'Level completed! Ready to advance to next level.'
+                    }
+
+            return None
+
+        except Exception as e:
+            print(f"Error determining next topic: {e}")
+            return None
+
+    def check_completion_popup_needed(self, user_progress_id):
+        """
+        Check if a completion popup should be shown for the current completed topic
+
+        Args:
+            user_progress_id: The user progress ID
+
+        Returns:
+            Dict with popup info or None if no popup needed
+        """
+        try:
+            # Get user progress to find current topic
+            user_progress = UserProgress.query.get(user_progress_id)
+            if not user_progress:
+                return None
+
+            current_topic_num = user_progress.current_topic
+
+            # Get the current topic's progress
+            topic_progress = self.get_user_topic_progress(user_progress_id, current_topic_num)
+            if not topic_progress:
+                return None
+
+            # Check if topic is completed and popup hasn't been shown
+            # Handle old records that might not have the field yet
+            has_seen_popup = getattr(topic_progress, 'has_seen_completion_popup', False)
+            if topic_progress.completed and not has_seen_popup:
+                # Check what comes next
+                next_item = self._determine_next_topic(user_progress_id, current_topic_num)
+
+                if next_item:
+                    return {
+                        'show_popup': True,
+                        'completed_topic': current_topic_num,
+                        'next_item': next_item,
+                        'is_test': next_item['type'] == 'test'
+                    }
+
+            return None
+
+        except Exception as e:
+            print(f"[ERROR] Checking completion popup: {e}")
+            return None
+
+    def mark_popup_seen(self, user_progress_id, topic_number):
+        """
+        Mark that the completion popup has been shown for a topic
+
+        Args:
+            user_progress_id: The user progress ID
+            topic_number: The topic number
+
+        Returns:
+            Tuple (success: bool, message: str)
+        """
+        try:
+            topic_progress = self.get_user_topic_progress(user_progress_id, topic_number)
+            if not topic_progress:
+                return False, 'Topic progress not found'
+
+            # Check if the attribute exists (for existing records before migration)
+            if not hasattr(topic_progress, 'has_seen_completion_popup'):
+                print(f"[WARNING] Topic progress {topic_number} missing has_seen_completion_popup field")
+                return True, 'Field not available - skipping'
+
+            topic_progress.mark_popup_seen()
+            self.db.session.commit()
+            return True, 'Popup marked as seen'
+
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"[ERROR] Marking popup seen: {e}")
+            return False, str(e)
+
+    def navigate_to_topic(self, user_progress_id, new_topic_number):
+        """
+        Navigate to a different topic (used when clicking on progress circles)
+
+        Args:
+            user_progress_id: The user progress ID
+            new_topic_number: The topic to navigate to
+
+        Returns:
+            Tuple (success: bool, result: dict)
+        """
+        try:
+            # Check if user can access this topic
+            can_access, reason = self.can_access_topic(user_progress_id, new_topic_number)
+            if not can_access:
+                return False, {'error': reason}
+
+            # Get user progress
+            user_progress = UserProgress.query.get(user_progress_id)
+            if not user_progress:
+                return False, {'error': 'User progress not found'}
+
+            # Check if user can actually access this topic based on completed topics
+            all_topic_progress = self.get_user_topic_progress(user_progress_id)
+            completed_topics = [tp.topic_number for tp in all_topic_progress if tp.completed]
+            max_accessible = max(completed_topics) + 1 if completed_topics else user_progress.current_topic
+
+            # Don't allow navigation to locked topics
+            if new_topic_number > max_accessible:
+                return False, {'error': f'Topic {new_topic_number} is locked. Complete earlier topics first.'}
+
+            # Only update current_topic if moving forward (to track progression)
+            # Allow backward navigation without changing current_topic
+            if new_topic_number > user_progress.current_topic:
+                user_progress.current_topic = new_topic_number
+
+            self.db.session.commit()
+
+            return True, {
+                'current_topic': user_progress.current_topic,
+                'navigated_to': new_topic_number,
+                'message': f'Navigated to Topic {new_topic_number}'
+            }
+
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"[ERROR] Navigating to topic: {e}")
+            return False, {'error': str(e)}
+
+    def can_access_topic(self, user_progress_id, topic_number):
+        """
+        Check if a user can access a specific topic
+
+        Args:
+            user_progress_id: The user progress ID
+            topic_number: The topic to check access for
+
+        Returns:
+            Tuple (can_access: bool, reason: str)
+        """
+        try:
+            # Get all progress and tests
+            all_progress = self.get_user_topic_progress(user_progress_id)
+            tests = TestProgress.query.filter_by(user_progress_id=user_progress_id).all()
+
+            # Topic 1 is always accessible
+            if topic_number == 1:
+                return True, "First topic is always accessible"
+
+            # Check if previous topic is completed
+            prev_topic = next((p for p in all_progress if p.topic_number == topic_number - 1), None)
+            if prev_topic and not prev_topic.completed:
+                return False, f"Complete Topic {topic_number - 1} first"
+
+            # Check test gates
+            if topic_number in [5, 6, 7, 8]:
+                checkpoint_1 = next((t for t in tests if t.test_type == 'checkpoint_1'), None)
+                if checkpoint_1 and not checkpoint_1.passed:
+                    # Check if topics 1-4 are completed
+                    topics_1_4_complete = all(
+                        p.completed for p in all_progress if p.topic_number in [1, 2, 3, 4]
+                    )
+                    if topics_1_4_complete:
+                        return False, "Pass Test 1 to unlock this topic"
+
+            elif topic_number in [9, 10, 11, 12]:
+                checkpoint_2 = next((t for t in tests if t.test_type == 'checkpoint_2'), None)
+                if checkpoint_2 and not checkpoint_2.passed:
+                    # Check if topics 5-8 are completed
+                    topics_5_8_complete = all(
+                        p.completed for p in all_progress if p.topic_number in [5, 6, 7, 8]
+                    )
+                    if topics_5_8_complete:
+                        return False, "Pass Test 2 to unlock this topic"
+
+            return True, "Topic is accessible"
+
+        except Exception as e:
+            print(f"Error checking topic access: {e}")
+            return False, "Error checking access"

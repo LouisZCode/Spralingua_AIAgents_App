@@ -42,6 +42,52 @@ class ProgressManager:
             print(f"Error getting user progress: {e}")
             return None
     
+    def get_or_create_progress(self, user_id, input_language, target_language):
+        """
+        Get existing progress or create new one if it doesn't exist
+
+        Args:
+            user_id: The user's ID
+            input_language: The input language
+            target_language: The target language
+
+        Returns:
+            UserProgress object or None
+        """
+        try:
+            # First try to get existing progress
+            existing = self.get_user_progress(user_id, input_language, target_language)
+
+            if existing:
+                return existing
+
+            # Create new progress if doesn't exist
+            new_progress = UserProgress(
+                user_id=user_id,
+                input_language=input_language.lower(),
+                target_language=target_language.lower(),
+                current_level='A1'  # Default to A1 for new progress
+            )
+
+            self.db.session.add(new_progress)
+            self.db.session.commit()
+
+            # Initialize topics and tests for the new progress
+            # Import here to avoid circular import
+            from topics.topic_manager import TopicManager
+            topic_mgr = TopicManager()
+            success, message = topic_mgr.initialize_user_topics(new_progress.id, 'A1')
+
+            if not success:
+                print(f"[WARNING] Failed to initialize topics: {message}")
+
+            return new_progress
+
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"[ERROR] get_or_create_progress failed: {e}")
+            return None
+
     def save_progress(self, user_id, input_language, target_language, current_level):
         """
         Save or update user's progress for a language pair

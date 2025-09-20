@@ -4,7 +4,7 @@ from database import db
 class TopicProgress(db.Model):
     """Model for tracking user progress through topics"""
     __tablename__ = 'topic_progress'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     user_progress_id = db.Column(db.Integer, db.ForeignKey('user_progress.id', ondelete='CASCADE'), nullable=False)
     topic_number = db.Column(db.Integer, nullable=False)  # 1-12
@@ -12,6 +12,7 @@ class TopicProgress(db.Model):
     completed_at = db.Column(db.DateTime)
     exercises_completed = db.Column(db.Integer, default=0, nullable=False)
     total_exercises = db.Column(db.Integer, nullable=False)  # Total exercises in this topic
+    has_seen_completion_popup = db.Column(db.Boolean, default=False, nullable=False)  # Track if user saw completion popup
     
     # Relationship to UserProgress
     user_progress = db.relationship('UserProgress', backref=db.backref('topic_records', lazy='dynamic', cascade='all, delete-orphan'))
@@ -45,6 +46,11 @@ class TopicProgress(db.Model):
         self.exercises_completed = 0
         self.completed = False
         self.completed_at = None
+        self.has_seen_completion_popup = False
+
+    def mark_popup_seen(self):
+        """Mark that the completion popup has been shown for this topic"""
+        self.has_seen_completion_popup = True
     
     def get_progress_percentage(self):
         """Get completion percentage for this topic"""
@@ -62,7 +68,8 @@ class TopicProgress(db.Model):
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
             'exercises_completed': self.exercises_completed,
             'total_exercises': self.total_exercises,
-            'progress_percentage': self.get_progress_percentage()
+            'progress_percentage': self.get_progress_percentage(),
+            'has_seen_completion_popup': self.has_seen_completion_popup
         }
     
     def __repr__(self):

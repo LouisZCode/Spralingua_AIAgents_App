@@ -570,15 +570,21 @@ class AuthRoutes:
                 # Get all topics for the level
                 topics = topic_manager.get_all_topics_for_level(user_progress.current_level)
 
+                # Get all topic progress to determine max accessible topic
+                all_topic_progress = topic_manager.get_user_topic_progress(user_progress.id)
+
                 # Get topic progress for each topic
                 topic_progress_list = []
                 completed_topics = []
 
+                # Calculate the highest accessible topic
+                # (highest completed topic + 1, or current topic if nothing completed)
+                completed_topics_nums = [tp.topic_number for tp in all_topic_progress if tp.completed]
+                max_accessible_topic = max(completed_topics_nums) + 1 if completed_topics_nums else user_progress.current_topic
+
                 for topic in topics:
                     # Get topic completion status
-                    topic_progress = topic_manager.get_user_topic_progress(
-                        user_progress.id, topic.topic_number
-                    )
+                    topic_progress = next((tp for tp in all_topic_progress if tp.topic_number == topic.topic_number), None)
 
                     # Get exercise status for this topic
                     exercise_status = exercise_manager.get_topic_exercises_status(
@@ -587,7 +593,8 @@ class AuthRoutes:
 
                     is_completed = topic_progress.completed if topic_progress else False
                     is_current = (topic.topic_number == user_progress.current_topic)
-                    is_locked = (topic.topic_number > user_progress.current_topic and not is_completed)
+                    # A topic is locked if it's beyond the max accessible topic
+                    is_locked = topic.topic_number > max_accessible_topic
 
                     if is_completed:
                         completed_topics.append(topic.topic_number)
@@ -657,6 +664,124 @@ class AuthRoutes:
 
             except Exception as e:
                 print(f"[ERROR] Getting user progress: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/check-completion-popup', methods=['GET'])
+        @login_required
+        def check_completion_popup():
+            """Check if a completion popup should be shown for the current topic."""
+            try:
+                from topics.topic_manager import TopicManager
+
+                user_id = session.get('user_id')
+                if not user_id:
+                    return jsonify({'error': 'User not authenticated'}), 401
+
+                # Get language pair from query params
+                input_lang = request.args.get('input_language')
+                target_lang = request.args.get('target_language')
+
+                if not input_lang or not target_lang:
+                    return jsonify({'show_popup': False}), 200
+
+                # Get user progress ID
+                progress_mgr = ProgressManager()
+                user_progress = progress_mgr.get_or_create_progress(user_id, input_lang, target_lang)
+
+                if not user_progress:
+                    return jsonify({'show_popup': False}), 200
+
+                # Check if popup is needed
+                topic_mgr = TopicManager()
+                popup_info = topic_mgr.check_completion_popup_needed(user_progress.id)
+
+                if popup_info:
+                    return jsonify(popup_info), 200
+                else:
+                    return jsonify({'show_popup': False}), 200
+
+            except Exception as e:
+                print(f"[ERROR] Checking completion popup: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/mark-popup-seen', methods=['POST'])
+        @login_required
+        def mark_popup_seen():
+            """Mark that the completion popup has been shown for a topic."""
+            try:
+                from topics.topic_manager import TopicManager
+
+                user_id = session.get('user_id')
+                if not user_id:
+                    return jsonify({'error': 'User not authenticated'}), 401
+
+                # Get data from request
+                data = request.get_json()
+                topic_number = data.get('topic_number')
+                input_lang = data.get('input_language')
+                target_lang = data.get('target_language')
+
+                if not all([topic_number, input_lang, target_lang]):
+                    return jsonify({'error': 'Missing required fields'}), 400
+
+                # Get user progress ID
+                progress_mgr = ProgressManager()
+                user_progress = progress_mgr.get_or_create_progress(user_id, input_lang, target_lang)
+
+                if not user_progress:
+                    return jsonify({'error': 'User progress not found'}), 404
+
+                # Mark popup as seen
+                topic_mgr = TopicManager()
+                success, message = topic_mgr.mark_popup_seen(user_progress.id, topic_number)
+
+                if success:
+                    return jsonify({'success': True, 'message': message}), 200
+                else:
+                    return jsonify({'error': message}), 400
+
+            except Exception as e:
+                print(f"[ERROR] Marking popup seen: {e}")
+                return jsonify({'error': str(e)}), 500
+
+        @self.app.route('/api/navigate-to-topic', methods=['POST'])
+        @login_required
+        def navigate_to_topic():
+            """Navigate to a different topic."""
+            try:
+                from topics.topic_manager import TopicManager
+
+                user_id = session.get('user_id')
+                if not user_id:
+                    return jsonify({'error': 'User not authenticated'}), 401
+
+                # Get data from request
+                data = request.get_json()
+                new_topic = data.get('topic_number')
+                input_lang = data.get('input_language')
+                target_lang = data.get('target_language')
+
+                if not all([new_topic, input_lang, target_lang]):
+                    return jsonify({'error': 'Missing required fields'}), 400
+
+                # Get user progress ID
+                progress_mgr = ProgressManager()
+                user_progress = progress_mgr.get_or_create_progress(user_id, input_lang, target_lang)
+
+                if not user_progress:
+                    return jsonify({'error': 'User progress not found'}), 404
+
+                # Navigate to the new topic
+                topic_mgr = TopicManager()
+                success, result = topic_mgr.navigate_to_topic(user_progress.id, new_topic)
+
+                if success:
+                    return jsonify({'success': True, **result}), 200
+                else:
+                    return jsonify({'error': result.get('error', 'Navigation failed')}), 400
+
+            except Exception as e:
+                print(f"[ERROR] Navigating to topic: {e}")
                 return jsonify({'error': str(e)}), 500
 
         @self.app.route('/api/casual-chat/scenario', methods=['GET'])

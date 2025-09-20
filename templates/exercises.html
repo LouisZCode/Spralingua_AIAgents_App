@@ -7,6 +7,28 @@
 {% endblock %}
 
 {% block content %}
+    <!-- Topic Completion Popup -->
+    <div id="completion-popup" class="completion-popup-overlay" style="display: none;">
+        <div class="completion-popup-content">
+            <div class="popup-icon">🎉</div>
+            <h2 class="popup-title" id="popup-title">You finished Topic 1!</h2>
+            <p class="popup-subtitle" id="popup-subtitle">Ready to move to Topic 2?</p>
+
+            <div class="popup-buttons">
+                <button class="popup-btn popup-btn-yes" id="popup-yes-btn">
+                    <span id="popup-yes-text">Yes, Let's Go!</span>
+                </button>
+                <button class="popup-btn popup-btn-stay" id="popup-stay-btn">
+                    <span id="popup-stay-text">Stay Here</span>
+                </button>
+            </div>
+
+            <div class="popup-stay-message" id="popup-stay-message" style="display: none;">
+                <p>You can move to the next topic anytime by clicking on it in the progress bar above!</p>
+            </div>
+        </div>
+    </div>
+
     <div class="hub-container">
         <!-- Back Navigation -->
         <div class="back-nav-container">
@@ -131,6 +153,8 @@
     // Load user progress when page loads
     document.addEventListener('DOMContentLoaded', async function() {
         await loadUserProgress();
+        await checkCompletionPopup();
+        setupPopupEventHandlers();
     });
 
     async function loadUserProgress() {
@@ -226,11 +250,18 @@
     }
 
     function displayProgress(data) {
+        // Check if user has selected a specific topic to view
+        const viewingTopic = localStorage.getItem('viewingTopic');
+        const displayTopic = viewingTopic ? parseInt(viewingTopic) : data.current_topic;
+
         // Update level and topic displays
         document.getElementById('current-level-display').textContent = data.current_level;
-        document.getElementById('current-topic-number').textContent = data.current_topic;
+        document.getElementById('current-topic-number').textContent = displayTopic;
 
-        // Update exercise completion indicators for current topic
+        // Store for use in other functions
+        data.display_topic = displayTopic;
+
+        // Update exercise completion indicators for the viewing topic
         updateExerciseCompletionIndicators(data);
 
         // Update progress percentage
@@ -306,8 +337,11 @@
     }
 
     function updateExerciseCompletionIndicators(data) {
-        // Find current topic data
-        const currentTopicData = data.topics.find(t => t.topic_number === data.current_topic);
+        // Use viewing topic if set, otherwise current topic
+        const topicToShow = data.display_topic || data.current_topic;
+
+        // Find topic data for the viewing/current topic
+        const currentTopicData = data.topics.find(t => t.topic_number === topicToShow);
 
         if (!currentTopicData || !currentTopicData.exercises) {
             console.log('No exercise data for current topic');
@@ -434,11 +468,41 @@
         return nodeDiv;
     }
 
-    function navigateToTopic(topicNumber) {
-        // Store the selected topic and navigate to exercises
-        localStorage.setItem('selectedTopic', topicNumber);
-        // For now, just log - implement actual navigation as needed
-        console.log(`Navigating to topic ${topicNumber}`);
+    async function navigateToTopic(topicNumber) {
+        // Navigate to a different topic
+        try {
+            const inputLang = localStorage.getItem('selectedInputLanguage');
+            const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+            const response = await fetch('/api/navigate-to-topic', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    topic_number: topicNumber,
+                    input_language: inputLang,
+                    target_language: targetLang
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log(`[SUCCESS] Navigated to Topic ${topicNumber}`);
+
+                // Store the selected topic to display it after reload
+                localStorage.setItem('viewingTopic', topicNumber);
+
+                // Reload page to refresh progress display
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                console.error('[ERROR] Navigation failed:', error);
+                alert(error.error || 'Cannot navigate to this topic');
+            }
+        } catch (error) {
+            console.error('[ERROR] Navigation request failed:', error);
+        }
     }
 
     function navigateToTest(testType) {
@@ -454,6 +518,132 @@
             return window.translationManager.getText(titleKey) || titleKey;
         }
         return titleKey;
+    }
+
+    async function checkCompletionPopup() {
+        // Check if we should show a completion popup
+        try {
+            const inputLang = localStorage.getItem('selectedInputLanguage');
+            const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+            if (!inputLang || !targetLang) {
+                return;
+            }
+
+            const response = await fetch(`/api/check-completion-popup?input_language=${inputLang}&target_language=${targetLang}`);
+
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data.show_popup) {
+                    showCompletionPopup(data);
+                }
+            }
+        } catch (error) {
+            console.error('[ERROR] Checking completion popup:', error);
+        }
+    }
+
+    function showCompletionPopup(popupData) {
+        const popup = document.getElementById('completion-popup');
+        const title = document.getElementById('popup-title');
+        const subtitle = document.getElementById('popup-subtitle');
+        const yesText = document.getElementById('popup-yes-text');
+
+        // Store popup data for button handlers
+        popup.dataset.completedTopic = popupData.completed_topic;
+        popup.dataset.nextType = popupData.next_item.type;
+        popup.dataset.nextNumber = popupData.next_item.topic_number || popupData.next_item.test_number;
+
+        if (popupData.is_test) {
+            // Test popup
+            title.textContent = `You finished Topic ${popupData.completed_topic}!`;
+            subtitle.textContent = popupData.next_item.message;
+            yesText.textContent = 'Take the Test';
+
+            // Update icon for test
+            document.querySelector('.popup-icon').textContent = '📝';
+        } else {
+            // Regular topic progression
+            title.textContent = `You finished Topic ${popupData.completed_topic}!`;
+            subtitle.textContent = `Do you want to move to Topic ${popupData.next_item.topic_number}?`;
+            yesText.textContent = 'Yes, Let\'s Go!';
+
+            // Update icon for topic
+            document.querySelector('.popup-icon').textContent = '🎉';
+        }
+
+        // Show the popup
+        popup.style.display = 'flex';
+    }
+
+    function setupPopupEventHandlers() {
+        const popup = document.getElementById('completion-popup');
+        const yesBtn = document.getElementById('popup-yes-btn');
+        const stayBtn = document.getElementById('popup-stay-btn');
+        const stayMessage = document.getElementById('popup-stay-message');
+
+        yesBtn.addEventListener('click', async function() {
+            const completedTopic = parseInt(popup.dataset.completedTopic);
+            const nextType = popup.dataset.nextType;
+            const nextNumber = parseInt(popup.dataset.nextNumber);
+
+            // Mark popup as seen
+            await markPopupSeen(completedTopic);
+
+            // Clear viewing topic since we're moving forward
+            localStorage.removeItem('viewingTopic');
+
+            if (nextType === 'test') {
+                // Navigate to test
+                const testTypes = {
+                    1: 'checkpoint_1',
+                    2: 'checkpoint_2',
+                    3: 'final'
+                };
+                navigateToTest(testTypes[nextNumber]);
+            } else {
+                // Navigate to next topic
+                await navigateToTopic(nextNumber);
+            }
+        });
+
+        stayBtn.addEventListener('click', async function() {
+            const completedTopic = parseInt(popup.dataset.completedTopic);
+
+            // Mark popup as seen
+            await markPopupSeen(completedTopic);
+
+            // Show the stay message
+            stayMessage.style.display = 'block';
+
+            // Hide popup after 3 seconds
+            setTimeout(() => {
+                popup.style.display = 'none';
+                stayMessage.style.display = 'none';
+            }, 3000);
+        });
+    }
+
+    async function markPopupSeen(topicNumber) {
+        try {
+            const inputLang = localStorage.getItem('selectedInputLanguage');
+            const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+            await fetch('/api/mark-popup-seen', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    topic_number: topicNumber,
+                    input_language: inputLang,
+                    target_language: targetLang
+                })
+            });
+        } catch (error) {
+            console.error('[ERROR] Marking popup seen:', error);
+        }
     }
 
     function updateExerciseAccessibility(progressData) {

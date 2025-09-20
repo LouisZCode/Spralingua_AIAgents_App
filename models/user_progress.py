@@ -10,6 +10,7 @@ class UserProgress(db.Model):
     input_language = db.Column(db.String(50), nullable=False)
     target_language = db.Column(db.String(50), nullable=False)
     current_level = db.Column(db.String(10), nullable=False)
+    current_topic = db.Column(db.Integer, default=1, nullable=False)  # Current topic (1-12)
     progress_in_level = db.Column(db.Integer, default=0, nullable=False)
     last_accessed = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -28,15 +29,19 @@ class UserProgress(db.Model):
         self.input_language = input_language.lower()
         self.target_language = target_language.lower()
         self.current_level = current_level.upper()
+        self.current_topic = 1  # Start with topic 1
         self.progress_in_level = 0
         self.last_accessed = datetime.utcnow()
     
-    def update_progress(self, new_level=None, progress_in_level=None):
+    def update_progress(self, new_level=None, progress_in_level=None, current_topic=None):
         """Update progress for this language pair"""
         if new_level:
             self.current_level = new_level.upper()
+            self.current_topic = 1  # Reset to topic 1 when changing levels
         if progress_in_level is not None:
             self.progress_in_level = progress_in_level
+        if current_topic is not None:
+            self.current_topic = current_topic
         self.last_accessed = datetime.utcnow()
     
     def to_dict(self):
@@ -47,6 +52,7 @@ class UserProgress(db.Model):
             'input_language': self.input_language,
             'target_language': self.target_language,
             'current_level': self.current_level,
+            'current_topic': self.current_topic,
             'progress_in_level': self.progress_in_level,
             'last_accessed': self.last_accessed.isoformat() if self.last_accessed else None,
             'created_at': self.created_at.isoformat() if self.created_at else None

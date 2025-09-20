@@ -37,6 +37,7 @@ from models.topic_exercise import TopicExercise
 from models.topic_progress import TopicProgress
 from models.test_progress import TestProgress
 from models.level_rule import LevelRule
+from models.exercise_progress import ExerciseProgress
 
 # Initialize authentication
 from auth import AuthManager
