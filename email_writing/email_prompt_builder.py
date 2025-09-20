@@ -19,7 +19,7 @@ class EmailPromptBuilder:
         self.topic_manager = TopicManager()
         self.level_rules_manager = LevelRulesManager()
 
-    def build_generation_prompt(self, user_id: int) -> Tuple[str, Dict]:
+    def build_generation_prompt(self, user_id: int, topic_override: int = None) -> Tuple[str, Dict]:
         """
         Build a letter generation prompt for the given user.
 
@@ -33,7 +33,7 @@ class EmailPromptBuilder:
             print(f"[DEBUG] EmailPromptBuilder: Building prompt for user_id={user_id}")
 
             # Get user context
-            user_context = self._get_user_context(user_id)
+            user_context = self._get_user_context(user_id, topic_override)
 
             if not user_context:
                 print(f"[ERROR] EmailPromptBuilder: No user context found for user_id={user_id}")
@@ -115,8 +115,8 @@ class EmailPromptBuilder:
                 original_letter, first_attempt, student_response
             )
 
-    def _get_user_context(self, user_id: int) -> Optional[Dict]:
-        """Get user's language pair, level, and current topic"""
+    def _get_user_context(self, user_id: int, topic_override: int = None) -> Optional[Dict]:
+        """Get user's language pair, level, and current topic (or use topic override)"""
         try:
             print(f"[DEBUG] _get_user_context: Getting context for user_id={user_id}")
 
@@ -136,18 +136,25 @@ class EmailPromptBuilder:
 
             print(f"[DEBUG] _get_user_context: Found progress - languages: {user_progress.input_language} to {user_progress.target_language}, level={user_progress.current_level}")
 
-            # Get current topic information
-            # TopicManager uses user_progress_id, not user_id
-            print(f"[DEBUG] _get_user_context: Calling topic_manager.get_current_topic({user_progress.id})")
-            topic_info = self.topic_manager.get_current_topic(user_progress.id)
-            print(f"[DEBUG] _get_user_context: Topic info result: {topic_info}")
-
-            if not topic_info:
-                print(f"[DEBUG] _get_user_context: No current topic found, defaulting to Topic 1")
-                # Default to Topic 1 if no specific topic
+            # Get topic information - use override if provided
+            if topic_override:
+                print(f"[INFO] _get_user_context: Using topic override: Topic {topic_override}")
                 topic_info = self.topic_manager.get_topic_definition(
-                    user_progress.current_level, 1
+                    user_progress.current_level, topic_override
                 )
+            else:
+                # Get current topic information
+                # TopicManager uses user_progress_id, not user_id
+                print(f"[DEBUG] _get_user_context: Calling topic_manager.get_current_topic({user_progress.id})")
+                topic_info = self.topic_manager.get_current_topic(user_progress.id)
+                print(f"[DEBUG] _get_user_context: Topic info result: {topic_info}")
+
+                if not topic_info:
+                    print(f"[DEBUG] _get_user_context: No current topic found, defaulting to Topic 1")
+                    # Default to Topic 1 if no specific topic
+                    topic_info = self.topic_manager.get_topic_definition(
+                        user_progress.current_level, 1
+                    )
 
             # Convert topic_info to dict if it's a TopicDefinition object
             if topic_info:

@@ -155,6 +155,7 @@
         await loadUserProgress();
         await checkCompletionPopup();
         setupPopupEventHandlers();
+        updateExerciseLinks();
     });
 
     async function loadUserProgress() {
@@ -336,6 +337,25 @@
         });
     }
 
+    function updateExerciseLinks() {
+        // Update exercise links with the current viewing topic
+        const viewingTopic = localStorage.getItem('viewingTopic');
+
+        if (viewingTopic) {
+            // Update casual chat link
+            const casualChatLink = document.getElementById('casual-chat-link');
+            if (casualChatLink) {
+                casualChatLink.href = `/casual-chat?topic=${viewingTopic}`;
+            }
+
+            // Update email writing link
+            const emailWritingLink = document.getElementById('email-writing-link');
+            if (emailWritingLink) {
+                emailWritingLink.href = `/writing-practice?topic=${viewingTopic}`;
+            }
+        }
+    }
+
     function updateExerciseCompletionIndicators(data) {
         // Use viewing topic if set, otherwise current topic
         const topicToShow = data.display_topic || data.current_topic;
@@ -492,6 +512,9 @@
 
                 // Store the selected topic to display it after reload
                 localStorage.setItem('viewingTopic', topicNumber);
+
+                // Update exercise links immediately
+                updateExerciseLinks();
 
                 // Reload page to refresh progress display
                 window.location.reload();

@@ -27,7 +27,7 @@ class ConversationPromptBuilder:
         # Feature flag for enhanced system
         self.use_enhanced = os.environ.get('USE_ENHANCED_PROMPTS', 'true').lower() == 'true'
     
-    def build_prompt(self, user_id: int, character: str = 'harry') -> Tuple[str, Dict]:
+    def build_prompt(self, user_id: int, character: str = 'harry', topic_override: int = None) -> Tuple[str, Dict]:
         """
         Build a complete conversation prompt for the given user and character
         
@@ -41,7 +41,7 @@ class ConversationPromptBuilder:
         try:
             # Use enhanced system if enabled
             if self.use_enhanced:
-                return self._build_enhanced_prompt(user_id, character)
+                return self._build_enhanced_prompt(user_id, character, topic_override)
             else:
                 # Fall back to legacy system (will be removed later)
                 return self._build_legacy_prompt(user_id, character)
@@ -51,7 +51,7 @@ class ConversationPromptBuilder:
             # Return None to signal fallback to old system
             return None, None
     
-    def _build_enhanced_prompt(self, user_id: int, character: str) -> Tuple[str, Dict]:
+    def _build_enhanced_prompt(self, user_id: int, character: str, topic_override: int = None) -> Tuple[str, Dict]:
         """
         Build prompt using the enhanced database-driven system
         NO CONFLICTS, SINGLE SOURCE OF TRUTH
@@ -60,7 +60,7 @@ class ConversationPromptBuilder:
         personality = self._load_personality(character)
         
         # 2. Get user context
-        user_context = self._get_user_context(user_id)
+        user_context = self._get_user_context(user_id, topic_override)
         
         # 3. Get level rules from database
         level_rules = self.level_rules_manager.get_level_rules(user_context['level'])
@@ -226,7 +226,7 @@ Follow this structure:
             self._personality_cache[character] = personality_data
             return personality_data
     
-    def _get_user_context(self, user_id: int) -> Dict:
+    def _get_user_context(self, user_id: int, topic_override: int = None) -> Dict:
         """
         Get user's learning context from database
         
@@ -263,9 +263,14 @@ Follow this structure:
                 context['level'] = user_progress.current_level
                 context['user_progress_id'] = user_progress.id
                 
-                # Determine current topic (next uncompleted topic)
-                current_topic_number = self._determine_current_topic(user_progress.id, context['level'])
-                context['topic_number'] = current_topic_number
+                # Use topic override if provided, otherwise determine current topic
+                if topic_override:
+                    context['topic_number'] = topic_override
+                    print(f"[INFO] Using topic override: Topic {topic_override}")
+                else:
+                    # Determine current topic (next uncompleted topic)
+                    current_topic_number = self._determine_current_topic(user_progress.id, context['level'])
+                    context['topic_number'] = current_topic_number
                 
                 # Get topic details
                 topic_def = self.topic_manager.get_topic_definition(context['level'], current_topic_number)

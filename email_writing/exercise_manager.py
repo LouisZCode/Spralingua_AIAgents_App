@@ -73,9 +73,14 @@ class EmailExerciseManager:
                 except Exception as e:
                     print(f"[WARNING] [EXERCISE MANAGER] Could not retrieve user info: {e}")
 
+            # Get topic override from user context if available
+            topic_override = user_context.get('topic_override')
+            if topic_override:
+                print(f"[INFO] [EXERCISE MANAGER] Using topic override: {topic_override}")
+
             # Build the generation prompt using the new language-aware builder
             print(f"[DEBUG] [EXERCISE MANAGER] Building generation prompt for user_id: {user_id}")
-            generation_prompt, context = self.prompt_builder.build_generation_prompt(user_id)
+            generation_prompt, context = self.prompt_builder.build_generation_prompt(user_id, topic_override)
             print(f"[DEBUG] [EXERCISE MANAGER] Got prompt: {bool(generation_prompt)}, context: {bool(context)}")
 
             if not generation_prompt or not context:

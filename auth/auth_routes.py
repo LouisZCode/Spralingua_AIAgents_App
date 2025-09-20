@@ -187,7 +187,13 @@ class AuthRoutes:
             
             email = session.get('email', 'User')
             user_id = session.get('user_id')
-            
+
+            # Get topic override from URL parameter if provided
+            topic_override = request.args.get('topic', type=int)
+            if topic_override:
+                # Store in session for API endpoints to use
+                session['exercise_topic'] = topic_override
+
             # Get user's current language progress
             progress_mgr = ProgressManager()
             user_progress = progress_mgr.get_user_progress(user_id) if user_id else None
@@ -290,9 +296,14 @@ class AuthRoutes:
                     try:
                         from prompts.conversation_prompt_builder import ConversationPromptBuilder
                         prompt_builder = ConversationPromptBuilder()
+
+                        # Get topic override from session (set by /casual-chat route)
+                        topic_override = session.get('exercise_topic')
+
                         dynamic_prompt, context = prompt_builder.build_prompt(
-                            session['user_id'], 
-                            character
+                            session['user_id'],
+                            character,
+                            topic_override=topic_override
                         )
                         
                         if dynamic_prompt:
@@ -798,11 +809,16 @@ class AuthRoutes:
                 # Get character from query params (default to harry)
                 character = request.args.get('character', 'harry')
 
+                # Get topic override from session if available
+                topic_override = session.get('exercise_topic')
+                if topic_override:
+                    print(f"[INFO] Scenario - Using topic override from session: {topic_override}")
+
                 # Initialize scenario manager
                 scenario_manager = ScenarioManager()
 
                 # Get scenario for user
-                scenario_text, context = scenario_manager.get_scenario_for_user(user_id, character)
+                scenario_text, context = scenario_manager.get_scenario_for_user(user_id, character, topic_override)
 
                 # Return scenario and context
                 return jsonify({
@@ -823,6 +839,12 @@ class AuthRoutes:
             try:
                 # Get user's language context
                 user_id = session.get('user_id')
+
+                # Get topic override from URL parameter if provided
+                topic_override = request.args.get('topic', type=int)
+                if topic_override:
+                    # Store in session for API endpoints to use
+                    session['exercise_topic'] = topic_override
 
                 # Get user's current language progress
                 progress_mgr = ProgressManager()
@@ -857,10 +879,15 @@ class AuthRoutes:
                 # Get current user
                 user_id = session.get('user_id')
 
-                # Prepare user context - just pass the user_id
+                # Get topic override from session if available
+                topic_override = session.get('exercise_topic')
+                print(f"[INFO] Email Writing - Using topic override from session: {topic_override}")
+
+                # Prepare user context - pass the user_id and optional topic override
                 # The EmailExerciseManager will fetch the full context
                 user_context = {
-                    'user_id': user_id
+                    'user_id': user_id,
+                    'topic_override': topic_override
                 }
 
                 # Get or create session ID

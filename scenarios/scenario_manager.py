@@ -75,7 +75,7 @@ class ScenarioManager:
             }
         }
 
-    def get_scenario_for_user(self, user_id: int, character: str = 'harry') -> Tuple[str, Dict]:
+    def get_scenario_for_user(self, user_id: int, character: str = 'harry', topic_override: int = None) -> Tuple[str, Dict]:
         """
         Get a translated scenario for the user's current topic and language pair
 
@@ -99,8 +99,13 @@ class ScenarioManager:
             target_language = user_progress.target_language.lower()
             level = user_progress.current_level
 
-            # Determine current topic (next uncompleted)
-            topic_number = self._determine_current_topic(user_progress.id, level)
+            # Use topic override if provided, otherwise determine current topic
+            if topic_override:
+                topic_number = topic_override
+                print(f"[INFO] ScenarioManager: Using topic override: Topic {topic_override}")
+            else:
+                # Determine current topic (next uncompleted)
+                topic_number = self._determine_current_topic(user_progress.id, level)
 
             # Get scenario template from database
             scenario_template = self.topic_manager.get_scenario_template(level, topic_number)
