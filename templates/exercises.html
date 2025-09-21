@@ -332,7 +332,7 @@
 
         // Create and append each node
         nodes.forEach(node => {
-            const nodeElement = createTimelineNode(node, totalNodes);
+            const nodeElement = createTimelineNode(node, totalNodes, displayTopic);
             nodesContainer.appendChild(nodeElement);
         });
     }
@@ -408,7 +408,7 @@
         }
     }
 
-    function createTimelineNode(node, totalNodes) {
+    function createTimelineNode(node, totalNodes, displayTopic) {
         const nodeDiv = document.createElement('div');
         nodeDiv.className = 'timeline-node';
 
@@ -420,20 +420,38 @@
             const topic = node.data;
             nodeDiv.classList.add('topic-node');
 
-            // Set state classes
+            // Debug logging for Topic 2
+            if (topic.topic_number === 2) {
+                console.log('Topic 2 data:', {
+                    topic_number: topic.topic_number,
+                    completed: topic.completed,
+                    current: topic.current,
+                    locked: topic.locked
+                });
+            }
+
+            // Set completion state classes
             if (topic.completed) {
                 nodeDiv.classList.add('completed');
-            } else if (topic.current) {
-                nodeDiv.classList.add('current');
-                // Add the red triangle indicator above current node
-                const triangle = document.createElement('div');
-                triangle.className = 'current-indicator';
-                triangle.innerHTML = '▼';
-                nodeDiv.appendChild(triangle);
             } else if (topic.locked) {
                 nodeDiv.classList.add('locked');
             } else {
                 nodeDiv.classList.add('available');
+            }
+
+            // Add progression-topic class for the database's current topic (blue color)
+            if (topic.current) {  // This comes from backend (database's current_topic)
+                nodeDiv.classList.add('progression-topic');
+                console.log(`Topic ${topic.topic_number} marked as progression-topic (current)`);
+            }
+
+            // Add triangle to the selected/viewing topic (separate from colors)
+            if (topic.topic_number === displayTopic) {
+                // Only add the triangle, no color-changing class
+                const triangle = document.createElement('div');
+                triangle.className = 'current-indicator';
+                triangle.innerHTML = '▼';
+                nodeDiv.appendChild(triangle);
             }
 
             // Add the circle with topic number
