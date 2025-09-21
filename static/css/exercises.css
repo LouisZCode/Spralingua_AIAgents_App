@@ -354,6 +354,8 @@
     top: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
+    width: 32px;  /* Match the node-circle width for proper centering */
+    height: 32px;  /* Match the node-circle height */
 }
 
 /* Node circle */
@@ -432,7 +434,7 @@
 .current-indicator {
     position: absolute;
     top: -20px;
-    left: 50%;
+    left: 28%;
     transform: translateX(-50%);
     color: #ef4444;
     font-size: 20px;
