@@ -474,6 +474,13 @@ body {
     text-align: center;
 }
 
+/* Center the third stat card when it's alone */
+.stat-card-centered {
+    grid-column: 1 / -1;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
 .stat-number {
     font-size: 3rem;
     font-weight: 700;
@@ -589,4 +596,84 @@ body {
         height: 50px;
         font-size: 1.25rem;
     }
+}
+
+/* Language Cycling Animation */
+.language-cycling-test {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.cycling-text {
+    font-size: 1.2rem;
+    color: white;
+    opacity: 0.95;
+}
+
+.language-rotator {
+    display: inline-block;
+    position: relative;
+    width: 140px; /* Fixed width to prevent layout shift */
+    height: 1.2em;
+    vertical-align: middle;
+}
+
+/* When in headline, inherit font size */
+.headline .language-rotator {
+    display: block; /* Make it take full width */
+    width: 100%;
+    height: 0; /* No height - doesn't affect spacing */
+    overflow: visible; /* Allow text to show */
+    margin: 0; /* Remove extra margins - let <br> handle spacing */
+    position: relative;
+}
+
+.language-word {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    left: 0;
+    right: 0;
+    top: 0; /* Position at container level */
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease;
+}
+
+.language-word.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.language-word.fade-out {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+/* Inline language rotator for section titles */
+.language-rotator-inline {
+    display: inline-block;
+    position: relative;
+    width: 140px; /* Fixed width for inline context */
+    height: 1.2em;
+    vertical-align: baseline;
+}
+
+.language-rotator-inline .language-word {
+    top: 0;
+}
+
+/* Section title language rotator (on its own line) */
+.language-rotator-section {
+    display: block;
+    width: 100%;
+    height: 0; /* No height to maintain equal spacing */
+    overflow: visible;
+    margin: 0;
+    position: relative;
+    text-align: center;
+}
+
+.language-rotator-section .language-word {
+    top: 0;
 }

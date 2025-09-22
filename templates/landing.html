@@ -20,10 +20,16 @@
                 
                 <!-- Value Proposition -->
                 <div class="value-prop">
-                    <h2 class="headline">Master Any Language with Your Personal AI Tutor</h2>
-                    <p class="subheadline">Experience personalized language learning powered by advanced AI. Start speaking confidently from day one.</p>
+                    <h2 class="headline">Master<br>
+                        <span class="language-rotator">
+                            <span class="language-word active">English</span>
+                            <span class="language-word">German</span>
+                            <span class="language-word">Spanish</span>
+                            <span class="language-word">Portuguese</span>
+                        </span><br>with<br>Your Personal AI Tutor</h2>
+                    <p class="subheadline">Personalized language learning powered by AI. Start speaking confidently from day one.</p>
                 </div>
-                
+
                 <!-- CTA -->
                 <div class="cta-container">
                     <a href="/register" class="cta-button cta-button-primary">
@@ -72,7 +78,14 @@
         <!-- How It Works Section -->
         <section class="how-it-works">
             <div class="container">
-                <h2 class="section-title">Start Speaking German in 3 Simple Steps</h2>
+                <h2 class="section-title">Start Speaking<br>
+                    <span class="language-rotator-section">
+                        <span class="language-word active">English</span>
+                        <span class="language-word">German</span>
+                        <span class="language-word">Spanish</span>
+                        <span class="language-word">Portuguese</span>
+                    </span><br>
+                    in 3 Simple Steps</h2>
                 <div class="steps-grid">
                     <div class="step-card">
                         <div class="step-number">1</div>
@@ -108,7 +121,7 @@
                         <div class="stat-number">4.9/5</div>
                         <div class="stat-label">Satisfaction Rating</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-card-centered">
                         <div class="stat-number">15 min</div>
                         <div class="stat-label">Daily Practice</div>
                     </div>
@@ -142,6 +155,34 @@
             elements.forEach((el, index) => {
                 el.style.animationDelay = `${index * 0.1}s`;
                 el.classList.add('fade-in-up');
+            });
+
+            // Language cycling animation - handle each rotator separately
+            const rotators = document.querySelectorAll('.language-rotator, .language-rotator-inline, .language-rotator-section');
+
+            rotators.forEach(rotator => {
+                const languages = rotator.querySelectorAll('.language-word');
+                let currentIndex = 0;
+
+                function cycleLanguages() {
+                    // Fade out current
+                    languages[currentIndex].classList.remove('active');
+                    languages[currentIndex].classList.add('fade-out');
+
+                    // Move to next language
+                    currentIndex = (currentIndex + 1) % languages.length;
+
+                    // Fade in new language
+                    setTimeout(() => {
+                        languages.forEach(lang => {
+                            lang.classList.remove('active', 'fade-out');
+                        });
+                        languages[currentIndex].classList.add('active');
+                    }, 100);
+                }
+
+                // Start cycling every 1 second for this rotator
+                setInterval(cycleLanguages, 1000);
             });
         });
     </script>
