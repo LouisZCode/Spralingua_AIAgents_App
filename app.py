@@ -81,8 +81,8 @@ def save_progress():
         if not user_id:
             return jsonify({'success': False, 'error': 'User ID not found in session'}), 400
         
-        # Save progress using ProgressManager
-        success, result = progress_manager.save_progress(
+        # Save progress using ProgressManager with topic initialization
+        success, result = progress_manager.save_progress_with_initialization(
             user_id=user_id,
             input_language=data['input_language'],
             target_language=data['target_language'],

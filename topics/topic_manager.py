@@ -58,11 +58,11 @@ class TopicManager:
     def get_user_topic_progress(self, user_progress_id, topic_number=None):
         """
         Get user's progress for a specific topic or all topics
-        
+
         Args:
             user_progress_id: The user progress ID
             topic_number: Optional specific topic number
-        
+
         Returns:
             TopicProgress object(s) or None
         """
@@ -79,6 +79,42 @@ class TopicManager:
         except Exception as e:
             print(f"Error getting user topic progress: {e}")
             return None if topic_number else []
+
+    def ensure_topic_progress_exists(self, user_progress_id, topic_number):
+        """
+        Ensure topic progress record exists, create if missing (resilience)
+
+        Args:
+            user_progress_id: The user progress ID
+            topic_number: The topic number
+
+        Returns:
+            TopicProgress object (existing or newly created)
+        """
+        try:
+            # First check if it exists
+            existing = self.get_user_topic_progress(user_progress_id, topic_number)
+            if existing:
+                return existing
+
+            print(f"[WARNING] Topic progress missing for topic {topic_number}, creating...")
+
+            # Create it if missing
+            new_progress = TopicProgress(
+                user_progress_id=user_progress_id,
+                topic_number=topic_number,
+                total_exercises=5  # Default number of exercises
+            )
+            self.db.session.add(new_progress)
+            self.db.session.commit()
+
+            print(f"[SUCCESS] Created missing topic progress for topic {topic_number}")
+            return new_progress
+
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"[ERROR] Failed to ensure topic progress: {e}")
+            return None
     
     def initialize_user_topics(self, user_progress_id, level):
         """
@@ -466,10 +502,10 @@ class TopicManager:
             Tuple (success: bool, result: dict)
         """
         try:
-            # Get the topic progress
-            topic_progress = self.get_user_topic_progress(user_progress_id, topic_number)
+            # Get the topic progress (with auto-create if missing for resilience)
+            topic_progress = self.ensure_topic_progress_exists(user_progress_id, topic_number)
             if not topic_progress:
-                return False, {'error': f'Topic {topic_number} progress not found'}
+                return False, {'error': f'Topic {topic_number} progress could not be created'}
 
             # Mark as complete
             if not topic_progress.completed:
@@ -591,7 +627,7 @@ class TopicManager:
 
     def check_completion_popup_needed(self, user_progress_id):
         """
-        Check if a completion popup should be shown for the current completed topic
+        Check if a completion popup should be shown for any completed topic
 
         Args:
             user_progress_id: The user progress ID
@@ -600,29 +636,30 @@ class TopicManager:
             Dict with popup info or None if no popup needed
         """
         try:
-            # Get user progress to find current topic
+            # Get user progress for context
             user_progress = UserProgress.query.get(user_progress_id)
             if not user_progress:
                 return None
 
-            current_topic_num = user_progress.current_topic
+            # Look for ANY completed topic that hasn't shown its popup yet
+            # Get the earliest one (lowest topic number) to show in order
+            completed_without_popup = TopicProgress.query.filter_by(
+                user_progress_id=user_progress_id,
+                completed=True,
+                has_seen_completion_popup=False
+            ).order_by(TopicProgress.topic_number).first()
 
-            # Get the current topic's progress
-            topic_progress = self.get_user_topic_progress(user_progress_id, current_topic_num)
-            if not topic_progress:
-                return None
+            if completed_without_popup:
+                completed_topic_num = completed_without_popup.topic_number
 
-            # Check if topic is completed and popup hasn't been shown
-            # Handle old records that might not have the field yet
-            has_seen_popup = getattr(topic_progress, 'has_seen_completion_popup', False)
-            if topic_progress.completed and not has_seen_popup:
-                # Check what comes next
-                next_item = self._determine_next_topic(user_progress_id, current_topic_num)
+                # Determine what comes after this completed topic
+                next_item = self._determine_next_topic(user_progress_id, completed_topic_num)
 
                 if next_item:
+                    print(f"[INFO] Popup needed for completed Topic {completed_topic_num}")
                     return {
                         'show_popup': True,
-                        'completed_topic': current_topic_num,
+                        'completed_topic': completed_topic_num,
                         'next_item': next_item,
                         'is_test': next_item['type'] == 'test'
                     }

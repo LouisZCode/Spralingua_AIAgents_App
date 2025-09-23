@@ -967,35 +967,67 @@ class AuthRoutes:
                     session_data=session_data
                 )
 
+                print(f"[DEBUG] Email Writing - process_exercise_request returned: success={success}, result keys={result.keys() if isinstance(result, dict) else 'not a dict'}")
+
                 # Update session data
                 session[exercise_session_key] = session_data
                 session.modified = True
 
                 if success:
+                    import sys
+                    print(f"[DEBUG] Email Writing - Response success. feedback_type: {result.get('feedback_type')}, score: {result.get('score')}", flush=True)
+                    sys.stdout.flush()
                     # Save score if this was a comprehensive feedback (second attempt)
                     if result.get('feedback_type') == 'comprehensive' and 'score' in result:
+                        print(f"[INFO] Email Writing - Conditions met for score saving. Score: {result['score']}", flush=True)
                         try:
+                            print("[DEBUG] Starting score save process...", flush=True)
+                            import traceback
+
+                            print("[DEBUG] Importing managers...", flush=True)
                             from progress.exercise_progress_manager import ExerciseProgressManager
                             from progress.progress_manager import ProgressManager
 
+                            print("[DEBUG] Creating progress_manager...", flush=True)
                             # Get user's progress record
                             progress_manager = ProgressManager()
 
-                            # Get language pair from session data (stored by exercise_manager)
-                            input_lang = session_data.get('input_language', 'english')
-                            target_lang = session_data.get('target_language', 'german')
+                            print(f"[DEBUG] Session data keys: {session_data.keys() if session_data else 'None'}", flush=True)
 
+                            # Get language pair from stored user context
+                            stored_context = session_data.get('user_context')
+                            print(f"[DEBUG] Stored context exists: {stored_context is not None}", flush=True)
+                            if stored_context:
+                                print(f"[DEBUG] Stored context keys: {stored_context.keys()}", flush=True)
+                                input_lang = stored_context.get('input_language', 'english')
+                                target_lang = stored_context.get('target_language', 'german')
+                                print(f"[DEBUG] Languages from stored context: input={input_lang}, target={target_lang}", flush=True)
+                            else:
+                                # Fallback to direct session data - but these are the WRONG keys!
+                                # native_language/target_language are for display, not the actual language pair
+                                input_lang = session_data.get('native_language', 'english')
+                                target_lang = session_data.get('target_language', 'german')
+                                print(f"[WARNING] Using fallback - Languages from session data: input={input_lang}, target={target_lang}", flush=True)
+
+                            print(f"[DEBUG] Getting user progress for user_id={user_id}")
                             # Get user progress ID
                             user_progress = progress_manager.get_user_progress(
                                 user_id, input_lang, target_lang
                             )
+                            print(f"[DEBUG] User progress found: {user_progress is not None}")
 
                             if user_progress:
+                                # Get the actual topic being practiced (might be different from current_topic)
+                                # This handles cases where user navigated to a specific topic via timeline
+                                topic_number = session.get('exercise_topic', user_progress.current_topic)
+
+                                print(f"[INFO] Email Writing - Saving score for topic {topic_number} (override: {session.get('exercise_topic')}, current: {user_progress.current_topic})")
+
                                 # Record the exercise attempt
                                 exercise_manager_db = ExerciseProgressManager()
                                 db_result = exercise_manager_db.record_exercise_attempt(
                                     user_progress_id=user_progress.id,
-                                    topic_number=user_progress.current_topic,
+                                    topic_number=topic_number,  # Use the override if present
                                     exercise_type='email_writing',
                                     score=result['score']
                                 )
@@ -1004,9 +1036,17 @@ class AuthRoutes:
                                 result['exercise_completed'] = db_result.get('newly_completed', False)
                                 result['topic_advanced'] = db_result.get('topic_advanced', False)
 
-                                print(f"[SCORE SAVED] Email Writing: {result['score']}%")
+                                print(f"[SUCCESS] Email Writing score saved! Exercise completed: {db_result.get('newly_completed')}")
+
+                                print(f"[SCORE SAVED] Email Writing: {result['score']}%", flush=True)
                         except Exception as e:
-                            print(f"[ERROR] Saving email writing score: {e}")
+                            import traceback
+                            print(f"[ERROR] Saving email writing score: {e}", flush=True)
+                            print(f"[ERROR] Full traceback:", flush=True)
+                            print(traceback.format_exc(), flush=True)
+                            sys.stdout.flush()
+                            # Don't re-raise - let the user at least see the feedback
+                            print(f"[WARNING] Score not saved but continuing with response", flush=True)
 
                     return jsonify(result)
                 else:

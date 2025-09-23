@@ -41,6 +41,11 @@ class TopicProgress(db.Model):
         
         return self.completed
     
+    def mark_complete(self):
+        """Mark this topic as complete"""
+        self.completed = True
+        self.completed_at = datetime.utcnow()
+
     def reset_progress(self):
         """Reset progress for this topic"""
         self.exercises_completed = 0

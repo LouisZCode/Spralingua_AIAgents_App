@@ -33,10 +33,45 @@
     
     <!-- Global translation system -->
     <script src="{{ url_for('static', filename='js/translations.js') }}?v={{ timestamp }}"></script>
-    
+
+    <!-- Global localStorage cleanup handlers -->
+    <script>
+        // Clear user-specific localStorage on logout
+        function clearUserStorage() {
+            console.log('[CLEANUP] Clearing user-specific localStorage data');
+
+            // Clear all viewing topic keys for all language pairs
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('viewingTopic_')) {
+                    console.log(`[CLEANUP] Removing ${key}`);
+                    localStorage.removeItem(key);
+                }
+            });
+
+            // Clear selected languages and level (user-specific choices)
+            localStorage.removeItem('selectedInputLanguage');
+            localStorage.removeItem('selectedTargetLanguage');
+            localStorage.removeItem('selectedLevel');
+
+            console.log('[CLEANUP] User storage cleared');
+        }
+
+        // Attach to logout link when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const logoutLink = document.querySelector('.nav-logout');
+            if (logoutLink) {
+                logoutLink.addEventListener('click', function(e) {
+                    // Clear storage before navigation
+                    clearUserStorage();
+                    // Allow normal navigation to continue
+                });
+            }
+        });
+    </script>
+
     <!-- Lottie/Bodymovin for avatar animations (only loaded where needed) -->
     {% block lottie %}{% endblock %}
-    
+
     <!-- Page-specific scripts -->
     {% block scripts %}{% endblock %}
 </body>

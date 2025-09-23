@@ -184,6 +184,88 @@ class ProgressManager:
             print(f"Error deleting progress: {e}")
             return False, 'Failed to delete progress'
     
+    def save_progress_with_initialization(self, user_id, input_language, target_language, current_level):
+        """
+        Save or update user's progress AND ensure topics are initialized.
+        Combines the behavior of save_progress() with topic initialization.
+
+        Args:
+            user_id: The user's ID
+            input_language: The input language
+            target_language: The target language
+            current_level: The current level (A1, A2, B1, B2)
+
+        Returns:
+            Tuple (success: bool, result: dict)
+        """
+        try:
+            # Check if progress already exists for this language pair
+            existing = self.get_user_progress(user_id, input_language, target_language)
+
+            if existing:
+                # Update existing progress level if different
+                if existing.current_level != current_level:
+                    existing.update_progress(new_level=current_level)
+                    self.db.session.commit()
+                    print(f"[INFO] Updated level from {existing.current_level} to {current_level}")
+
+                # Check if topics are initialized (safety check)
+                from topics.topic_manager import TopicManager
+                from models.topic_progress import TopicProgress
+
+                topic_mgr = TopicManager()
+                topic_count = TopicProgress.query.filter_by(
+                    user_progress_id=existing.id
+                ).count()
+
+                if topic_count == 0:
+                    print(f"[WARNING] No topics found for existing progress {existing.id}, initializing...")
+                    success, message = topic_mgr.initialize_user_topics(existing.id, existing.current_level)
+                    if not success:
+                        print(f"[ERROR] Failed to initialize topics: {message}")
+                    else:
+                        print(f"[SUCCESS] Initialized topics for existing user")
+
+                return True, {
+                    'message': 'Progress updated successfully',
+                    'progress': existing.to_dict()
+                }
+            else:
+                # Create new progress record
+                new_progress = UserProgress(
+                    user_id=user_id,
+                    input_language=input_language.lower(),
+                    target_language=target_language.lower(),
+                    current_level=current_level
+                )
+
+                self.db.session.add(new_progress)
+                self.db.session.commit()
+
+                # Initialize topics for the new progress
+                from topics.topic_manager import TopicManager
+                topic_mgr = TopicManager()
+                success, message = topic_mgr.initialize_user_topics(new_progress.id, current_level)
+
+                if not success:
+                    print(f"[ERROR] Failed to initialize topics for new progress: {message}")
+                else:
+                    print(f"[SUCCESS] Created progress and initialized topics")
+
+                return True, {
+                    'message': 'Progress saved successfully with topics initialized',
+                    'progress': new_progress.to_dict()
+                }
+
+        except IntegrityError as e:
+            self.db.session.rollback()
+            print(f"[ERROR] Database integrity error: {e}")
+            return False, {'error': 'Progress already exists for this language pair'}
+        except Exception as e:
+            self.db.session.rollback()
+            print(f"[ERROR] save_progress_with_initialization failed: {e}")
+            return False, {'error': 'Failed to save progress'}
+
     def update_progress_in_level(self, user_id, input_language, target_language, progress_percentage):
         """
         Update the progress percentage within a level

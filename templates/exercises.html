@@ -174,6 +174,30 @@
                 return;
             }
 
+            // Language pair change detection
+            const lastInputLang = localStorage.getItem('lastInputLanguage');
+            const lastTargetLang = localStorage.getItem('lastTargetLanguage');
+
+            if (lastInputLang && lastTargetLang) {
+                // Check if language pair has changed
+                if (lastInputLang !== inputLang || lastTargetLang !== targetLang) {
+                    console.log('[LANGUAGE CHANGE] Detected language pair change');
+                    console.log(`[LANGUAGE CHANGE] From: ${lastInputLang}->${lastTargetLang} To: ${inputLang}->${targetLang}`);
+
+                    // Clear viewing topics for all language pairs since we're switching
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.startsWith('viewingTopic_')) {
+                            console.log(`[LANGUAGE CHANGE] Clearing ${key}`);
+                            localStorage.removeItem(key);
+                        }
+                    });
+                }
+            }
+
+            // Store current language pair for next time
+            localStorage.setItem('lastInputLanguage', inputLang);
+            localStorage.setItem('lastTargetLanguage', targetLang);
+
             // Fetch progress data
             const response = await fetch(`/api/user-progress?input_language=${inputLang}&target_language=${targetLang}`);
 
@@ -251,9 +275,33 @@
     }
 
     function displayProgress(data) {
-        // Check if user has selected a specific topic to view
-        const viewingTopic = localStorage.getItem('viewingTopic');
-        const displayTopic = viewingTopic ? parseInt(viewingTopic) : data.current_topic;
+        // Get current language pair for context-aware storage
+        const inputLang = localStorage.getItem('selectedInputLanguage');
+        const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+        // Migrate old viewingTopic key if it exists
+        const oldViewingTopic = localStorage.getItem('viewingTopic');
+        if (oldViewingTopic) {
+            console.log('[MIGRATION] Removing old global viewingTopic key');
+            localStorage.removeItem('viewingTopic');
+        }
+
+        // Use context-aware key for viewing topic
+        const contextKey = `viewingTopic_${inputLang}_${targetLang}`;
+        const storedViewingTopic = localStorage.getItem(contextKey);
+        let displayTopic = storedViewingTopic ? parseInt(storedViewingTopic) : data.current_topic;
+
+        // Validate that the viewing topic is accessible for this user
+        if (displayTopic) {
+            // Check if this topic is actually available
+            const topicData = data.topics.find(t => t.topic_number === displayTopic);
+            if (!topicData || topicData.locked) {
+                console.log(`[VALIDATION] Topic ${displayTopic} is not accessible, resetting to current topic ${data.current_topic}`);
+                displayTopic = data.current_topic;
+                // Clear invalid stored value
+                localStorage.removeItem(contextKey);
+            }
+        }
 
         // Update level and topic displays
         document.getElementById('current-level-display').textContent = data.current_level;
@@ -338,8 +386,13 @@
     }
 
     function updateExerciseLinks() {
-        // Update exercise links with the current viewing topic
-        const viewingTopic = localStorage.getItem('viewingTopic');
+        // Get current language pair for context-aware storage
+        const inputLang = localStorage.getItem('selectedInputLanguage');
+        const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+        // Use context-aware key for viewing topic
+        const contextKey = `viewingTopic_${inputLang}_${targetLang}`;
+        const viewingTopic = localStorage.getItem(contextKey);
 
         if (viewingTopic) {
             // Update casual chat link
@@ -528,8 +581,9 @@
                 const result = await response.json();
                 console.log(`[SUCCESS] Navigated to Topic ${topicNumber}`);
 
-                // Store the selected topic to display it after reload
-                localStorage.setItem('viewingTopic', topicNumber);
+                // Use context-aware key for storing the selected topic
+                const contextKey = `viewingTopic_${inputLang}_${targetLang}`;
+                localStorage.setItem(contextKey, topicNumber);
 
                 // Update exercise links immediately
                 updateExerciseLinks();
@@ -632,8 +686,13 @@
             // Mark popup as seen
             await markPopupSeen(completedTopic);
 
-            // Clear viewing topic since we're moving forward
-            localStorage.removeItem('viewingTopic');
+            // Get current language pair for context-aware storage
+            const inputLang = localStorage.getItem('selectedInputLanguage');
+            const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+            // Clear viewing topic since we're moving forward (use context-aware key)
+            const contextKey = `viewingTopic_${inputLang}_${targetLang}`;
+            localStorage.removeItem(contextKey);
 
             if (nextType === 'test') {
                 // Navigate to test
