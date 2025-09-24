@@ -325,45 +325,28 @@
         const totalNodes = 16;
         const nodes = [];
 
-        // Build the nodes array with topics and tests in order
-        let topicIndex = 0;
-        let testIndex = 0;
-
+        // Build the nodes array - all 16 are topics now, but 4,8,12,16 are tests
         for (let i = 0; i < totalNodes; i++) {
             const position = i + 1;
+            const topic = data.topics.find(t => t.topic_number === position);
 
-            // Tests are at positions 4, 8, 12, 16
-            if (position === 4 || position === 8 || position === 12 || position === 16) {
-                // This is a test position
-                const test = data.tests[testIndex];
-                if (test) {
-                    nodes.push({
-                        type: 'test',
-                        data: test,
-                        position: position
-                    });
-                    testIndex++;
-                }
-            } else {
-                // This is a topic position
-                const topic = data.topics[topicIndex];
-                if (topic) {
-                    nodes.push({
-                        type: 'topic',
-                        data: topic,
-                        position: position
-                    });
-                    topicIndex++;
-                }
+            if (topic) {
+                // Check if this is a test topic (positions 4, 8, 12, 16)
+                const isTest = (position === 4 || position === 8 || position === 12 || position === 16);
+
+                nodes.push({
+                    type: isTest ? 'test' : 'topic',
+                    data: topic,
+                    position: position
+                });
             }
         }
 
         // Find the current position for the progress line
         let currentPosition = 0;
         nodes.forEach(node => {
-            if (node.type === 'topic' && node.data.completed) {
-                currentPosition = Math.max(currentPosition, node.position);
-            } else if (node.type === 'test' && node.data.passed) {
+            // All are topics now, just check if completed
+            if (node.data.completed) {
                 currentPosition = Math.max(currentPosition, node.position);
             }
         });
@@ -522,16 +505,30 @@
                 nodeDiv.onclick = () => navigateToTopic(topic.topic_number);
             }
         } else if (node.type === 'test') {
-            const test = node.data;
+            // This is a test topic (positions 4, 8, 12, 16)
+            const topic = node.data;
             nodeDiv.classList.add('test-node');
 
-            // Set state classes
-            if (test.passed) {
-                nodeDiv.classList.add('passed');
-            } else if (test.unlocked) {
-                nodeDiv.classList.add('unlocked');
-            } else {
+            // Set state classes same as topics
+            if (topic.completed) {
+                nodeDiv.classList.add('completed');
+            } else if (topic.locked) {
                 nodeDiv.classList.add('locked');
+            } else {
+                nodeDiv.classList.add('available');
+            }
+
+            // Add progression-topic class if this is current
+            if (topic.current) {
+                nodeDiv.classList.add('progression-topic');
+            }
+
+            // Add triangle to selected test topic
+            if (topic.topic_number === displayTopic) {
+                const triangle = document.createElement('div');
+                triangle.className = 'current-indicator';
+                triangle.innerHTML = '▼';
+                nodeDiv.appendChild(triangle);
             }
 
             // Add the circle with test emoji
@@ -542,17 +539,17 @@
 
             // Add tooltip
             const testNames = {
-                'checkpoint_1': 'Checkpoint Test 1',
-                'checkpoint_2': 'Checkpoint Test 2',
-                'checkpoint_3': 'Checkpoint Test 3',
-                'final': 'Final Test'
+                4: 'Checkpoint Test 1',
+                8: 'Checkpoint Test 2',
+                12: 'Checkpoint Test 3',
+                16: 'Final Test'
             };
-            nodeDiv.title = testNames[test.test_type] || `Test ${test.test_number}`;
+            nodeDiv.title = testNames[topic.topic_number] || `Test ${topic.topic_number}`;
 
-            // Add click handler if unlocked
-            if (test.unlocked) {
+            // Add click handler if not locked
+            if (!topic.locked) {
                 nodeDiv.style.cursor = 'pointer';
-                nodeDiv.onclick = () => navigateToTest(test.test_type);
+                nodeDiv.onclick = () => navigateToTopic(topic.topic_number);
             }
         }
 
@@ -600,10 +597,6 @@
         }
     }
 
-    function navigateToTest(testType) {
-        // Navigate to test page
-        window.location.href = `/test/${testType}`;
-    }
 
 
 
@@ -647,13 +640,15 @@
 
         // Store popup data for button handlers
         popup.dataset.completedTopic = popupData.completed_topic;
-        popup.dataset.nextType = popupData.next_item.type;
-        popup.dataset.nextNumber = popupData.next_item.topic_number || popupData.next_item.test_number;
+        popup.dataset.nextNumber = popupData.next_item.topic_number;
 
-        if (popupData.is_test) {
+        // Check if next topic is a test (positions 4, 8, 12, 16)
+        const nextIsTest = [4, 8, 12, 16].includes(popupData.next_item.topic_number);
+
+        if (nextIsTest) {
             // Test popup
             title.textContent = `You finished Topic ${popupData.completed_topic}!`;
-            subtitle.textContent = popupData.next_item.message;
+            subtitle.textContent = `Ready for Checkpoint Test ${[4, 8, 12, 16].indexOf(popupData.next_item.topic_number) + 1}?`;
             yesText.textContent = 'Take the Test';
 
             // Update icon for test
@@ -680,7 +675,6 @@
 
         yesBtn.addEventListener('click', async function() {
             const completedTopic = parseInt(popup.dataset.completedTopic);
-            const nextType = popup.dataset.nextType;
             const nextNumber = parseInt(popup.dataset.nextNumber);
 
             // Mark popup as seen
@@ -694,18 +688,8 @@
             const contextKey = `viewingTopic_${inputLang}_${targetLang}`;
             localStorage.removeItem(contextKey);
 
-            if (nextType === 'test') {
-                // Navigate to test
-                const testTypes = {
-                    1: 'checkpoint_1',
-                    2: 'checkpoint_2',
-                    3: 'final'
-                };
-                navigateToTest(testTypes[nextNumber]);
-            } else {
-                // Navigate to next topic
-                await navigateToTopic(nextNumber);
-            }
+            // Navigate to next topic (tests are now just topics)
+            await navigateToTopic(nextNumber);
         });
 
         stayBtn.addEventListener('click', async function() {
