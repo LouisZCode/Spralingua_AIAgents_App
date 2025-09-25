@@ -2,9 +2,15 @@
     <div class="nav-container">
         <!-- Logo/Brand -->
         <div class="nav-brand">
-            <a href="/" class="brand-link">
-                <span class="brand-text">Spralingua</span>
-            </a>
+            {% if session.authenticated %}
+                <a href="{{ url_for('exercises') }}" class="brand-link">
+                    <span class="brand-text">Spralingua</span>
+                </a>
+            {% else %}
+                <a href="/" class="brand-link">
+                    <span class="brand-text">Spralingua</span>
+                </a>
+            {% endif %}
         </div>
         
         <!-- Navigation Links -->

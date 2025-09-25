@@ -14,13 +14,14 @@ class ExerciseProgressManager:
         """Initialize the ExerciseProgressManager"""
         self.db = db
 
-    def get_exercise_progress(self, user_progress_id, topic_number, exercise_type):
+    def get_exercise_progress(self, user_progress_id, level, topic_number, exercise_type):
         """
         Get specific exercise progress for a user
 
         Args:
             user_progress_id: The user progress ID
-            topic_number: The topic number (1-12)
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-16)
             exercise_type: The exercise type ('casual_chat', 'email_writing', etc.)
 
         Returns:
@@ -29,6 +30,7 @@ class ExerciseProgressManager:
         try:
             progress = ExerciseProgress.query.filter_by(
                 user_progress_id=user_progress_id,
+                level=level.upper(),
                 topic_number=topic_number,
                 exercise_type=exercise_type.lower()
             ).first()
@@ -37,14 +39,15 @@ class ExerciseProgressManager:
             print(f"[ERROR] Getting exercise progress: {e}")
             return None
 
-    def record_exercise_attempt(self, user_progress_id, topic_number, exercise_type,
+    def record_exercise_attempt(self, user_progress_id, level, topic_number, exercise_type,
                                score, messages_correct=None, messages_total=None):
         """
         Record an exercise attempt and check for topic completion
 
         Args:
             user_progress_id: The user progress ID
-            topic_number: The topic number (1-12)
+            level: The level (A1, A2, B1, B2)
+            topic_number: The topic number (1-16)
             exercise_type: The exercise type
             score: The score achieved (0-100)
             messages_correct: Optional - for casual chat
@@ -56,13 +59,14 @@ class ExerciseProgressManager:
         try:
             # Get or create exercise progress record
             exercise_progress = self.get_exercise_progress(
-                user_progress_id, topic_number, exercise_type
+                user_progress_id, level, topic_number, exercise_type
             )
 
             if not exercise_progress:
                 # Create new record
                 exercise_progress = ExerciseProgress(
                     user_progress_id=user_progress_id,
+                    level=level,
                     topic_number=topic_number,
                     exercise_type=exercise_type
                 )
@@ -80,7 +84,7 @@ class ExerciseProgressManager:
             # Check if this completion triggers topic advancement
             topic_advanced = False
             if is_now_complete and not was_completed:
-                topic_advanced = self._check_topic_completion(user_progress_id, topic_number)
+                topic_advanced = self._check_topic_completion(user_progress_id, level, topic_number)
 
             return {
                 'success': True,
@@ -97,12 +101,13 @@ class ExerciseProgressManager:
             print(f"[ERROR] Recording exercise attempt: {e}")
             return {'success': False, 'error': str(e)}
 
-    def _check_topic_completion(self, user_progress_id, topic_number):
+    def _check_topic_completion(self, user_progress_id, level, topic_number):
         """
         Check if all exercises in a topic are complete and advance if so
 
         Args:
             user_progress_id: The user progress ID
+            level: The level (A1, A2, B1, B2)
             topic_number: The topic number to check
 
         Returns:
@@ -116,7 +121,7 @@ class ExerciseProgressManager:
             all_complete = True
             for exercise_type in active_exercises:
                 progress = self.get_exercise_progress(
-                    user_progress_id, topic_number, exercise_type
+                    user_progress_id, level, topic_number, exercise_type
                 )
                 if not progress or not progress.completed:
                     all_complete = False
@@ -128,7 +133,7 @@ class ExerciseProgressManager:
                 # Use TopicManager to handle topic completion properly
                 from topics.topic_manager import TopicManager
                 topic_manager = TopicManager()
-                success, result = topic_manager.mark_topic_complete(user_progress_id, topic_number)
+                success, result = topic_manager.mark_topic_complete(user_progress_id, level, topic_number)
 
                 if success:
                     print(f"[SUCCESS] Topic {topic_number} marked as complete")
@@ -179,12 +184,13 @@ class ExerciseProgressManager:
             print(f"[ERROR] Calculating level progress: {e}")
             return 0
 
-    def get_topic_exercises_status(self, user_progress_id, topic_number):
+    def get_topic_exercises_status(self, user_progress_id, level, topic_number):
         """
         Get status of all exercises in a topic
 
         Args:
             user_progress_id: The user progress ID
+            level: The level (A1, A2, B1, B2)
             topic_number: The topic number
 
         Returns:
@@ -196,7 +202,7 @@ class ExerciseProgressManager:
 
             for exercise_type in active_exercises:
                 progress = self.get_exercise_progress(
-                    user_progress_id, topic_number, exercise_type
+                    user_progress_id, level, topic_number, exercise_type
                 )
 
                 if progress:
@@ -233,12 +239,13 @@ class ExerciseProgressManager:
                 'topic_number': topic_number
             }
 
-    def reset_exercise_progress(self, user_progress_id, topic_number, exercise_type):
+    def reset_exercise_progress(self, user_progress_id, level, topic_number, exercise_type):
         """
         Reset progress for a specific exercise (for testing)
 
         Args:
             user_progress_id: The user progress ID
+            level: The level (A1, A2, B1, B2)
             topic_number: The topic number
             exercise_type: The exercise type
 
@@ -247,7 +254,7 @@ class ExerciseProgressManager:
         """
         try:
             progress = self.get_exercise_progress(
-                user_progress_id, topic_number, exercise_type
+                user_progress_id, level, topic_number, exercise_type
             )
 
             if progress:

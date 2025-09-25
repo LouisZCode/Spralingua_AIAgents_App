@@ -439,6 +439,7 @@ class AuthRoutes:
                                     exercise_manager = ExerciseProgressManager()
                                     result = exercise_manager.record_exercise_attempt(
                                         user_progress_id=user_progress.id,
+                                        level=user_progress.current_level,
                                         topic_number=user_progress.current_topic,
                                         exercise_type='casual_chat',
                                         score=score,
@@ -582,7 +583,7 @@ class AuthRoutes:
                 topics = topic_manager.get_all_topics_for_level(user_progress.current_level)
 
                 # Get all topic progress to determine max accessible topic
-                all_topic_progress = topic_manager.get_user_topic_progress(user_progress.id)
+                all_topic_progress = topic_manager.get_user_topic_progress(user_progress.id, user_progress.current_level)
 
                 # Get topic progress for each topic
                 topic_progress_list = []
@@ -599,7 +600,7 @@ class AuthRoutes:
 
                     # Get exercise status for this topic
                     exercise_status = exercise_manager.get_topic_exercises_status(
-                        user_progress.id, topic.topic_number
+                        user_progress.id, user_progress.current_level, topic.topic_number
                     )
 
                     is_completed = topic_progress.completed if topic_progress else False
@@ -1027,6 +1028,7 @@ class AuthRoutes:
                                 exercise_manager_db = ExerciseProgressManager()
                                 db_result = exercise_manager_db.record_exercise_attempt(
                                     user_progress_id=user_progress.id,
+                                    level=user_progress.current_level,
                                     topic_number=topic_number,  # Use the override if present
                                     exercise_type='email_writing',
                                     score=result['score']

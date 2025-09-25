@@ -7,7 +7,8 @@ class ExerciseProgress(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_progress_id = db.Column(db.Integer, db.ForeignKey('user_progress.id', ondelete='CASCADE'), nullable=False)
-    topic_number = db.Column(db.Integer, nullable=False)  # 1-12
+    level = db.Column(db.String(10), nullable=False)  # A1, A2, B1, B2
+    topic_number = db.Column(db.Integer, nullable=False)  # 1-16
     exercise_type = db.Column(db.String(50), nullable=False)  # 'casual_chat', 'email_writing', etc.
     score = db.Column(db.Float, default=0.0, nullable=False)  # Percentage score (0-100)
     completed = db.Column(db.Boolean, default=False, nullable=False)
@@ -23,14 +24,15 @@ class ExerciseProgress(db.Model):
     # Relationship to UserProgress
     user_progress = db.relationship('UserProgress', backref=db.backref('exercise_records', lazy='dynamic', cascade='all, delete-orphan'))
 
-    # Unique constraint for user progress + topic + exercise type
+    # Unique constraint for user progress + level + topic + exercise type
     __table_args__ = (
-        db.UniqueConstraint('user_progress_id', 'topic_number', 'exercise_type', name='_user_topic_exercise_uc'),
+        db.UniqueConstraint('user_progress_id', 'level', 'topic_number', 'exercise_type', name='_user_level_topic_exercise_uc'),
     )
 
-    def __init__(self, user_progress_id, topic_number, exercise_type):
+    def __init__(self, user_progress_id, level, topic_number, exercise_type):
         """Initialize exercise progress"""
         self.user_progress_id = user_progress_id
+        self.level = level.upper()  # Ensure uppercase (A1, A2, B1, B2)
         self.topic_number = topic_number
         self.exercise_type = exercise_type.lower()
         self.score = 0.0
@@ -96,6 +98,7 @@ class ExerciseProgress(db.Model):
         return {
             'id': self.id,
             'user_progress_id': self.user_progress_id,
+            'level': self.level,
             'topic_number': self.topic_number,
             'exercise_type': self.exercise_type,
             'score': self.score,

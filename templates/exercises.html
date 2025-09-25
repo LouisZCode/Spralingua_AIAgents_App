@@ -152,10 +152,11 @@
 <script>
     // Load user progress when page loads
     document.addEventListener('DOMContentLoaded', async function() {
-        await loadUserProgress();
+        const currentTopic = await loadUserProgress();
+        console.log('[DEBUG] currentTopic from loadUserProgress:', currentTopic);
         await checkCompletionPopup();
         setupPopupEventHandlers();
-        updateExerciseLinks();
+        updateExerciseLinks(currentTopic);
     });
 
     async function loadUserProgress() {
@@ -218,7 +219,13 @@
                 return;
             }
 
-            displayProgress(progressData);
+            console.log('[DEBUG] About to call displayProgress with:', progressData);
+            const currentDisplayTopic = displayProgress(progressData);
+            console.log('[DEBUG] displayProgress returned:', typeof currentDisplayTopic, currentDisplayTopic);
+            console.log('[DEBUG] loadUserProgress got currentDisplayTopic:', currentDisplayTopic);
+
+            // Return the current display topic for use in the main handler
+            return currentDisplayTopic;
 
         } catch (error) {
             console.error('Error loading progress:', error);
@@ -366,16 +373,29 @@
             const nodeElement = createTimelineNode(node, totalNodes, displayTopic);
             nodesContainer.appendChild(nodeElement);
         });
+
+        // Return the display topic for use in updateExerciseLinks
+        console.log('[DEBUG] displayProgress returning displayTopic:', displayTopic);
+        return displayTopic;
     }
 
-    function updateExerciseLinks() {
+    function updateExerciseLinks(defaultTopic) {
+        console.log('[DEBUG] updateExerciseLinks called with defaultTopic:', defaultTopic);
+
         // Get current language pair for context-aware storage
         const inputLang = localStorage.getItem('selectedInputLanguage');
         const targetLang = localStorage.getItem('selectedTargetLanguage');
 
         // Use context-aware key for viewing topic
         const contextKey = `viewingTopic_${inputLang}_${targetLang}`;
-        const viewingTopic = localStorage.getItem(contextKey);
+        let viewingTopic = localStorage.getItem(contextKey);
+        console.log('[DEBUG] viewingTopic from localStorage:', viewingTopic);
+
+        // Use default topic if no saved viewing topic
+        if (!viewingTopic && defaultTopic) {
+            viewingTopic = defaultTopic;
+            console.log('[DEBUG] Using defaultTopic as viewingTopic:', viewingTopic);
+        }
 
         if (viewingTopic) {
             // Update casual chat link
@@ -1102,14 +1122,16 @@
     // Modify the existing loadUserProgress function to call updateExerciseAccessibility
     const originalLoadUserProgress = loadUserProgress;
     loadUserProgress = async function() {
-        await originalLoadUserProgress();
+        const result = await originalLoadUserProgress();
+        return result;  // IMPORTANT: Return the result from the original function
     };
 
     // Modify displayProgress to also update exercise accessibility
     const originalDisplayProgress = displayProgress;
     displayProgress = function(data) {
-        originalDisplayProgress(data);
+        const result = originalDisplayProgress(data);
         updateExerciseAccessibility(data);
+        return result;  // IMPORTANT: Return the result from the original function
     };
 </script>
 {% endblock %}

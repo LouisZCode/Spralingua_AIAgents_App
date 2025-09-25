@@ -1393,18 +1393,11 @@
             }
         }, 200); // Wait for TranslationManager to be ready
         
-        // Also clear when navigating away via back button
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                console.log('[SESSION] Page hidden - clearing session for clean state');
-                fetch('/api/casual-chat/clear', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'clear' })
-                }).catch(() => {
-                    // Silently fail
-                });
-            }
+        // Clear session only when actually leaving the page (not when switching tabs)
+        window.addEventListener('beforeunload', function() {
+            console.log('[SESSION] Page unloading - clearing session for clean state');
+            // Use sendBeacon for reliable cleanup when leaving page
+            navigator.sendBeacon('/api/casual-chat/clear', JSON.stringify({ action: 'clear' }));
         });
     });
 </script>

@@ -271,9 +271,9 @@ Follow this structure:
                     # Determine current topic (next uncompleted topic)
                     current_topic_number = self._determine_current_topic(user_progress.id, context['level'])
                     context['topic_number'] = current_topic_number
-                
-                # Get topic details
-                topic_def = self.topic_manager.get_topic_definition(context['level'], current_topic_number)
+
+                # Get topic details (use the topic number from context, not the undefined current_topic_number)
+                topic_def = self.topic_manager.get_topic_definition(context['level'], context['topic_number'])
                 if topic_def:
                     context['topic_title'] = self._translate_topic_title(topic_def.title_key)
                     context['topic_key'] = topic_def.title_key

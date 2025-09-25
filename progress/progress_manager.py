@@ -209,18 +209,20 @@ class ProgressManager:
                     self.db.session.commit()
                     print(f"[INFO] Updated level from {existing.current_level} to {current_level}")
 
-                # Check if topics are initialized (safety check)
+                # Check if topics are initialized for the CURRENT LEVEL
                 from topics.topic_manager import TopicManager
                 from models.topic_progress import TopicProgress
 
                 topic_mgr = TopicManager()
+                # Check specifically for this level's topics
                 topic_count = TopicProgress.query.filter_by(
-                    user_progress_id=existing.id
+                    user_progress_id=existing.id,
+                    level=current_level.upper()
                 ).count()
 
                 if topic_count == 0:
-                    print(f"[WARNING] No topics found for existing progress {existing.id}, initializing...")
-                    success, message = topic_mgr.initialize_user_topics(existing.id, existing.current_level)
+                    print(f"[WARNING] No topics found for level {current_level} in progress {existing.id}, initializing...")
+                    success, message = topic_mgr.initialize_user_topics(existing.id, current_level)
                     if not success:
                         print(f"[ERROR] Failed to initialize topics: {message}")
                     else:

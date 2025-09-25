@@ -55,12 +55,13 @@ class TopicManager:
             print(f"Error getting topics for level: {e}")
             return []
     
-    def get_user_topic_progress(self, user_progress_id, topic_number=None):
+    def get_user_topic_progress(self, user_progress_id, level, topic_number=None):
         """
         Get user's progress for a specific topic or all topics
 
         Args:
             user_progress_id: The user progress ID
+            level: The level (A1, A2, B1, B2)
             topic_number: Optional specific topic number
 
         Returns:
@@ -70,22 +71,25 @@ class TopicManager:
             if topic_number:
                 return TopicProgress.query.filter_by(
                     user_progress_id=user_progress_id,
+                    level=level.upper(),
                     topic_number=topic_number
                 ).first()
             else:
                 return TopicProgress.query.filter_by(
-                    user_progress_id=user_progress_id
+                    user_progress_id=user_progress_id,
+                    level=level.upper()
                 ).order_by(TopicProgress.topic_number).all()
         except Exception as e:
             print(f"Error getting user topic progress: {e}")
             return None if topic_number else []
 
-    def ensure_topic_progress_exists(self, user_progress_id, topic_number):
+    def ensure_topic_progress_exists(self, user_progress_id, level, topic_number):
         """
         Ensure topic progress record exists, create if missing (resilience)
 
         Args:
             user_progress_id: The user progress ID
+            level: The level (A1, A2, B1, B2)
             topic_number: The topic number
 
         Returns:
@@ -93,7 +97,7 @@ class TopicManager:
         """
         try:
             # First check if it exists
-            existing = self.get_user_topic_progress(user_progress_id, topic_number)
+            existing = self.get_user_topic_progress(user_progress_id, level, topic_number)
             if existing:
                 return existing
 
@@ -102,6 +106,7 @@ class TopicManager:
             # Create it if missing
             new_progress = TopicProgress(
                 user_progress_id=user_progress_id,
+                level=level,
                 topic_number=topic_number,
                 total_exercises=5  # Default number of exercises
             )
@@ -139,6 +144,7 @@ class TopicManager:
                 # Check if progress already exists
                 existing = TopicProgress.query.filter_by(
                     user_progress_id=user_progress_id,
+                    level=level.upper(),
                     topic_number=topic.topic_number
                 ).first()
                 
@@ -149,6 +155,7 @@ class TopicManager:
                     
                     progress = TopicProgress(
                         user_progress_id=user_progress_id,
+                        level=level,
                         topic_number=topic.topic_number,
                         total_exercises=total_exercises
                     )
@@ -186,16 +193,21 @@ class TopicManager:
     def get_current_topic(self, user_progress_id):
         """
         Get the current topic a user should be working on
-        
+
         Args:
             user_progress_id: The user progress ID
-        
+
         Returns:
             Dict with current topic info or None
         """
         try:
+            # Get user progress to determine level
+            user_progress = UserProgress.query.get(user_progress_id)
+            if not user_progress:
+                return None
+
             # Get all topic progress
-            all_progress = self.get_user_topic_progress(user_progress_id)
+            all_progress = self.get_user_topic_progress(user_progress_id, user_progress.current_level)
             
             if not all_progress:
                 return None
@@ -277,19 +289,20 @@ class TopicManager:
             print(f"Error getting current topic: {e}")
             return None
     
-    def complete_topic_exercise(self, user_progress_id, topic_number):
+    def complete_topic_exercise(self, user_progress_id, level, topic_number):
         """
         Mark an exercise as completed for a topic
-        
+
         Args:
             user_progress_id: The user progress ID
+            level: The level (A1, A2, B1, B2)
             topic_number: The topic number
-        
+
         Returns:
             Tuple (success: bool, result: dict)
         """
         try:
-            progress = self.get_user_topic_progress(user_progress_id, topic_number)
+            progress = self.get_user_topic_progress(user_progress_id, level, topic_number)
             
             if not progress:
                 return False, {'error': 'Topic progress not found'}
@@ -490,12 +503,13 @@ class TopicManager:
             print(f"Error getting scenario template: {e}")
             return None
 
-    def mark_topic_complete(self, user_progress_id, topic_number):
+    def mark_topic_complete(self, user_progress_id, level, topic_number):
         """
         Mark a topic as complete and update current_topic
 
         Args:
             user_progress_id: The user progress ID
+            level: The level (A1, A2, B1, B2)
             topic_number: The topic number to complete
 
         Returns:
@@ -503,7 +517,7 @@ class TopicManager:
         """
         try:
             # Get the topic progress (with auto-create if missing for resilience)
-            topic_progress = self.ensure_topic_progress_exists(user_progress_id, topic_number)
+            topic_progress = self.ensure_topic_progress_exists(user_progress_id, level, topic_number)
             if not topic_progress:
                 return False, {'error': f'Topic {topic_number} progress could not be created'}
 
@@ -527,7 +541,7 @@ class TopicManager:
                 pass
             elif next_topic and next_topic['type'] == 'completed':
                 # Level completed - keep at last topic
-                user_progress.current_topic = 12
+                user_progress.current_topic = 16
 
             self.db.session.commit()
 
@@ -546,74 +560,37 @@ class TopicManager:
         """
         Determine what comes next after completing a topic
 
+        In the 16-topic system, tests are integrated as regular topics at positions 4, 8, 12, 16
+
         Args:
             user_progress_id: The user progress ID
             completed_topic_number: The topic that was just completed
 
         Returns:
-            Dict with next item info (topic, test, or completed)
+            Dict with next item info (topic or completed)
         """
         try:
-            # Check test gates after specific topics
-            tests = TestProgress.query.filter_by(user_progress_id=user_progress_id).all()
-
-            # After topic 4, need checkpoint_1
-            if completed_topic_number == 4:
-                checkpoint_1 = next((t for t in tests if t.test_type == 'checkpoint_1'), None)
-                if checkpoint_1 and not checkpoint_1.passed:
-                    return {
-                        'type': 'test',
-                        'test_type': 'checkpoint_1',
-                        'test_number': 1,
-                        'message': 'Complete Test 1 to unlock topics 5-8'
-                    }
-
-            # After topic 8, need checkpoint_2
-            elif completed_topic_number == 8:
-                checkpoint_2 = next((t for t in tests if t.test_type == 'checkpoint_2'), None)
-                if checkpoint_2 and not checkpoint_2.passed:
-                    return {
-                        'type': 'test',
-                        'test_type': 'checkpoint_2',
-                        'test_number': 2,
-                        'message': 'Complete Test 2 to unlock topics 9-12'
-                    }
-
-            # After topic 12, need final test
-            elif completed_topic_number == 12:
-                final_test = next((t for t in tests if t.test_type == 'final'), None)
-                if final_test and not final_test.passed:
-                    return {
-                        'type': 'test',
-                        'test_type': 'final',
-                        'test_number': 3,
-                        'message': 'Complete Final Test to advance to next level'
-                    }
-
-            # Otherwise, advance to next sequential topic
-            if completed_topic_number < 12:
+            # Simply advance to the next sequential topic
+            if completed_topic_number < 16:
                 next_topic_num = completed_topic_number + 1
 
-                # Check if next topic exists and is not gated
-                topic_progress = self.get_user_topic_progress(user_progress_id, next_topic_num)
-                if topic_progress:
-                    user_prog = UserProgress.query.get(user_progress_id)
-                    if user_prog:
-                        topic_def = self.get_topic_definition(user_prog.current_level, next_topic_num)
-                        if topic_def:
-                            return {
-                                'type': 'topic',
-                                'topic_number': next_topic_num,
-                                'title_key': topic_def.title_key
-                            }
+                # Get user progress for level
+                user_prog = UserProgress.query.get(user_progress_id)
+                if user_prog:
+                    # Get topic definition for the next topic
+                    topic_def = self.get_topic_definition(user_prog.current_level, next_topic_num)
+                    if topic_def:
+                        return {
+                            'type': 'topic',
+                            'topic_number': next_topic_num,
+                            'title_key': topic_def.title_key
+                        }
 
-            # Check if everything is completed
-            all_topics = self.get_user_topic_progress(user_progress_id)
-            all_completed = all(tp.completed for tp in all_topics)
-
-            if all_completed:
-                final_test = next((t for t in tests if t.test_type == 'final'), None)
-                if final_test and final_test.passed:
+            # Check if level is completed (all 16 topics done)
+            elif completed_topic_number == 16:
+                user_prog = UserProgress.query.get(user_progress_id)
+                if user_prog:
+                    # All 16 topics completed - level is done
                     return {
                         'type': 'completed',
                         'message': 'Level completed! Ready to advance to next level.'
@@ -682,7 +659,12 @@ class TopicManager:
             Tuple (success: bool, message: str)
         """
         try:
-            topic_progress = self.get_user_topic_progress(user_progress_id, topic_number)
+            # Get user progress for level
+            user_progress = UserProgress.query.get(user_progress_id)
+            if not user_progress:
+                return False, 'User progress not found'
+
+            topic_progress = self.get_user_topic_progress(user_progress_id, user_progress.current_level, topic_number)
             if not topic_progress:
                 return False, 'Topic progress not found'
 
@@ -723,7 +705,7 @@ class TopicManager:
                 return False, {'error': 'User progress not found'}
 
             # Check if user can actually access this topic based on completed topics
-            all_topic_progress = self.get_user_topic_progress(user_progress_id)
+            all_topic_progress = self.get_user_topic_progress(user_progress_id, user_progress.current_level)
             completed_topics = [tp.topic_number for tp in all_topic_progress if tp.completed]
             max_accessible = max(completed_topics) + 1 if completed_topics else user_progress.current_topic
 
@@ -761,8 +743,13 @@ class TopicManager:
             Tuple (can_access: bool, reason: str)
         """
         try:
-            # Get all progress and tests
-            all_progress = self.get_user_topic_progress(user_progress_id)
+            # Get user progress for level
+            user_progress = UserProgress.query.get(user_progress_id)
+            if not user_progress:
+                return False, "User progress not found"
+
+            # Get all progress
+            all_progress = self.get_user_topic_progress(user_progress_id, user_progress.current_level)
             tests = TestProgress.query.filter_by(user_progress_id=user_progress_id).all()
 
             # Topic 1 is always accessible
@@ -774,29 +761,9 @@ class TopicManager:
             if prev_topic and not prev_topic.completed:
                 return False, f"Complete Topic {topic_number - 1} first"
 
-            # Check test gates
-            if topic_number in [5, 6, 7, 8]:
-                checkpoint_1 = next((t for t in tests if t.test_type == 'checkpoint_1'), None)
-                if checkpoint_1 and not checkpoint_1.passed:
-                    # Check if topics 1-4 are completed
-                    topics_1_4_complete = all(
-                        p.completed for p in all_progress if p.topic_number in [1, 2, 3, 4]
-                    )
-                    if topics_1_4_complete:
-                        return False, "Pass Test 1 to unlock this topic"
-
-            elif topic_number in [9, 10, 11, 12]:
-                checkpoint_2 = next((t for t in tests if t.test_type == 'checkpoint_2'), None)
-                if checkpoint_2 and not checkpoint_2.passed:
-                    # Check if topics 5-8 are completed
-                    topics_5_8_complete = all(
-                        p.completed for p in all_progress if p.topic_number in [5, 6, 7, 8]
-                    )
-                    if topics_5_8_complete:
-                        return False, "Pass Test 2 to unlock this topic"
-
+            # In 16-topic system, no test gates - just sequential progression
             return True, "Topic is accessible"
 
         except Exception as e:
             print(f"Error checking topic access: {e}")
-            return False, "Error checking access"
+            return False, str(e)
