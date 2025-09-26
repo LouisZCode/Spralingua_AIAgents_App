@@ -1283,6 +1283,25 @@
             if (overviewPanel && overviewContent) {
                 let feedbackHTML = '';
 
+                // Check if this is an error response
+                if (feedbackData.error) {
+                    feedbackHTML = `
+                        <div class="feedback-error" style="padding: 20px; background-color: #ffebee; border-radius: 8px;">
+                            <h4 style="color: #d32f2f; margin-top: 0;">⚠️ Technical Issue</h4>
+                            <p style="color: #333; margin: 10px 0;">${feedbackData.message || 'The feedback system is temporarily unavailable.'}</p>
+                            <p style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                                ${feedbackData.overall_feedback || 'Please try again later or contact support if the problem persists.'}
+                            </p>
+                        </div>
+                    `;
+                    overviewContent.innerHTML = feedbackHTML;
+                    if (responseCount) {
+                        responseCount.textContent = `After ${messageCount} responses`;
+                    }
+                    overviewPanel.style.display = 'block';
+                    return;
+                }
+
                 // Get translations
                 const commonMistakesText = translationManager.getText('feedback_common_mistakes');
                 const errorLabelText = translationManager.getText('feedback_error_label');
