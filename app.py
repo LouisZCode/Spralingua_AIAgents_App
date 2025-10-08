@@ -18,6 +18,13 @@ if database_url and database_url.startswith("postgres://"):
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Log database connection info (masked for security)
+if database_url:
+    masked_url = database_url[:50] + "..." + database_url[-20:] if len(database_url) > 70 else database_url[:50] + "..."
+    print(f"[APP INIT] Connected to database: {masked_url}")
+else:
+    print("[APP INIT ERROR] No DATABASE_URL found!")
+
 # Session configuration
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 # Enable secure cookies in production (Railway sets RAILWAY_ENVIRONMENT)

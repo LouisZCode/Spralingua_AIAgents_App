@@ -101,6 +101,10 @@ class AuthRoutes:
                 email = form.email.data
                 password = form.password.data
 
+                # Debug: Log database connection info
+                import os
+                db_url = os.getenv('DATABASE_URL', 'Not set')
+                print(f"[REGISTRATION] DATABASE_URL (masked): {db_url[:50]}...{db_url[-20:] if len(db_url) > 70 else ''}")
                 print(f"[REGISTRATION] Attempting to register user: {email}, name: {name}")
 
                 # Register user with name
