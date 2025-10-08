@@ -111,59 +111,6 @@ def save_progress():
         print(f"Error in save_progress API: {e}")
         return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
-# Temporary endpoint for database initialization (remove after use)
-@app.route('/init-db')
-def init_database():
-    """Initialize database tables and run migrations - ONE TIME USE ONLY"""
-    try:
-        results = []
-
-        # Step 1: Create all tables
-        results.append("[STEP 1] Creating all database tables...")
-        db.create_all()
-        results.append("[SUCCESS] All tables created via db.create_all()")
-
-        # Step 2: Import and run migrations
-        import sys
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'migrations'))
-
-        # Populate A1 topics
-        results.append("[STEP 2] Populating A1 topics...")
-        from populate_a1_topics import populate_a1_topics
-        populate_a1_topics()
-        results.append("[SUCCESS] A1 topics populated")
-
-        # Populate exercise types
-        results.append("[STEP 3] Populating exercise types...")
-        from populate_exercise_types import populate_exercise_types
-        populate_exercise_types()
-        results.append("[SUCCESS] Exercise types populated")
-
-        # Verify results
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        tables = inspector.get_table_names()
-        results.append(f"[VERIFY] Total tables: {len(tables)}")
-        results.append(f"[VERIFY] Tables: {', '.join(sorted(tables))}")
-
-        # Check data counts
-        topic_count = db.session.execute(db.text('SELECT COUNT(*) FROM topic_definitions')).scalar()
-        exercise_count = db.session.execute(db.text('SELECT COUNT(*) FROM exercise_types')).scalar()
-        results.append(f"[DATA] Topics: {topic_count}, Exercise Types: {exercise_count}")
-
-        return jsonify({
-            'success': True,
-            'message': 'Database initialized successfully!',
-            'details': results
-        }), 200
-
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'message': 'Database initialization failed'
-        }), 500
-
 # Context processor to make timestamp available to all templates
 @app.context_processor
 def inject_timestamp():
