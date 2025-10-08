@@ -118,21 +118,42 @@
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-    .modules-grid-intro {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    
-    .modules-grid-practice {
-        grid-template-columns: repeat(2, 1fr);
+    .module-exercises-grid {
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 }
 
 @media (max-width: 768px) {
-    .modules-grid-intro,
-    .modules-grid-practice {
+    /* Stack exercise cards on mobile */
+    .module-exercises-grid {
         grid-template-columns: 1fr;
+        padding-left: 0;
+        padding-right: 0;
     }
-    
+
+    /* Adjust module header for mobile */
+    .module-header-card {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .module-header-content {
+        gap: 1.5rem;
+    }
+
+    .module-avatar {
+        width: 60px;
+        height: 60px;
+    }
+
+    .module-header-title {
+        font-size: 1.4rem;
+    }
+
+    .module-header-description {
+        font-size: 1rem;
+    }
+
     /* Back button mobile adjustments */
     .back-nav-button {
         font-size: 0.9rem;
@@ -607,73 +628,118 @@
 }
 
 /* Practice Module Layout Styles */
-.practice-module-container {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    align-items: stretch;
+/* New Module Section Layout */
+.module-section {
+    margin-bottom: 3rem;
 }
 
-.practice-module-main {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--border-color, #e2e8f0);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition: all 0.3s ease;
+/* Wide Module Header Card */
+.module-header-card {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.practice-module-main::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #2563eb, #06b6d4);
+.module-header-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
 }
 
-.practice-module-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    display: block;
-}
-
-.practice-module-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary, #0f172a);
-    margin-bottom: 0.5rem;
-}
-
-.practice-module-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.practice-exercises-container {
+.module-header-content {
     display: flex;
-    gap: 1rem;
-    align-items: stretch;
+    align-items: center;
+    gap: 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+.module-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s ease;
+}
+
+.module-header-card:hover .avatar-image {
+    transform: scale(1.05);
+}
+
+.module-info {
+    flex-grow: 1;
+}
+
+.module-header-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 0.5rem 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.module-header-description {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Decorative gradient overlay */
+.module-header-decoration {
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* Exercise Cards Grid */
+.module-exercises-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .practice-exercise-box {
-    flex: 1;
     background: white;
     border-radius: 12px;
     padding: 1.5rem;
@@ -688,7 +754,8 @@
     cursor: pointer;
     text-decoration: none;
     color: var(--text-primary, #0f172a);
-    position: relative; /* Added to ensure completion indicators position correctly */
+    position: relative;
+    min-height: 180px;
 }
 
 .practice-exercise-box:hover {

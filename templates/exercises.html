@@ -84,20 +84,25 @@
         <!-- Practice Modules Grid -->
         <div class="modules-section">
             <h2 class="section-title" data-translate="practice_modules">Practice Modules</h2>
-            
-            <!-- Static Conversation Practice Module -->
-            <div class="practice-module-container">
-                <!-- Main Module Box -->
-                <div class="practice-module-main unlocked">
-                    <span class="practice-module-icon">💬</span>
-                    <h3 class="practice-module-title" data-translate="conversation_practice">Conversation Practice</h3>
-                    <div class="practice-module-status unlocked">
-                        🔓 <span data-translate="ready_practice">Ready to practice</span>
+
+            <!-- Conversation Practice Module Section -->
+            <div class="module-section">
+                <!-- Wide Module Header Card -->
+                <div class="module-header-card">
+                    <div class="module-header-content">
+                        <div class="module-avatar">
+                            <img src="{{ url_for('static', filename='images/avatars/harry_profile.png') }}" alt="Harry" class="avatar-image">
+                        </div>
+                        <div class="module-info">
+                            <h3 class="module-header-title" data-translate="conversation_practice">Conversation Practice</h3>
+                            <p class="module-header-description" data-translate="conversation_practice_desc">Practice natural conversations with our AI tandems</p>
+                        </div>
                     </div>
+                    <div class="module-header-decoration"></div>
                 </div>
-                
-                <!-- Exercise Boxes -->
-                <div class="practice-exercises-container">
+
+                <!-- Exercise Cards Grid -->
+                <div class="module-exercises-grid">
                     <a href="{{ url_for('casual_chat') }}" class="practice-exercise-box" id="casual-chat-link">
                         <div class="exercise-completion-indicator" id="casual-chat-indicator">
                             <span class="completion-circle"></span>
@@ -114,20 +119,25 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Static Writing Practice Module -->
-            <div class="practice-module-container">
-                <!-- Main Module Box -->
-                <div class="practice-module-main unlocked">
-                    <span class="practice-module-icon">✍️</span>
-                    <h3 class="practice-module-title" data-translate="writing_practice">Writing Practice</h3>
-                    <div class="practice-module-status unlocked">
-                        🔓 <span data-translate="ready_practice">Ready to practice</span>
+
+            <!-- Writing Practice Module Section -->
+            <div class="module-section">
+                <!-- Wide Module Header Card -->
+                <div class="module-header-card">
+                    <div class="module-header-content">
+                        <div class="module-avatar">
+                            <img src="{{ url_for('static', filename='images/avatars/sally_profile.png') }}" alt="Sally" class="avatar-image">
+                        </div>
+                        <div class="module-info">
+                            <h3 class="module-header-title" data-translate="writing_practice">Writing Practice</h3>
+                            <p class="module-header-description" data-translate="writing_practice_desc">Improve your written communication skills</p>
+                        </div>
                     </div>
+                    <div class="module-header-decoration"></div>
                 </div>
-                
-                <!-- Exercise Boxes -->
-                <div class="practice-exercises-container">
+
+                <!-- Exercise Cards Grid -->
+                <div class="module-exercises-grid">
                     <a href="/writing-practice" class="practice-exercise-box" id="email-writing-link">
                         <div class="exercise-completion-indicator" id="email-writing-indicator">
                             <span class="completion-circle"></span>
