@@ -95,26 +95,39 @@ class AuthRoutes:
         def auth_register():
             """Registration page and handler."""
             form = RegistrationForm()
-            
+
             if form.validate_on_submit():
                 name = form.name.data
                 email = form.email.data
                 password = form.password.data
-                
+
+                print(f"[REGISTRATION] Attempting to register user: {email}, name: {name}")
+
                 # Register user with name
                 success, result = self.auth_manager.register_user(email, name, password)
-                
+
                 if success:
                     # Log the user in automatically
                     user = result.get('user')
                     self.auth_manager.login_user(user, session)
-                    
+
+                    print(f"[REGISTRATION] User registered successfully: {email}")
+                    print(f"[REGISTRATION] Session authenticated: {session.get('authenticated')}")
+                    print(f"[REGISTRATION] Redirecting to dashboard")
+
                     flash(f'Registration successful! Welcome to Spralingua, {user.name}!', 'success')
                     return redirect(url_for('dashboard'))
                 else:
                     error_msg = result.get('error', 'Registration failed')
+                    print(f"[REGISTRATION ERROR] {error_msg}")
                     flash(error_msg, 'error')
-            
+            elif request.method == 'POST':
+                # Form validation failed
+                print(f"[REGISTRATION] Form validation errors: {form.errors}")
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f'{field}: {error}', 'error')
+
             return render_template('auth/register.html', form=form)
         
         @self.app.route('/logout')

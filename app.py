@@ -20,7 +20,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Session configuration
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+# Enable secure cookies in production (Railway sets RAILWAY_ENVIRONMENT)
+app.config['SESSION_COOKIE_SECURE'] = bool(os.getenv('RAILWAY_ENVIRONMENT'))
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
