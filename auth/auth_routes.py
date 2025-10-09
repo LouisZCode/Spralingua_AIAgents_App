@@ -314,7 +314,14 @@ class AuthRoutes:
                         claude = self.app.claude_clients[session_id]
                         print(f"[WORKER DEBUG] Client FOUND, reusing existing client in worker {worker_pid}")
                         print(f"[WORKER DEBUG] Existing conversation history length: {len(claude.conversation_history)}")
-                
+
+                # Restore conversation history from session (survives across workers)
+                if 'claude_conversation_history' in session:
+                    claude.set_conversation_history(session['claude_conversation_history'])
+                    print(f"[SESSION RESTORE] Restored {len(session['claude_conversation_history'])} messages from session")
+                else:
+                    print(f"[SESSION RESTORE] No history in session, starting fresh")
+
                 # Feature flag for dynamic prompt system
                 USE_DYNAMIC_PROMPTS = True  # Enable new system
                 
@@ -370,6 +377,10 @@ class AuthRoutes:
                 
                 # Send message to Claude with character prompt
                 response = claude.send_message(message, system_prompt)
+
+                # Save conversation history to session (persists across workers)
+                session['claude_conversation_history'] = claude.get_conversation_history()
+                print(f"[SESSION SAVE] Saved {len(session['claude_conversation_history'])} messages to session")
 
                 # Add delay to prevent context bleeding between API calls
                 time.sleep(0.5)
@@ -518,11 +529,16 @@ class AuthRoutes:
                 # Clear Claude client marker from session
                 if 'claude_client' in session:
                     session.pop('claude_client', None)
-                
+
+                # Clear conversation history from session
+                if 'claude_conversation_history' in session:
+                    session.pop('claude_conversation_history', None)
+                    print("[SESSION CLEAR] Cleared conversation history from session")
+
                 # Clear all claude clients from app context (they'll be recreated as needed)
                 if hasattr(self.app, 'claude_clients'):
                     self.app.claude_clients = {}
-                
+
                 session.modified = True
                 return jsonify({'status': 'success', 'message': 'Conversation cleared'})
                 

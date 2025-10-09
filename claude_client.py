@@ -99,7 +99,12 @@ class ClaudeClient:
     def get_conversation_history(self) -> List[Dict[str, str]]:
         """Get the current conversation history."""
         return self.conversation_history.copy()
-    
+
+    def set_conversation_history(self, history: List[Dict[str, str]]):
+        """Set the conversation history from external source (e.g., session)."""
+        self.conversation_history = history.copy()
+        print(f"[CLAUDE CLIENT] Conversation history restored: {len(self.conversation_history)} messages")
+
     def set_model(self, model: str):
         """Change the Claude model being used."""
         self.model = model
