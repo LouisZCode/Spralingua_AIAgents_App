@@ -188,6 +188,86 @@ print("[SUCCESS] Operation completed")  # GOOD
 
 ---
 
+## 6. Debugging Multi-Process Production Issues
+
+### The Problem
+When applications run in production with multiple worker processes (like Gunicorn), issues that don't appear in local single-process development can emerge. In-memory state is not shared between workers.
+
+### Real Example from Spralingua
+- **Scenario**: Casual chat conversations losing memory in production but working locally
+- **Symptoms**:
+  - AI avatar repeatedly asks "what is your name?" even after user provided it
+  - Conversation history lost between messages
+  - Works perfectly in local Flask development server
+- **Initial Suspicion**: Gunicorn multi-worker issue causing memory isolation
+- **Production Config**: `workers = multiprocessing.cpu_count() * 2 + 1` resulted in 98 workers on Railway
+
+### The Verification Approach
+Instead of immediately implementing a fix based on theory, we added comprehensive logging:
+
+```python
+# Added worker PID tracking
+import os as os_module
+worker_pid = os_module.getpid()
+print(f"[WORKER DEBUG] Process ID: {worker_pid}")
+
+# Added client creation/retrieval logging
+print(f"[WORKER DEBUG] Created NEW ClaudeClient in worker {worker_pid}")
+print(f"[WORKER DEBUG] Looking for client with session_id: {session_id} in worker {worker_pid}")
+print(f"[WORKER DEBUG] Available session IDs in worker {worker_pid}: {list(self.app.claude_clients.keys())}")
+
+# Added conversation history length tracking
+print(f"[CLAUDE CLIENT] Current conversation_history length: {len(self.conversation_history)}")
+print(f"[CLAUDE CLIENT] ClaudeClient object ID: {id(self)}")
+```
+
+### What the Logs Revealed
+```
+Message 1:
+[WORKER DEBUG] Process ID: 44
+[WORKER DEBUG] Created NEW ClaudeClient in worker 44
+[CLAUDE CLIENT] Current conversation_history length: 0
+[CLAUDE CLIENT] New conversation_history length: 2
+
+Message 2:
+[WORKER DEBUG] Process ID: 47  ← DIFFERENT WORKER!
+[WORKER DEBUG] Looking for client with session_id: 139834328666592 in worker 47
+[WORKER DEBUG] Available session IDs in worker 47: []  ← EMPTY!
+[WORKER DEBUG] Client NOT FOUND, creating NEW client in worker 47
+[CLAUDE CLIENT] Current conversation_history length: 0  ← LOST HISTORY!
+```
+
+### The Verified Root Cause
+- Worker 44 handled first message and stored ClaudeClient in its memory
+- Worker 47 handled second message and had no access to Worker 44's memory
+- Each worker has its own `app.claude_clients` dictionary
+- In-memory storage doesn't survive worker handoffs
+
+### The Fix (After Verification)
+Store conversation history in Flask session (persists across workers) instead of in-memory:
+```python
+# Before: In-memory storage (doesn't work with multiple workers)
+self.app.claude_clients[session_id] = claude
+
+# After: Session-based storage (works across all workers)
+session['conversation_history'] = claude.get_conversation_history()
+# Restore on next request
+claude.set_conversation_history(session.get('conversation_history', []))
+```
+
+### Best Practices for Production Debugging
+1. **Never Assume**: Don't implement fixes based on theory alone
+2. **Add Logging First**: Comprehensive logging reveals the actual issue
+3. **Track Worker PIDs**: Essential for multi-process debugging
+4. **Compare Environments**: Understand how local differs from production
+5. **Verify in Logs**: Confirm your hypothesis with real production data before coding
+6. **Keep Logs Temporarily**: Logging overhead is acceptable during diagnosis
+
+### Key Learning
+**When diagnosing production issues, always add logging first and verify the root cause in production logs before implementing solutions. Never guess or assume - confirm with evidence.**
+
+---
+
 ## Future Project Checklist
 
 Based on these learnings, here's a checklist for starting new projects:
