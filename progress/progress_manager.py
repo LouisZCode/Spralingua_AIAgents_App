@@ -203,11 +203,17 @@ class ProgressManager:
             existing = self.get_user_progress(user_id, input_language, target_language)
 
             if existing:
+                # ALWAYS update last_accessed when user selects this language pair from dashboard
+                from datetime import datetime
+                existing.last_accessed = datetime.utcnow()
+
                 # Update existing progress level if different
                 if existing.current_level != current_level:
                     existing.update_progress(new_level=current_level)
-                    self.db.session.commit()
                     print(f"[INFO] Updated level from {existing.current_level} to {current_level}")
+
+                # Commit the changes (includes last_accessed update even if level didn't change)
+                self.db.session.commit()
 
                 # Check if topics are initialized for the CURRENT LEVEL
                 from topics.topic_manager import TopicManager
