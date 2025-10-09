@@ -14,6 +14,7 @@ class ScenarioManager:
         self.progress_manager = ProgressManager()
 
         # Language name translations
+        # Used to translate the {target_language} placeholder in scenarios
         # Each language has translations for all target languages
         self.language_translations = {
             'english': {
@@ -39,39 +40,6 @@ class ScenarioManager:
                 'spanish': 'Espanhol',
                 'portuguese': 'Português',
                 'english': 'Inglês'
-            }
-        }
-
-        # Basic scenario translations for core template
-        # This allows us to translate the template structure itself
-        self.scenario_translations = {
-            'english': {
-                'first_time': "It's your first time practicing",
-                'meet_someone': "You meet someone new",
-                'at_location': "at a café",
-                'start_by': "Start by",
-                'greeting_intro': "greeting them and introducing yourself with your name"
-            },
-            'german': {
-                'first_time': "Es ist dein erstes Mal",
-                'meet_someone': "Du triffst jemanden Neues",
-                'at_location': "in einem Café",
-                'start_by': "Beginne damit",
-                'greeting_intro': "sie zu begrüßen und dich mit deinem Namen vorzustellen"
-            },
-            'spanish': {
-                'first_time': "Es tu primera vez practicando",
-                'meet_someone': "Conoces a alguien nuevo",
-                'at_location': "en una cafetería",
-                'start_by': "Empieza",
-                'greeting_intro': "saludándoles y presentándote con tu nombre"
-            },
-            'portuguese': {
-                'first_time': "É a tua primeira vez a praticar",
-                'meet_someone': "Conheces alguém novo",
-                'at_location': "num café",
-                'start_by': "Começa por",
-                'greeting_intro': "cumprimentá-los e apresentar-te com o teu nome"
             }
         }
 
@@ -107,11 +75,16 @@ class ScenarioManager:
                 # Determine current topic (next uncompleted)
                 topic_number = self._determine_current_topic(user_progress.id, level)
 
-            # Get scenario template from database
-            scenario_template = self.topic_manager.get_scenario_template(level, topic_number)
+            # Get scenario template from database in user's native language
+            print(f"[DEBUG] ScenarioManager: Fetching scenario for level={level}, topic={topic_number}, language={input_language}")
+            scenario_template = self.topic_manager.get_scenario_template(
+                level, topic_number, language=input_language
+            )
+            print(f"[DEBUG] ScenarioManager: Scenario template received: {'YES' if scenario_template else 'NO (None)'}")
 
             if not scenario_template:
                 # No scenario for this topic yet, use default
+                print(f"[WARNING] ScenarioManager: No scenario template found, using default fallback")
                 return self._get_default_scenario_for_topic(
                     input_language, target_language, level, topic_number
                 ), {
@@ -121,7 +94,7 @@ class ScenarioManager:
                     'target_language': target_language
                 }
 
-            # Process the scenario template
+            # Process the scenario template (only replace placeholder)
             translated_scenario = self._translate_scenario(
                 scenario_template,
                 input_language,
@@ -145,54 +118,28 @@ class ScenarioManager:
 
     def _translate_scenario(self, template: str, input_language: str, target_language: str) -> str:
         """
-        Translate a scenario template to the user's native language
+        Process a scenario template by replacing the {target_language} placeholder
+
+        The template is already in the user's native language (from database),
+        we just need to replace the placeholder with the translated language name.
 
         Args:
-            template: The scenario template with {target_language} placeholder
+            template: The scenario template with {target_language} placeholder (already translated)
             input_language: User's native language
             target_language: Language they're learning
 
         Returns:
-            Translated scenario in user's native language
+            Fully processed scenario with placeholder replaced
         """
-        # First, replace the {target_language} placeholder
+        # Get translated name of target language in user's native language
         target_lang_translated = self.language_translations.get(
             input_language, {}
         ).get(target_language, target_language.capitalize())
 
+        # Replace the placeholder
         scenario = template.replace('{target_language}', target_lang_translated)
 
-        # For A1 Topic 1, we have a special case - translate the entire template
-        # In the future, this could be expanded to handle all templates
-        if "This is your first time trying to speak" in template and input_language != 'english':
-            scenario = self._translate_a1_topic1_scenario(
-                input_language, target_lang_translated
-            )
-
         return scenario
-
-    def _translate_a1_topic1_scenario(self, input_language: str, target_lang_translated: str) -> str:
-        """
-        Special translation for A1 Topic 1 scenario
-
-        Args:
-            input_language: User's native language
-            target_lang_translated: Already translated target language name
-
-        Returns:
-            Fully translated scenario
-        """
-        translations = self.scenario_translations.get(input_language, {})
-
-        if input_language == 'german':
-            return f"Dies ist dein erstes Mal {target_lang_translated} zu sprechen, also sagst du..."
-        elif input_language == 'spanish':
-            return f"Esta es tu primera vez intentando hablar {target_lang_translated}, así que dices..."
-        elif input_language == 'portuguese':
-            return f"Esta é a tua primeira vez a tentar falar {target_lang_translated}, então dizes..."
-        else:
-            # Default to English version with translated language name
-            return f"This is your first time trying to speak {target_lang_translated}, so you say..."
 
     def _determine_current_topic(self, user_progress_id: int, level: str) -> int:
         """

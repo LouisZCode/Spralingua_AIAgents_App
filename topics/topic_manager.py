@@ -482,22 +482,35 @@ class TopicManager:
             print(f"Error getting number of exchanges: {e}")
             return 5
 
-    def get_scenario_template(self, level, topic_number):
+    def get_scenario_template(self, level, topic_number, language='english'):
         """
-        Get scenario template for a topic
+        Get scenario template for a topic in specified language
 
         Args:
             level: The level (A1, A2, B1, B2)
-            topic_number: The topic number (1-12)
+            topic_number: The topic number (1-16)
+            language: The language for the scenario (english, spanish, german, portuguese)
 
         Returns:
             Scenario template string or None
         """
         try:
             topic = self.get_topic_definition(level, topic_number)
-            if topic:
+            if not topic:
+                return None
+
+            # Map language to appropriate database column
+            language_lower = language.lower()
+
+            if language_lower == 'spanish' and topic.scenario_spanish:
+                return topic.scenario_spanish
+            elif language_lower == 'german' and topic.scenario_german:
+                return topic.scenario_german
+            elif language_lower == 'portuguese' and topic.scenario_portuguese:
+                return topic.scenario_portuguese
+            else:
+                # Default to English (scenario_template column)
                 return topic.scenario_template
-            return None
 
         except Exception as e:
             print(f"Error getting scenario template: {e}")

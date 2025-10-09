@@ -22,6 +22,11 @@ class TopicDefinition(db.Model):
     topic_specific_rules = db.Column(db.Text, nullable=True)  # Additional topic-specific guidance
     scenario_template = db.Column(db.Text, nullable=True)  # Scenario template for conversation practice
 
+    # Multilingual scenario columns
+    scenario_spanish = db.Column(db.Text, nullable=True)  # Spanish translation of scenario
+    scenario_german = db.Column(db.Text, nullable=True)  # German translation of scenario
+    scenario_portuguese = db.Column(db.Text, nullable=True)  # Portuguese translation of scenario
+
     # Relationships
     exercises = db.relationship('TopicExercise', backref='topic', lazy='dynamic', cascade='all, delete-orphan')
     
@@ -32,7 +37,8 @@ class TopicDefinition(db.Model):
     
     def __init__(self, level, topic_number, title_key, subtopics, conversation_contexts, llm_prompt_template,
                  word_limit=None, opening_phrases=None, required_vocabulary=None, conversation_flow=None,
-                 number_of_exchanges=5, topic_specific_rules=None, scenario_template=None):
+                 number_of_exchanges=5, topic_specific_rules=None, scenario_template=None,
+                 scenario_spanish=None, scenario_german=None, scenario_portuguese=None):
         """Initialize topic definition"""
         self.level = level.upper()
         self.topic_number = topic_number
@@ -48,6 +54,10 @@ class TopicDefinition(db.Model):
         self.number_of_exchanges = number_of_exchanges
         self.topic_specific_rules = topic_specific_rules
         self.scenario_template = scenario_template
+        # Multilingual scenarios
+        self.scenario_spanish = scenario_spanish
+        self.scenario_german = scenario_german
+        self.scenario_portuguese = scenario_portuguese
     
     def to_dict(self):
         """Convert topic definition to dictionary"""
@@ -66,7 +76,11 @@ class TopicDefinition(db.Model):
             'conversation_flow': self.conversation_flow,
             'number_of_exchanges': self.number_of_exchanges,
             'topic_specific_rules': self.topic_specific_rules,
-            'scenario_template': self.scenario_template
+            'scenario_template': self.scenario_template,
+            # Multilingual scenarios
+            'scenario_spanish': self.scenario_spanish,
+            'scenario_german': self.scenario_german,
+            'scenario_portuguese': self.scenario_portuguese
         }
     
     def __repr__(self):
