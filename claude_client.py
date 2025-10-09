@@ -26,26 +26,33 @@ class ClaudeClient:
     def send_message(self, user_input: str, system_prompt: str = '', context=None) -> str:
         """
         Send a message to Claude and get a response.
-        
+
         Args:
             user_input: The user's message
             system_prompt: System prompt to use for the conversation
             context: Optional context (not used in simplified version)
-            
+
         Returns:
             Claude's response text
-            
+
         Raises:
             Exception: If there's an error communicating with the API
         """
+        # Log conversation history state BEFORE sending
+        print(f"[CLAUDE CLIENT] send_message() called with user_input length: {len(user_input)}")
+        print(f"[CLAUDE CLIENT] Current conversation_history length: {len(self.conversation_history)}")
+        print(f"[CLAUDE CLIENT] ClaudeClient object ID: {id(self)}")
+
         # Prepare messages
         messages_to_send = self.conversation_history.copy()
-        
+
         # Add user message
         messages_to_send.append({
-            "role": "user", 
+            "role": "user",
             "content": user_input
         })
+
+        print(f"[CLAUDE CLIENT] Sending {len(messages_to_send)} messages to Claude API")
         
         try:
             # Send request to Claude
@@ -59,7 +66,7 @@ class ClaudeClient:
             
             # Extract response text
             assistant_message = response.content[0].text
-            
+
             # Update conversation history
             self.conversation_history.append({
                 "role": "user",
@@ -69,11 +76,15 @@ class ClaudeClient:
                 "role": "assistant",
                 "content": assistant_message
             })
-            
+
+            print(f"[CLAUDE CLIENT] Added user + assistant messages to history")
+            print(f"[CLAUDE CLIENT] New conversation_history length: {len(self.conversation_history)}")
+
             # Keep conversation history manageable (last 20 messages)
             if len(self.conversation_history) > 20:
                 self.conversation_history = self.conversation_history[-20:]
-            
+                print(f"[CLAUDE CLIENT] Trimmed history to last 20 messages")
+
             return assistant_message
             
         except Exception as e:

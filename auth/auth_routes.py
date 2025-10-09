@@ -284,23 +284,36 @@ class AuthRoutes:
                     return jsonify({'error': 'No message provided'}), 400
                 
                 # Initialize or get Claude client from session
+                # Log worker process info for debugging multi-worker issues
+                import os as os_module
+                worker_pid = os_module.getpid()
+                print(f"[WORKER DEBUG] Process ID: {worker_pid}")
+
                 if 'claude_client' not in session:
                     session['claude_client'] = True
                     # Create new client for this session
                     claude = ClaudeClient()
+                    print(f"[WORKER DEBUG] Created NEW ClaudeClient in worker {worker_pid}")
                     # Store in app context for this request
                     self.app.claude_clients = getattr(self.app, 'claude_clients', {})
                     session_id = session.get('_id', id(session))
+                    print(f"[WORKER DEBUG] Session ID: {session_id}, Storing client in worker {worker_pid}")
                     self.app.claude_clients[session_id] = claude
+                    print(f"[WORKER DEBUG] Total clients in worker {worker_pid}: {len(self.app.claude_clients)}")
                 else:
                     # Retrieve existing client
                     self.app.claude_clients = getattr(self.app, 'claude_clients', {})
                     session_id = session.get('_id', id(session))
+                    print(f"[WORKER DEBUG] Looking for client with session_id: {session_id} in worker {worker_pid}")
+                    print(f"[WORKER DEBUG] Available session IDs in worker {worker_pid}: {list(self.app.claude_clients.keys())}")
                     if session_id not in self.app.claude_clients:
                         claude = ClaudeClient()
+                        print(f"[WORKER DEBUG] Client NOT FOUND, creating NEW client in worker {worker_pid}")
                         self.app.claude_clients[session_id] = claude
                     else:
                         claude = self.app.claude_clients[session_id]
+                        print(f"[WORKER DEBUG] Client FOUND, reusing existing client in worker {worker_pid}")
+                        print(f"[WORKER DEBUG] Existing conversation history length: {len(claude.conversation_history)}")
                 
                 # Feature flag for dynamic prompt system
                 USE_DYNAMIC_PROMPTS = True  # Enable new system
