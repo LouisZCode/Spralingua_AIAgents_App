@@ -18,3 +18,6 @@ CLAUDE.md
 
 # Study materials (large files)
 German_Levels_Info/
+
+# Database utility scripts (optional to commit)
+compare_databases.py
