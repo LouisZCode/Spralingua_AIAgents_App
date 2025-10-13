@@ -50,18 +50,20 @@
         <!-- Progress Timeline Section -->
         <div class="progress-section">
             <div class="progress-container">
-                <div class="progress-header">
-                    <h3 class="progress-title">
+                <!-- Centered Current Level -->
+                <div class="progress-header-centered">
+                    <h3 class="progress-title-centered">
                         <span data-translate="current_level">Current Level</span>:
                         <span id="current-level-display">A1</span>
                     </h3>
-                    <div class="progress-stats">
-                        <span data-translate="topic">Topic</span>
-                        <span id="current-topic-display">1</span> / 16
-                    </div>
                 </div>
 
-                <!-- NEW: Carousel Container -->
+                <!-- Centered Topic Title (above carousel) -->
+                <div class="topic-title-display">
+                    <span id="topic-title-text">Who are you?</span>
+                </div>
+
+                <!-- Carousel Container -->
                 <div class="carousel-wrapper">
                     <!-- Left Arrow (hidden if can't go left) -->
                     <button class="carousel-arrow carousel-arrow-left" id="carousel-left" aria-label="Previous topic">
@@ -81,9 +83,10 @@
                     </button>
                 </div>
 
-                <!-- NEW: Topic Name Display (below centered node) -->
-                <div class="topic-name-display" id="topic-name-display">
-                    <span id="topic-name-text">Topic 1</span>
+                <!-- Centered Topic Counter (below carousel) -->
+                <div class="topic-counter-display">
+                    <span data-translate="topic">Topic</span>
+                    <span id="current-topic-display">1</span> / 16
                 </div>
             </div>
         </div>
@@ -509,21 +512,27 @@
         rightArrow.disabled = atEnd || nextLocked;
     }
 
-    // NEW: Update Topic Name Display
+    // NEW: Update Topic Title and Counter Display
     function updateTopicNameDisplay() {
         const topic = carouselState.topics[carouselState.currentCenterIndex];
-        const nameDisplay = document.getElementById('topic-name-text');
-        const topicNumberDisplay = document.getElementById('current-topic-display');
+        const titleDisplay = document.getElementById('topic-title-text');
+        const counterDisplay = document.getElementById('current-topic-display');
 
         if (topic) {
-            // Get translated title from translations system
+            // Get target language for immersion (display in language being learned)
+            const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+            // Get translated title in TARGET language from translations system
             const titleKey = topic.title;
             const translatedTitle = window.translationManager
-                ? window.translationManager.getText(titleKey)
+                ? window.translationManager.getTextInLanguage(titleKey, targetLang)
                 : titleKey;
 
-            nameDisplay.textContent = `${translatedTitle}`;
-            topicNumberDisplay.textContent = topic.topic_number;
+            // Update title above carousel
+            titleDisplay.textContent = translatedTitle;
+
+            // Update counter below carousel
+            counterDisplay.textContent = topic.topic_number;
         }
     }
 
@@ -696,9 +705,12 @@
 
 
     function getTopicTitle(titleKey) {
-        // Try to get translated title, fallback to key
+        // Get target language for immersion (tooltips also in target language)
+        const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+        // Try to get translated title in TARGET language, fallback to key
         if (window.translationManager) {
-            return window.translationManager.getText(titleKey) || titleKey;
+            return window.translationManager.getTextInLanguage(titleKey, targetLang) || titleKey;
         }
         return titleKey;
     }

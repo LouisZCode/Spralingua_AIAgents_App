@@ -513,21 +513,36 @@
     margin: 0 auto;
 }
 
-.progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-    color: white;
+/* Centered vertical layout for progress elements */
+.progress-header-centered {
+    text-align: center;
+    margin-bottom: 1.5rem;
 }
 
-.progress-title {
+.progress-title-centered {
     font-size: 1.3rem;
     font-weight: 600;
     margin: 0;
+    color: white;
 }
 
-.progress-stats {
+.topic-title-display {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    min-height: 30px;
+}
+
+#topic-title-text {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 500;
+    opacity: 0.95;
+}
+
+.topic-counter-display {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: white;
     font-size: 1.1rem;
     font-weight: 500;
 }
