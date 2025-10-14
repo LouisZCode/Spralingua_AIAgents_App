@@ -15,6 +15,7 @@ wheels/
 # Claude Code files
 .claude/
 CLAUDE.md
+LEARNINGS.md
 
 # Study materials (large files)
 German_Levels_Info/
