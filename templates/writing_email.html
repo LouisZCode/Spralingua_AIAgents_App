@@ -1180,10 +1180,27 @@
                     content += `</ul></div>`;
                 }
             }
-            
+
+            // Add "Fix Errors and Resubmit" button at the bottom
+            content += `
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-primary" id="try-again-btn">
+                        Fix Errors and Resubmit
+                    </button>
+                </div>
+            `;
+
             feedbackContent.innerHTML = content;
             feedbackPanel.style.display = 'block';
-            
+
+            // Add click handler for "Try Again" button
+            const tryAgainBtn = document.getElementById('try-again-btn');
+            if (tryAgainBtn) {
+                tryAgainBtn.addEventListener('click', function() {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+            }
+
             // Smooth scroll to feedback
             feedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
