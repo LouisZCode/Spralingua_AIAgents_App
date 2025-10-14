@@ -50,33 +50,43 @@
         <!-- Progress Timeline Section -->
         <div class="progress-section">
             <div class="progress-container">
-                <div class="progress-header">
-                    <h3 class="progress-title">
+                <!-- Centered Current Level -->
+                <div class="progress-header-centered">
+                    <h3 class="progress-title-centered">
                         <span data-translate="current_level">Current Level</span>:
                         <span id="current-level-display">A1</span>
                     </h3>
-                    <div class="progress-stats">
-                        <span data-translate="topic">Topic</span>
-                        <span id="current-topic-number">1</span> / 12
-                    </div>
                 </div>
 
-                <!-- Node-based Timeline -->
-                <div class="timeline-wrapper">
-                    <div class="timeline-container">
-                        <!-- Gray baseline -->
-                        <div class="timeline-base"></div>
-                        <!-- Green progress line -->
-                        <div class="timeline-progress" id="timeline-progress"></div>
-                        <!-- Nodes will be populated by JavaScript -->
-                        <div class="timeline-nodes" id="timeline-nodes">
-                            <!-- Will be populated by JavaScript -->
+                <!-- Centered Topic Title (above carousel) -->
+                <div class="topic-title-display">
+                    <span id="topic-title-text">Who are you?</span>
+                </div>
+
+                <!-- Carousel Container -->
+                <div class="carousel-wrapper">
+                    <!-- Left Arrow (hidden if can't go left) -->
+                    <button class="carousel-arrow carousel-arrow-left" id="carousel-left" aria-label="Previous topic">
+                        ←
+                    </button>
+
+                    <!-- Carousel Track (5 visible nodes) -->
+                    <div class="carousel-track-container">
+                        <div class="carousel-track" id="carousel-track">
+                            <!-- Nodes populated by JavaScript -->
                         </div>
                     </div>
-                    <!-- Progress Percentage -->
-                    <div class="progress-percentage">
-                        <span id="progress-percent">0</span>%
-                    </div>
+
+                    <!-- Right Arrow (hidden if can't go right) -->
+                    <button class="carousel-arrow carousel-arrow-right" id="carousel-right" aria-label="Next topic">
+                        →
+                    </button>
+                </div>
+
+                <!-- Centered Topic Counter (below carousel) -->
+                <div class="topic-counter-display">
+                    <span data-translate="topic">Topic</span>
+                    <span id="current-topic-display">1</span> / 16
                 </div>
             </div>
         </div>
@@ -291,6 +301,14 @@
         document.body.appendChild(errorDiv);
     }
 
+    // NEW: Carousel State
+    let carouselState = {
+        currentCenterIndex: 0, // Index in topics array (0-15)
+        topics: [],
+        maxAccessibleIndex: 0,
+        totalTopics: 16
+    };
+
     function displayProgress(data) {
         // Get current language pair for context-aware storage
         const inputLang = localStorage.getItem('selectedInputLanguage');
@@ -322,7 +340,7 @@
 
         // Update level and topic displays
         document.getElementById('current-level-display').textContent = data.current_level;
-        document.getElementById('current-topic-number').textContent = displayTopic;
+        document.getElementById('current-topic-display').textContent = displayTopic;
 
         // Store for use in other functions
         data.display_topic = displayTopic;
@@ -330,64 +348,231 @@
         // Update exercise completion indicators for the viewing topic
         updateExerciseCompletionIndicators(data);
 
-        // Update progress percentage
-        const progressPercent = document.getElementById('progress-percent');
-        progressPercent.textContent = data.overall_progress;
-
-        // Create the node-based timeline
-        const nodesContainer = document.getElementById('timeline-nodes');
-        nodesContainer.innerHTML = '';
-
-        // Calculate positions for all 16 nodes
-        const totalNodes = 16;
-        const nodes = [];
-
-        // Build the nodes array - all 16 are topics now, but 4,8,12,16 are tests
-        for (let i = 0; i < totalNodes; i++) {
-            const position = i + 1;
-            const topic = data.topics.find(t => t.topic_number === position);
-
-            if (topic) {
-                // Check if this is a test topic (positions 4, 8, 12, 16)
-                const isTest = (position === 4 || position === 8 || position === 12 || position === 16);
-
-                nodes.push({
-                    type: isTest ? 'test' : 'topic',
-                    data: topic,
-                    position: position
-                });
-            }
-        }
-
-        // Find the current position for the progress line
-        let currentPosition = 0;
-        nodes.forEach(node => {
-            // All are topics now, just check if completed
-            if (node.data.completed) {
-                currentPosition = Math.max(currentPosition, node.position);
-            }
-        });
-
-        // Update the green progress line - only show if there's actual progress
-        const progressLine = document.getElementById('timeline-progress');
-        if (currentPosition > 0) {
-            const progressWidth = (currentPosition / totalNodes) * 100;
-            progressLine.style.width = `${progressWidth}%`;
-            progressLine.style.display = 'block';
-        } else {
-            progressLine.style.display = 'none';
-        }
-
-        // Create and append each node
-        nodes.forEach(node => {
-            const nodeElement = createTimelineNode(node, totalNodes, displayTopic);
-            nodesContainer.appendChild(nodeElement);
-        });
+        // NEW: Initialize carousel with topics
+        initializeCarousel(data.topics, displayTopic);
 
         // Return the display topic for use in updateExerciseLinks
         console.log('[DEBUG] displayProgress returning displayTopic:', displayTopic);
         return displayTopic;
     }
+
+    // NEW: Initialize Carousel
+    function initializeCarousel(topics, displayTopic) {
+        carouselState.topics = topics;
+
+        // Find max accessible topic
+        carouselState.maxAccessibleIndex = topics.findIndex(t => t.locked);
+        if (carouselState.maxAccessibleIndex === -1) {
+            carouselState.maxAccessibleIndex = topics.length - 1;
+        } else {
+            carouselState.maxAccessibleIndex = Math.max(0, carouselState.maxAccessibleIndex - 1);
+        }
+
+        // Set initial center topic
+        const displayIndex = topics.findIndex(t => t.topic_number === displayTopic);
+        carouselState.currentCenterIndex = displayIndex >= 0 ? displayIndex : 0;
+
+        renderCarousel();
+        updateArrowStates();
+    }
+
+    // NEW: Render Carousel Nodes
+    function renderCarousel() {
+        const track = document.getElementById('carousel-track');
+        track.innerHTML = '';
+
+        carouselState.topics.forEach((topic, index) => {
+            const node = createCarouselNode(topic, index);
+            track.appendChild(node);
+        });
+
+        updateCarouselPosition();
+        updateTopicNameDisplay();
+    }
+
+    // NEW: Create Individual Carousel Node (simplified - no red triangle, no absolute positioning)
+    function createCarouselNode(topic, index) {
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'timeline-node';
+        nodeDiv.dataset.index = index;
+
+        // Apply status classes
+        if (topic.completed) nodeDiv.classList.add('completed');
+        else if (topic.locked) nodeDiv.classList.add('locked');
+        else nodeDiv.classList.add('available');
+
+        if (topic.current) nodeDiv.classList.add('progression-topic');
+
+        // Center class for opacity
+        if (index === carouselState.currentCenterIndex) {
+            nodeDiv.classList.add('carousel-center');
+        }
+
+        // Circle with number or emoji
+        const circle = document.createElement('div');
+        circle.className = 'node-circle';
+        const isTestTopic = [4, 8, 12, 16].includes(topic.topic_number);
+        if (isTestTopic) {
+            circle.classList.add('test-circle');
+            circle.innerHTML = '📝';
+            nodeDiv.classList.add('test-node');
+        } else {
+            circle.textContent = topic.topic_number;
+            nodeDiv.classList.add('topic-node');
+        }
+        nodeDiv.appendChild(circle);
+
+        // Add tooltip
+        nodeDiv.title = `Topic ${topic.topic_number}: ${getTopicTitle(topic.title)}`;
+
+        // Click handler (only for unlocked topics)
+        if (!topic.locked) {
+            nodeDiv.onclick = () => navigateToCarouselIndex(index);
+        }
+
+        return nodeDiv;
+    }
+
+    // NEW: Update Carousel Position (transform animation)
+    function updateCarouselPosition() {
+        const track = document.getElementById('carousel-track');
+        const nodeWidth = 48;
+        const gap = 8;
+        const offset = carouselState.currentCenterIndex * (nodeWidth + gap);
+
+        // Center the current topic (5 visible = 2 left + center + 2 right)
+        const centerOffset = 2 * (nodeWidth + gap);
+        track.style.transform = `translateX(${centerOffset - offset}px)`;
+
+        // Update opacity classes
+        document.querySelectorAll('.timeline-node').forEach((node, index) => {
+            if (index === carouselState.currentCenterIndex) {
+                node.classList.add('carousel-center');
+            } else {
+                node.classList.remove('carousel-center');
+            }
+        });
+    }
+
+    // NEW: Navigate to Specific Index
+    async function navigateToCarouselIndex(index) {
+        const topic = carouselState.topics[index];
+
+        // Prevent navigation to locked topics
+        if (topic.locked) return;
+
+        carouselState.currentCenterIndex = index;
+        updateCarouselPosition();
+        updateTopicNameDisplay();
+        updateArrowStates();
+
+        // Save to localStorage
+        const inputLang = localStorage.getItem('selectedInputLanguage');
+        const targetLang = localStorage.getItem('selectedTargetLanguage');
+        const contextKey = `viewingTopic_${inputLang}_${targetLang}`;
+        localStorage.setItem(contextKey, topic.topic_number);
+
+        // Update exercise links
+        updateExerciseLinks(topic.topic_number);
+
+        // Call backend API to update server state
+        await navigateToTopic(topic.topic_number);
+    }
+
+    // NEW: Arrow Navigation
+    function navigateCarouselLeft() {
+        if (carouselState.currentCenterIndex > 0) {
+            navigateToCarouselIndex(carouselState.currentCenterIndex - 1);
+        }
+    }
+
+    function navigateCarouselRight() {
+        const nextIndex = carouselState.currentCenterIndex + 1;
+        const nextTopic = carouselState.topics[nextIndex];
+
+        if (nextIndex < carouselState.topics.length && !nextTopic.locked) {
+            navigateToCarouselIndex(nextIndex);
+        }
+    }
+
+    // NEW: Update Arrow States (show/hide based on position + locks)
+    function updateArrowStates() {
+        const leftArrow = document.getElementById('carousel-left');
+        const rightArrow = document.getElementById('carousel-right');
+
+        // Left arrow: disabled if at start
+        leftArrow.disabled = carouselState.currentCenterIndex === 0;
+
+        // Right arrow: disabled if at end OR next topic is locked
+        const nextIndex = carouselState.currentCenterIndex + 1;
+        const nextTopic = carouselState.topics[nextIndex];
+        const atEnd = nextIndex >= carouselState.topics.length;
+        const nextLocked = nextTopic && nextTopic.locked;
+
+        rightArrow.disabled = atEnd || nextLocked;
+    }
+
+    // NEW: Update Topic Title and Counter Display
+    function updateTopicNameDisplay() {
+        const topic = carouselState.topics[carouselState.currentCenterIndex];
+        const titleDisplay = document.getElementById('topic-title-text');
+        const counterDisplay = document.getElementById('current-topic-display');
+
+        if (topic) {
+            // Get target language for immersion (display in language being learned)
+            const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+            // Get translated title in TARGET language from translations system
+            const titleKey = topic.title;
+            const translatedTitle = window.translationManager
+                ? window.translationManager.getTextInLanguage(titleKey, targetLang)
+                : titleKey;
+
+            // Update title above carousel
+            titleDisplay.textContent = translatedTitle;
+
+            // Update counter below carousel
+            counterDisplay.textContent = topic.topic_number;
+        }
+    }
+
+    // NEW: Touch Swipe Support
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    function handleTouchStart(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    }
+
+    function handleTouchEnd(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }
+
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                // Swipe left = navigate right
+                navigateCarouselRight();
+            } else {
+                // Swipe right = navigate left
+                navigateCarouselLeft();
+            }
+        }
+    }
+
+    // NEW: Event Listeners (add after DOM loaded)
+    setTimeout(() => {
+        document.getElementById('carousel-left')?.addEventListener('click', navigateCarouselLeft);
+        document.getElementById('carousel-right')?.addEventListener('click', navigateCarouselRight);
+
+        const trackContainer = document.querySelector('.carousel-track-container');
+        trackContainer?.addEventListener('touchstart', handleTouchStart);
+        trackContainer?.addEventListener('touchend', handleTouchEnd);
+    }, 100);
 
     function updateExerciseLinks(defaultTopic) {
         console.log('[DEBUG] updateExerciseLinks called with defaultTopic:', defaultTopic);
@@ -474,117 +659,6 @@
         }
     }
 
-    function createTimelineNode(node, totalNodes, displayTopic) {
-        const nodeDiv = document.createElement('div');
-        nodeDiv.className = 'timeline-node';
-
-        // Calculate position as percentage
-        const position = ((node.position - 1) / (totalNodes - 1)) * 100;
-        nodeDiv.style.left = `${position}%`;
-
-        if (node.type === 'topic') {
-            const topic = node.data;
-            nodeDiv.classList.add('topic-node');
-
-            // Debug logging for Topic 2
-            if (topic.topic_number === 2) {
-                console.log('Topic 2 data:', {
-                    topic_number: topic.topic_number,
-                    completed: topic.completed,
-                    current: topic.current,
-                    locked: topic.locked
-                });
-            }
-
-            // Set completion state classes
-            if (topic.completed) {
-                nodeDiv.classList.add('completed');
-            } else if (topic.locked) {
-                nodeDiv.classList.add('locked');
-            } else {
-                nodeDiv.classList.add('available');
-            }
-
-            // Add progression-topic class for the database's current topic (blue color)
-            if (topic.current) {  // This comes from backend (database's current_topic)
-                nodeDiv.classList.add('progression-topic');
-                console.log(`Topic ${topic.topic_number} marked as progression-topic (current)`);
-            }
-
-            // Add triangle to the selected/viewing topic (separate from colors)
-            if (topic.topic_number === displayTopic) {
-                // Only add the triangle, no color-changing class
-                const triangle = document.createElement('div');
-                triangle.className = 'current-indicator';
-                triangle.innerHTML = '▼';
-                nodeDiv.appendChild(triangle);
-            }
-
-            // Add the circle with topic number
-            const circle = document.createElement('div');
-            circle.className = 'node-circle';
-            circle.textContent = topic.topic_number;
-            nodeDiv.appendChild(circle);
-
-            // Add tooltip
-            nodeDiv.title = `Topic ${topic.topic_number}: ${getTopicTitle(topic.title)}`;
-
-            // Add click handler if not locked
-            if (!topic.locked) {
-                nodeDiv.style.cursor = 'pointer';
-                nodeDiv.onclick = () => navigateToTopic(topic.topic_number);
-            }
-        } else if (node.type === 'test') {
-            // This is a test topic (positions 4, 8, 12, 16)
-            const topic = node.data;
-            nodeDiv.classList.add('test-node');
-
-            // Set state classes same as topics
-            if (topic.completed) {
-                nodeDiv.classList.add('completed');
-            } else if (topic.locked) {
-                nodeDiv.classList.add('locked');
-            } else {
-                nodeDiv.classList.add('available');
-            }
-
-            // Add progression-topic class if this is current
-            if (topic.current) {
-                nodeDiv.classList.add('progression-topic');
-            }
-
-            // Add triangle to selected test topic
-            if (topic.topic_number === displayTopic) {
-                const triangle = document.createElement('div');
-                triangle.className = 'current-indicator';
-                triangle.innerHTML = '▼';
-                nodeDiv.appendChild(triangle);
-            }
-
-            // Add the circle with test emoji
-            const circle = document.createElement('div');
-            circle.className = 'node-circle test-circle';
-            circle.innerHTML = '📝';
-            nodeDiv.appendChild(circle);
-
-            // Add tooltip
-            const testNames = {
-                4: 'Checkpoint Test 1',
-                8: 'Checkpoint Test 2',
-                12: 'Checkpoint Test 3',
-                16: 'Final Test'
-            };
-            nodeDiv.title = testNames[topic.topic_number] || `Test ${topic.topic_number}`;
-
-            // Add click handler if not locked
-            if (!topic.locked) {
-                nodeDiv.style.cursor = 'pointer';
-                nodeDiv.onclick = () => navigateToTopic(topic.topic_number);
-            }
-        }
-
-        return nodeDiv;
-    }
 
     async function navigateToTopic(topicNumber) {
         // Navigate to a different topic
@@ -631,9 +705,12 @@
 
 
     function getTopicTitle(titleKey) {
-        // Try to get translated title, fallback to key
+        // Get target language for immersion (tooltips also in target language)
+        const targetLang = localStorage.getItem('selectedTargetLanguage');
+
+        // Try to get translated title in TARGET language, fallback to key
         if (window.translationManager) {
-            return window.translationManager.getText(titleKey) || titleKey;
+            return window.translationManager.getTextInLanguage(titleKey, targetLang) || titleKey;
         }
         return titleKey;
     }

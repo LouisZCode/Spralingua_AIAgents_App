@@ -47,6 +47,8 @@ const translations = {
         // Exercises Page
         learning_hub: "Learning Hub",
         learning_journey: "Your personalized language learning journey",
+        current_level: "Current Level",
+        topic: "Topic",
         practice_modules: "Practice Modules",
         conversation_practice: "Conversation Practice",
         conversation_practice_desc: "Practice natural conversations with our AI tandems",
@@ -148,7 +150,67 @@ const translations = {
         // Coming Soon and Correct Kevin
         coming_soon: "Coming Soon",
         correct_kevin: "Correct Kevin",
-        fix_mistakes: "Fix the mistakes"
+        fix_mistakes: "Fix the mistakes",
+
+        // A1 Topic Titles
+        who_are_you: "Who are you?",
+        what_do_you_do: "What do you do?",
+        know_your_abc: "Know your ABC",
+        test_checkpoint_1: "Test Checkpoint 1",
+        can_you_spell_it: "Can you spell it?",
+        whats_the_number: "What's the number?",
+        how_much_is_it: "How much is it?",
+        test_checkpoint_2: "Test Checkpoint 2",
+        whats_your_address: "What's your address?",
+        more_about_you: "More about you",
+        what_are_they_like: "What are they like?",
+        test_checkpoint_3: "Test Checkpoint 3",
+        what_do_they_do: "What do they do?",
+        what_time_is_it: "What time is it?",
+        when_is_it: "When is it?",
+        test_final: "Final Test",
+
+        // A2 Topic Titles
+        morning_routine: "Morning routine",
+        making_plans: "Making plans",
+        where_is_subway: "Where is the subway?",
+        my_apartment: "My apartment",
+        love_fast_food: "I love fast food",
+        ordering_dinner: "Ordering dinner",
+        got_sick: "I got sick",
+        exercise_daily: "Exercise daily",
+        want_go_japan: "I want to go to Japan",
+        lets_take_trip: "Let's take a trip",
+        meeting_someone_new: "Meeting someone new",
+        make_reservation: "Make a reservation",
+
+        // B1 Topic Titles
+        making_small_talk: "Making small talk",
+        at_the_store: "At the store",
+        giving_instructions: "Giving instructions",
+        talking_about_hobbies: "Talking about hobbies",
+        talking_about_work: "Talking about work",
+        going_out: "Going out",
+        travel_planning: "Travel planning",
+        understanding_social_media: "Understanding social media",
+        asking_for_clarification: "Asking for clarification",
+        expressing_preferences: "Expressing preferences",
+        discussing_pop_culture: "Discussing pop culture",
+        expressing_opinions: "Expressing opinions",
+
+        // B2 Topic Titles
+        getting_around_town: "Getting around town",
+        at_restaurant_b2: "At the restaurant",
+        at_doctor_b2: "At the doctor",
+        at_work_b2: "At work",
+        at_school_b2: "At school",
+        shopping_b2: "Shopping",
+        at_airport_b2: "At the airport",
+        at_hotel_b2: "At the hotel",
+        socializing_b2: "Socializing",
+        social_media_b2: "Social media",
+        expressing_opinions_b2: "Expressing opinions",
+        common_idioms: "Common idioms"
     },
     
     german: {
@@ -197,6 +259,8 @@ const translations = {
         // Exercises Page
         learning_hub: "Lernzentrum",
         learning_journey: "Deine personalisierte Sprachlernreise",
+        current_level: "Aktuelles Niveau",
+        topic: "Thema",
         practice_modules: "Übungsmodule",
         conversation_practice: "Konversationsübung",
         conversation_practice_desc: "Übe natürliche Gespräche mit unseren KI-Tandems",
@@ -298,9 +362,69 @@ const translations = {
         // Coming Soon and Correct Kevin
         coming_soon: "Demnächst",
         correct_kevin: "Kevin korrigieren",
-        fix_mistakes: "Fehler korrigieren"
+        fix_mistakes: "Fehler korrigieren",
+
+        // A1 Topic Titles
+        who_are_you: "Wer bist du?",
+        what_do_you_do: "Was machst du?",
+        know_your_abc: "Kennst du dein ABC?",
+        test_checkpoint_1: "Test Kontrollpunkt 1",
+        can_you_spell_it: "Kannst du es buchstabieren?",
+        whats_the_number: "Wie ist die Zahl?",
+        how_much_is_it: "Wie viel kostet das?",
+        test_checkpoint_2: "Test Kontrollpunkt 2",
+        whats_your_address: "Wie ist deine Adresse?",
+        more_about_you: "Mehr über dich",
+        what_are_they_like: "Wie sind sie?",
+        test_checkpoint_3: "Test Kontrollpunkt 3",
+        what_do_they_do: "Was machen sie?",
+        what_time_is_it: "Wie spät ist es?",
+        when_is_it: "Wann ist es?",
+        test_final: "Abschlusstest",
+
+        // A2 Topic Titles
+        morning_routine: "Morgenroutine",
+        making_plans: "Pläne machen",
+        where_is_subway: "Wo ist die U-Bahn?",
+        my_apartment: "Meine Wohnung",
+        love_fast_food: "Ich liebe Fast Food",
+        ordering_dinner: "Abendessen bestellen",
+        got_sick: "Ich bin krank geworden",
+        exercise_daily: "Täglich Sport treiben",
+        want_go_japan: "Ich möchte nach Japan",
+        lets_take_trip: "Lass uns eine Reise machen",
+        meeting_someone_new: "Jemanden neues treffen",
+        make_reservation: "Eine Reservierung machen",
+
+        // B1 Topic Titles
+        making_small_talk: "Smalltalk machen",
+        at_the_store: "Im Laden",
+        giving_instructions: "Anweisungen geben",
+        talking_about_hobbies: "Über Hobbys sprechen",
+        talking_about_work: "Über Arbeit sprechen",
+        going_out: "Ausgehen",
+        travel_planning: "Reiseplanung",
+        understanding_social_media: "Social Media verstehen",
+        asking_for_clarification: "Um Klärung bitten",
+        expressing_preferences: "Vorlieben ausdrücken",
+        discussing_pop_culture: "Popkultur diskutieren",
+        expressing_opinions: "Meinungen äußern",
+
+        // B2 Topic Titles
+        getting_around_town: "Sich in der Stadt zurechtfinden",
+        at_restaurant_b2: "Im Restaurant",
+        at_doctor_b2: "Beim Arzt",
+        at_work_b2: "Bei der Arbeit",
+        at_school_b2: "In der Schule",
+        shopping_b2: "Einkaufen",
+        at_airport_b2: "Am Flughafen",
+        at_hotel_b2: "Im Hotel",
+        socializing_b2: "Gesellig sein",
+        social_media_b2: "Soziale Medien",
+        expressing_opinions_b2: "Meinungen äußern",
+        common_idioms: "Häufige Redewendungen"
     },
-    
+
     spanish: {
         // Navigation
         nav_dashboard: "Panel",
@@ -347,6 +471,8 @@ const translations = {
         // Exercises Page
         learning_hub: "Centro de Aprendizaje",
         learning_journey: "Tu viaje personalizado de aprendizaje de idiomas",
+        current_level: "Nivel Actual",
+        topic: "Tema",
         practice_modules: "Módulos de Práctica",
         conversation_practice: "Práctica de Conversación",
         conversation_practice_desc: "Practica conversaciones naturales con nuestros tándems de IA",
@@ -448,9 +574,69 @@ const translations = {
         // Coming Soon and Correct Kevin
         coming_soon: "Próximamente",
         correct_kevin: "Corrige a Kevin",
-        fix_mistakes: "Corrige los errores"
+        fix_mistakes: "Corrige los errores",
+
+        // A1 Topic Titles
+        who_are_you: "¿Quién eres?",
+        what_do_you_do: "¿Qué haces?",
+        know_your_abc: "Conoce tu ABC",
+        test_checkpoint_1: "Test Punto de Control 1",
+        can_you_spell_it: "¿Puedes deletrearlo?",
+        whats_the_number: "¿Cuál es el número?",
+        how_much_is_it: "¿Cuánto cuesta?",
+        test_checkpoint_2: "Test Punto de Control 2",
+        whats_your_address: "¿Cuál es tu dirección?",
+        more_about_you: "Más sobre ti",
+        what_are_they_like: "¿Cómo son?",
+        test_checkpoint_3: "Test Punto de Control 3",
+        what_do_they_do: "¿Qué hacen?",
+        what_time_is_it: "¿Qué hora es?",
+        when_is_it: "¿Cuándo es?",
+        test_final: "Test Final",
+
+        // A2 Topic Titles
+        morning_routine: "Rutina matutina",
+        making_plans: "Haciendo planes",
+        where_is_subway: "¿Dónde está el metro?",
+        my_apartment: "Mi apartamento",
+        love_fast_food: "Me encanta la comida rápida",
+        ordering_dinner: "Pidiendo la cena",
+        got_sick: "Me enfermé",
+        exercise_daily: "Hacer ejercicio diario",
+        want_go_japan: "Quiero ir a Japón",
+        lets_take_trip: "Hagamos un viaje",
+        meeting_someone_new: "Conociendo a alguien nuevo",
+        make_reservation: "Hacer una reserva",
+
+        // B1 Topic Titles
+        making_small_talk: "Conversación ligera",
+        at_the_store: "En la tienda",
+        giving_instructions: "Dando instrucciones",
+        talking_about_hobbies: "Hablando de pasatiempos",
+        talking_about_work: "Hablando del trabajo",
+        going_out: "Salir",
+        travel_planning: "Planificación de viajes",
+        understanding_social_media: "Entendiendo las redes sociales",
+        asking_for_clarification: "Pidiendo aclaración",
+        expressing_preferences: "Expresando preferencias",
+        discussing_pop_culture: "Discutiendo cultura pop",
+        expressing_opinions: "Expresando opiniones",
+
+        // B2 Topic Titles
+        getting_around_town: "Moviéndose por la ciudad",
+        at_restaurant_b2: "En el restaurante",
+        at_doctor_b2: "En el médico",
+        at_work_b2: "En el trabajo",
+        at_school_b2: "En la escuela",
+        shopping_b2: "De compras",
+        at_airport_b2: "En el aeropuerto",
+        at_hotel_b2: "En el hotel",
+        socializing_b2: "Socializando",
+        social_media_b2: "Redes sociales",
+        expressing_opinions_b2: "Expresando opiniones",
+        common_idioms: "Modismos comunes"
     },
-    
+
     portuguese: {
         // Navigation
         nav_dashboard: "Painel",
@@ -497,6 +683,8 @@ const translations = {
         // Exercises Page
         learning_hub: "Centro de Aprendizagem",
         learning_journey: "Sua jornada personalizada de aprendizado de idiomas",
+        current_level: "Nível Atual",
+        topic: "Tópico",
         practice_modules: "Módulos de Prática",
         conversation_practice: "Prática de Conversação",
         conversation_practice_desc: "Pratique conversas naturais com nossos tandems de IA",
@@ -598,7 +786,67 @@ const translations = {
         // Coming Soon and Correct Kevin
         coming_soon: "Em Breve",
         correct_kevin: "Corrija o Kevin",
-        fix_mistakes: "Corrija os erros"
+        fix_mistakes: "Corrija os erros",
+
+        // A1 Topic Titles
+        who_are_you: "Quem és tu?",
+        what_do_you_do: "O que fazes?",
+        know_your_abc: "Conhece o teu ABC",
+        test_checkpoint_1: "Teste Ponto de Controlo 1",
+        can_you_spell_it: "Podes soletrar?",
+        whats_the_number: "Qual é o número?",
+        how_much_is_it: "Quanto custa?",
+        test_checkpoint_2: "Teste Ponto de Controlo 2",
+        whats_your_address: "Qual é a tua morada?",
+        more_about_you: "Mais sobre ti",
+        what_are_they_like: "Como são?",
+        test_checkpoint_3: "Teste Ponto de Controlo 3",
+        what_do_they_do: "O que fazem?",
+        what_time_is_it: "Que horas são?",
+        when_is_it: "Quando é?",
+        test_final: "Teste Final",
+
+        // A2 Topic Titles
+        morning_routine: "Rotina matinal",
+        making_plans: "Fazendo planos",
+        where_is_subway: "Onde é o metro?",
+        my_apartment: "Meu apartamento",
+        love_fast_food: "Eu adoro fast food",
+        ordering_dinner: "Pedindo o jantar",
+        got_sick: "Fiquei doente",
+        exercise_daily: "Fazer exercício diário",
+        want_go_japan: "Quero ir ao Japão",
+        lets_take_trip: "Vamos fazer uma viagem",
+        meeting_someone_new: "Conhecendo alguém novo",
+        make_reservation: "Fazer uma reserva",
+
+        // B1 Topic Titles
+        making_small_talk: "Fazendo conversa leve",
+        at_the_store: "Na loja",
+        giving_instructions: "Dando instruções",
+        talking_about_hobbies: "Falando sobre hobbies",
+        talking_about_work: "Falando sobre trabalho",
+        going_out: "Saindo",
+        travel_planning: "Planejamento de viagem",
+        understanding_social_media: "Entendendo redes sociais",
+        asking_for_clarification: "Pedindo esclarecimento",
+        expressing_preferences: "Expressando preferências",
+        discussing_pop_culture: "Discutindo cultura pop",
+        expressing_opinions: "Expressando opiniões",
+
+        // B2 Topic Titles
+        getting_around_town: "Movendo-se pela cidade",
+        at_restaurant_b2: "No restaurante",
+        at_doctor_b2: "No médico",
+        at_work_b2: "No trabalho",
+        at_school_b2: "Na escola",
+        shopping_b2: "Fazendo compras",
+        at_airport_b2: "No aeroporto",
+        at_hotel_b2: "No hotel",
+        socializing_b2: "Socializando",
+        social_media_b2: "Redes sociais",
+        expressing_opinions_b2: "Expressando opiniões",
+        common_idioms: "Expressões idiomáticas comuns"
     }
 };
 
@@ -625,11 +873,30 @@ class TranslationManager {
     
     // Get a specific translation
     getText(key) {
-        return this.translations[this.currentLanguage][key] || 
-               this.translations['english'][key] || 
+        return this.translations[this.currentLanguage][key] ||
+               this.translations['english'][key] ||
                key;
     }
-    
+
+    // Get translation in a specific language (for target language display)
+    getTextInLanguage(key, language) {
+        // Normalize language to lowercase
+        const normalizedLang = language ? language.toLowerCase() : 'english';
+
+        // Try to get translation in specified language
+        if (this.translations[normalizedLang] && this.translations[normalizedLang][key]) {
+            return this.translations[normalizedLang][key];
+        }
+
+        // Fallback to English
+        if (this.translations['english'] && this.translations['english'][key]) {
+            return this.translations['english'][key];
+        }
+
+        // Final fallback: return the key itself
+        return key;
+    }
+
     // Update all elements with data-translate attribute
     updatePageText() {
         const elements = document.querySelectorAll('[data-translate]');
