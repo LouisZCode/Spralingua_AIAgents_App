@@ -1,5 +1,13 @@
 # Spralingua - AI-Powered Language Learning Platform
 
+🌐 **[Try Live Demo](https://spralingua.com)** | [![Live Status](https://img.shields.io/badge/status-live-brightgreen)](https://spralingua.com)
+
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+![Flask](https://img.shields.io/badge/flask-3.0-green)
+![PostgreSQL](https://img.shields.io/badge/postgresql-15-blue)
+![Claude AI](https://img.shields.io/badge/AI-Claude-purple)
+![Deployment](https://img.shields.io/badge/deployment-Railway-blueviolet)
+
 A Flask-based language learning platform that uses AI to provide personalized conversation practice and writing exercises. Built with Anthropic's Claude API for intelligent feedback and Minimax for text-to-speech capabilities.
 
 ## Features
@@ -185,6 +193,31 @@ uv run python script.py # Run Python scripts
 3. Use the established CSS design system
 4. Test each component independently before integration
 5. Follow the existing OOP architecture patterns
+
+6. ## Why I Built This
+
+7. After spending 4+ years as a Talent Partner recruiting for tech companies across the DACH region, I saw firsthand how language barriers limit career opportunities. Many talented professionals struggled to break into international markets simply because they lacked conversational confidence in German or English.
+
+8. Traditional language learning apps focus on gamification and vocabulary drills, but what people actually need is **real conversation practice with immediate, intelligent feedback**. That's where AI shines—you can practice speaking without fear of judgment, get instant corrections, and have conversations that adapt to your actual skill level.
+
+9. Spralingua combines my understanding of what learners need (from recruiting internationally) with modern AI capabilities to create a tool that solves a real problem: helping people gain the language confidence they need to access better career opportunities.
+
+10. ## Technical Challenges Solved
+
+11. ### Multi-Agent Conversation Architecture
+12. Built a sophisticated agent orchestration system using **LangGraph** where multiple AI personalities (Harry & Sally) maintain consistent character traits while adapting their language complexity to the user's CEFR level (A1-C2). Each agent has memory of past conversations and adjusts responses based on user progress.
+
+13. ### Sub-Second Response Times
+14. Achieved <2s response times for AI-generated feedback by implementing efficient prompt engineering, strategic caching, and optimized Claude API calls. This creates a natural conversation flow rather than the frustrating delays common in AI chat applications.
+
+15. ### Privacy-First Voice AI
+16. Integrated real-time voice input/output using Web Speech API and Minimax TTS, allowing users to practice pronunciation. Voice processing happens client-side where possible, minimizing data transmission and protecting user privacy.
+
+17. ### Database-Driven Prompt System
+18. Designed a flexible prompt management system stored in PostgreSQL that allows dynamic adjustment of difficulty levels, grammar rules, and cultural context without code changes. This makes it easy to add new languages and customize learning paths.
+
+19. ### Production-Ready Deployment
+20. Successfully deployed on Railway with Gunicorn, PostgreSQL, and proper environment configuration. Handles concurrent users with stateful conversation management across multiple workers.
 
 ## License
 
