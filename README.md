@@ -1,83 +1,120 @@
-# Spralingua - AI-Powered Language Learning Platform
+# Spralingua: AI-Powered Language Learning Platform
 
-🌐 **[Try Live Demo](https://spralingua.com)** | [![Live Status](https://img.shields.io/badge/status-live-brightgreen)](https://spralingua.com)
+**[Live Demo](https://spralingua.com)** | **[Portfolio](https://www.luiszermeno.info)**
 
-![Python](https://img.shields.io/badge/python-3.11+-blue)
-![Flask](https://img.shields.io/badge/flask-3.0-green)
-![PostgreSQL](https://img.shields.io/badge/postgresql-15-blue)
+![Python](https://img.shields.io/badge/python-3.12+-blue)
+![Flask](https://img.shields.io/badge/flask-3.1-green)
+![PostgreSQL](https://img.shields.io/badge/postgresql-17-blue)
 ![Claude AI](https://img.shields.io/badge/AI-Claude-purple)
 ![Deployment](https://img.shields.io/badge/deployment-Railway-blueviolet)
 
-A Flask-based language learning platform that uses AI to provide personalized conversation practice and writing exercises. Built with Anthropic's Claude API for intelligent feedback and Minimax for text-to-speech capabilities.
+---
+
+## The Problem
+
+Traditional language learning apps (like Duolingo) are excellent for vocabulary, but they often fail to prepare learners for **real-time conversation anxiety**. Students know the words but freeze when they have to speak.
+
+## The Solution
+
+Spralingua is an immersive AI tutor that simulates real-world scenarios (ordering coffee, job interviews, casual chat). It uses LLMs (Anthropic Claude) for reasoning and cultural context, and ultra-low latency TTS (Text-to-Speech) to create a fluid conversational loop.
+
+---
+
+## Tech Stack & Architecture
+
+### Backend
+- **Core**: Python 3.12 + Flask
+- **AI Engine**: Anthropic Claude 3.5 Sonnet (via API)
+- **Database**: PostgreSQL (SQLAlchemy ORM)
+- **Authentication**: Flask-Login + Bcrypt
+- **TTS**: Minimax API
+
+### Frontend
+- **UI**: HTML5, CSS3, Vanilla JavaScript
+- **Audio**: Web Speech API (Input) + Minimax TTS (Output)
+- **Animations**: Lottie for character avatars
+
+### Infrastructure
+- **Deployment**: Railway (CI/CD with Gunicorn)
+- **Session Management**: Server-side Flask sessions
+
+---
+
+## System Architecture
+
+The application is designed to minimize latency for a "real-time" feel:
+
+```
+User Voice Input
+      |
+      v
+[Web Speech API] --> Browser --> Flask Backend
+                                      |
+                    +-----------------+-----------------+
+                    |                                   |
+                    v                                   v
+            [PostgreSQL]                    [Claude 3.5 API]
+            (Get History)                   (Generate Response)
+                    |                                   |
+                    +-----------------+-----------------+
+                                      |
+                                      v
+                              [Minimax TTS API]
+                                      |
+                                      v
+                              Audio Playback
+```
+
+---
+
+## Key Technical Challenges Solved
+
+### 1. Multi-Worker Session "Bleeding"
+
+**The Challenge**: In production (deployed on Railway with Gunicorn), requests were load-balanced across multiple workers. A user would start a conversation on Worker A, but their next message would hit Worker B, which had no memory of the conversation context.
+
+**The Solution**: Implemented database-backed conversation history. Every turn is serialized and stored in the Flask session immediately. The context manager retrieves the full conversation history before sending the prompt to Claude, ensuring continuity regardless of which worker handles the request.
+
+### 2. Latency Optimization (<2s)
+
+**The Challenge**: A standard LLM loop (Transcribe -> Generate -> TTS) can take 5-8 seconds, killing immersion.
+
+**The Solution**:
+- Moved Speech-to-Text (STT) to the client-side (Web Speech API) to eliminate upload latency
+- Optimized prompt token usage to reduce Claude's "Time to First Token"
+- Asynchronous TTS fetching while the UI updates
+
+---
 
 ## Features
 
-### Core Learning Tools
-- **Casual Conversation Practice** - Chat with AI characters (Harry & Sally) who adapt to your level
-- **Email Writing Exercises** - Practice formal writing with culturally-appropriate scenarios
-- **Real-time Language Feedback** - Get instant corrections and suggestions as you learn
-- **Voice Input/Output** - Practice speaking and listening with speech recognition and TTS
-- **Progress Tracking** - Track your advancement through CEFR levels (A1-B2)
+- **Real-time Conversation**: Speak naturally; the AI responds contextually with character personalities
+- **Email Writing Coach**: AI analyzes your draft emails for tone, grammar, and cultural appropriateness
+- **Adaptive CEFR Levels**: Content adjusts automatically from A1 (Beginner) to B2 (Upper Intermediate)
+- **Dual-Feedback System**:
+  - *Instant*: Subtle hints during chat (color-coded feedback)
+  - *Deep Dive*: Post-conversation grammar breakdown
+- **Voice Input/Output**: Practice speaking and listening with speech recognition and TTS
+- **Progress Tracking**: Track advancement through 16 topics per level
 
-### Language Support
-- **Learning Languages**: Spanish, German, Portuguese, English
-- **Interface Languages**: Full UI translation in all supported languages
-- **Personalization**: Characters address you by name for a more engaging experience
+---
 
-### Smart Features
-- **Adaptive Difficulty** - Content adjusts to your current CEFR level
-- **Topic-Based Learning** - 12 structured topics per level with specific vocabulary
-- **Dual Feedback System** - Quick hints during practice, detailed analysis after
-- **Cultural Adaptation** - Letters and conversations reflect authentic cultural contexts
+## Local Development Setup
 
-## Tech Stack
-
-### Backend
-- **Flask** - Web framework
-- **PostgreSQL** - Database for user progress and content
-- **SQLAlchemy** - ORM for database operations
-- **Anthropic Claude API** - AI conversation and feedback generation
-- **Minimax API** - Text-to-speech synthesis
-
-### Frontend
-- **Vanilla JavaScript** - No framework dependencies
-- **Web Speech API** - Browser-based speech recognition
-- **Lottie** - Animated character avatars
-- **CSS3** - Modern responsive design with glass morphism effects
-
-## Prerequisites
-
-- Python 3.11+
+### Prerequisites
+- Python 3.12+
 - PostgreSQL 17
 - UV package manager
 - Anthropic API key
 - Minimax API credentials (optional, for TTS)
 
-## Installation
-
-1. **Clone the repository**
+### 1. Clone the repository
 ```bash
 git clone https://github.com/LouisZCode/spralingua.git
 cd spralingua
 ```
 
-2. **Set up PostgreSQL database**
-```sql
-CREATE DATABASE spralingua_dev;
-CREATE USER dev WITH PASSWORD 'devpass';
-GRANT ALL PRIVILEGES ON DATABASE spralingua_dev TO dev;
-```
-
-3. **Configure environment variables**
-Create a `.env` file in the project root:
-```
-ANTHROPIC_API_KEY=your_anthropic_api_key
-MINIMAX_API_KEY=your_minimax_api_key
-MINIMAX_GROUP_ID=your_minimax_group_id
-MINIMAX_VOICE_ID=your_default_voice_id
-```
-
-4. **Install dependencies with UV**
+### 2. Install dependencies with UV
 ```bash
 # Install UV if you haven't already
 pip install uv
@@ -86,79 +123,98 @@ pip install uv
 uv sync
 ```
 
-5. **Run database migrations**
+### 3. Configure environment variables
+
+Create a `.env` file in the project root:
+```env
+# Database
+DATABASE_URL=postgresql://dev:devpass@localhost:5432/spralingua_dev
+
+# Flask
+FLASK_SECRET_KEY=your_secret_key_here
+
+# AI APIs
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+MINIMAX_API_KEY=your_minimax_key
+MINIMAX_GROUP_ID=your_group_id
+MINIMAX_VOICE_ID=female-shaonv
+```
+
+### 4. Database Setup
+
+**Option A: Local PostgreSQL**
+```bash
+# Start PostgreSQL (macOS)
+brew services start postgresql
+
+# Create database
+psql -U postgres -c "CREATE DATABASE spralingua_dev;"
+psql -U postgres -c "CREATE USER dev WITH PASSWORD 'devpass';"
+psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE spralingua_dev TO dev;"
+```
+
+**Option B: Use Railway Production DB (for testing)**
+```bash
+export DATABASE_URL="your_railway_database_url"
+```
+
+### 5. Run database migrations
 ```bash
 uv run python migrations/create_user_progress_table.py
 uv run python migrations/create_topic_system_tables.py
 uv run python migrations/populate_a1_topics.py
-uv run python migrations/populate_exercise_types.py
-uv run python migrations/01_create_level_rules_table.py
-uv run python migrations/02_enhance_topic_definitions.py
-uv run python migrations/03_update_topic1_flow.py
-uv run python migrations/04_add_scenario_templates.py
-uv run python migrations/05_update_topic1_to_5_exchanges.py
-uv run python migrations/06_add_exercise_progress.py
-uv run python migrations/07_add_completion_popup_tracking.py
+# ... additional migrations as needed
 ```
 
-6. **Start the application**
+### 6. Start the application
 ```bash
 uv run python app.py
 ```
 
-The application will be available at `http://localhost:5001`
+Access at **http://localhost:5000**
+
+---
 
 ## Project Structure
 
 ```
 spralingua/
+├── app.py                  # Main Flask application (factory pattern)
+├── config.py               # Centralized configuration
+├── database.py             # Database initialization
+│
+├── routes/                 # Flask Blueprints
+│   ├── core.py             # Landing page
+│   ├── auth.py             # Login, register, dashboard
+│   ├── exercises.py        # Exercise pages
+│   └── api.py              # All /api/* endpoints
+│
+├── services/               # External service clients
+│   ├── claude_client.py    # Anthropic API integration
+│   ├── minimax_client.py   # Minimax TTS integration
+│   └── feedback.py         # Feedback generation
+│
 ├── auth/                   # Authentication system
-├── email_writing/          # Email writing exercise module
-├── language/               # Language mapping utilities
-├── level_rules/            # CEFR level rules and guidelines
-├── migrations/             # Database migration scripts
+│   ├── auth_manager.py     # Auth logic
+│   ├── forms.py            # WTForms classes
+│   └── decorators.py       # @login_required
+│
 ├── models/                 # SQLAlchemy database models
-├── progress/               # Progress tracking system
 ├── prompts/                # AI prompt templates and personalities
+├── progress/               # Progress tracking system
+├── topics/                 # Topic progression management
 ├── scenarios/              # Dynamic scenario generation
+├── email_writing/          # Email writing exercise module
+│
 ├── static/                 # CSS, JavaScript, and assets
 │   ├── css/                # Stylesheets
 │   ├── js/                 # Frontend JavaScript
 │   └── animations/         # Lottie animation files
-├── templates/              # Jinja2 HTML templates
-├── tests/                  # Test management system
-├── topics/                 # Topic progression management
-├── app.py                  # Main Flask application
-├── claude_client.py        # Anthropic API integration
-├── minimax_client.py       # Minimax TTS integration
-└── database.py             # Database configuration
+│
+└── templates/              # Jinja2 HTML templates
 ```
 
-## Development Guidelines
-
-### Windows Compatibility
-**CRITICAL**: Never use emoji characters in console output due to Windows encoding limitations. Use text markers instead:
-- ✅ → [SUCCESS]
-- ❌ → [ERROR]
-- ⚠️ → [WARNING]
-
-Emojis ARE allowed in HTML templates for user-facing UI.
-
-### Database Models
-All SQLAlchemy models must be imported in `app.py` after database initialization to establish proper relationships.
-
-### CSS Architecture
-- Two-layer system: `base.css` (global utilities) + component-specific styles
-- Use CSS custom properties for consistent theming
-- Purple gradient branding: `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
-
-### Package Management
-Always use UV for package management:
-```bash
-uv add package_name     # Add new dependency
-uv sync                 # Install all dependencies
-uv run python script.py # Run Python scripts
-```
+---
 
 ## API Endpoints
 
@@ -173,60 +229,45 @@ uv run python script.py # Run Python scripts
 - `GET /api/casual-chat/scenario` - Get conversation scenario
 
 ### Email Writing
-- `GET /writing-practice` - Email writing exercise page
 - `POST /api/writing-practice/generate` - Generate culturally-adapted letters
 - `POST /api/writing-practice/submit` - Submit and evaluate responses
 
-## Features in Development
+---
 
-- Fill the Blanks exercise
-- Correct Kevin exercise (error correction practice)
-- A2, B1, B2 topic content
-- Progress analytics dashboard
-- Achievement system
-- Additional conversation characters
+## Development Guidelines
+
+### Windows Compatibility
+**CRITICAL**: Never use emoji characters in console output due to Windows encoding limitations. Use text markers instead:
+- `[SUCCESS]` instead of checkmarks
+- `[ERROR]` instead of X marks
+- `[WARNING]` instead of warning signs
+
+Emojis ARE allowed in HTML templates for user-facing UI.
+
+### Package Management
+Always use UV for package management:
+```bash
+uv add package_name     # Add new dependency
+uv sync                 # Install all dependencies
+uv run python script.py # Run Python scripts
+```
+
+---
 
 ## Contributing
 
-1. Follow the component-first development approach
-2. Maintain Windows compatibility (no console emojis)
-3. Use the established CSS design system
-4. Test each component independently before integration
-5. Follow the existing OOP architecture patterns
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-6. ## Why I Built This
-
-7. After spending 4+ years as a Talent Partner recruiting for tech companies across the DACH region, I saw firsthand how language barriers limit career opportunities. Many talented professionals struggled to break into international markets simply because they lacked conversational confidence in German or English.
-
-8. Traditional language learning apps focus on gamification and vocabulary drills, but what people actually need is **real conversation practice with immediate, intelligent feedback**. That's where AI shines—you can practice speaking without fear of judgment, get instant corrections, and have conversations that adapt to your actual skill level.
-
-9. Spralingua combines my understanding of what learners need (from recruiting internationally) with modern AI capabilities to create a tool that solves a real problem: helping people gain the language confidence they need to access better career opportunities.
-
-10. ## Technical Challenges Solved
-
-11. ### Multi-Agent Conversation Architecture
-12. Built a sophisticated agent orchestration system using **LangGraph** where multiple AI personalities (Harry & Sally) maintain consistent character traits while adapting their language complexity to the user's CEFR level (A1-C2). Each agent has memory of past conversations and adjusts responses based on user progress.
-
-13. ### Sub-Second Response Times
-14. Achieved <2s response times for AI-generated feedback by implementing efficient prompt engineering, strategic caching, and optimized Claude API calls. This creates a natural conversation flow rather than the frustrating delays common in AI chat applications.
-
-15. ### Privacy-First Voice AI
-16. Integrated real-time voice input/output using Web Speech API and Minimax TTS, allowing users to practice pronunciation. Voice processing happens client-side where possible, minimizing data transmission and protecting user privacy.
-
-17. ### Database-Driven Prompt System
-18. Designed a flexible prompt management system stored in PostgreSQL that allows dynamic adjustment of difficulty levels, grammar rules, and cultural context without code changes. This makes it easy to add new languages and customize learning paths.
-
-19. ### Production-Ready Deployment
-20. Successfully deployed on Railway with Gunicorn, PostgreSQL, and proper environment configuration. Handles concurrent users with stateful conversation management across multiple workers.
+---
 
 ## License
 
-[License information to be added]
+Distributed under the MIT License. See `LICENSE` for more information.
 
-## Support
+---
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/LouisZCode/spralingua/issues) page.
-
-## Acknowledgments
-
-Built as a simplified version of GTA-V2, focusing on core language learning features with clean, maintainable architecture.
+**Built by [Luis Zermeno](https://www.luiszermeno.info)** - Bridging Talent Acquisition & Software Engineering.
