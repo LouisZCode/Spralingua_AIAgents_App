@@ -44,26 +44,7 @@ Spralingua is an immersive AI tutor that simulates real-world scenarios (orderin
 
 The application is designed to minimize latency for a "real-time" feel:
 
-```
-User Voice Input
-      |
-      v
-[Web Speech API] --> Browser --> Flask Backend
-                                      |
-                    +-----------------+-----------------+
-                    |                                   |
-                    v                                   v
-            [PostgreSQL]                    [Claude 3.5 API]
-            (Get History)                   (Generate Response)
-                    |                                   |
-                    +-----------------+-----------------+
-                                      |
-                                      v
-                              [Minimax TTS API]
-                                      |
-                                      v
-                              Audio Playback
-```
+![Conversation Flow Architecture](docs/conversation-flow.png)
 
 ---
 
