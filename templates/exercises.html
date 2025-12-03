@@ -32,7 +32,7 @@
     <div class="hub-container">
         <!-- Back Navigation -->
         <div class="back-nav-container">
-            <a href="{{ url_for('dashboard') }}" class="back-nav-button">
+            <a href="{{ url_for('auth.dashboard') }}" class="back-nav-button">
                 <span class="back-arrow">←</span>
                 <span data-translate="back_to_dashboard">Back to Language Selection</span>
             </a>
@@ -113,7 +113,7 @@
 
                 <!-- Exercise Cards Grid -->
                 <div class="module-exercises-grid">
-                    <a href="{{ url_for('casual_chat') }}" class="practice-exercise-box" id="casual-chat-link">
+                    <a href="{{ url_for('exercises.casual_chat') }}" class="practice-exercise-box" id="casual-chat-link">
                         <div class="exercise-completion-indicator" id="casual-chat-indicator">
                             <span class="completion-circle"></span>
                         </div>

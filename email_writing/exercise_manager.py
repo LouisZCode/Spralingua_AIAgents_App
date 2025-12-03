@@ -4,7 +4,7 @@ import json
 import re
 import random
 from typing import Dict, Any, Optional, Tuple
-from claude_client import ClaudeClient
+from services.claude_client import ClaudeClient
 from models.user import User
 from email_writing.email_prompt_builder import EmailPromptBuilder
 from email_writing.email_feedback_builder import EmailFeedbackBuilder

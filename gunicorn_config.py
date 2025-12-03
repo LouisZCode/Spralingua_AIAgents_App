@@ -10,7 +10,9 @@ bind = f"0.0.0.0:{os.environ.get('PORT', '8080')}"
 backlog = 2048
 
 # Worker processes
-workers = multiprocessing.cpu_count() * 2 + 1
+# Using 1 worker for portfolio/demo project with minimal traffic (~10 users/month)
+# Saves significant RAM vs the formula (cpu_count * 2 + 1) which spawns 17+ workers
+workers = 1
 worker_class = 'sync'
 worker_connections = 1000
 timeout = 120

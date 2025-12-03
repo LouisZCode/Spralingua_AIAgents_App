@@ -3,7 +3,7 @@
         <!-- Logo/Brand -->
         <div class="nav-brand">
             {% if session.authenticated %}
-                <a href="{{ url_for('exercises') }}" class="brand-link">
+                <a href="{{ url_for('exercises.exercises') }}" class="brand-link">
                     <span class="brand-text">Spralingua</span>
                 </a>
             {% else %}
@@ -12,23 +12,23 @@
                 </a>
             {% endif %}
         </div>
-        
+
         <!-- Navigation Links -->
         <div class="nav-links">
             {% if session.authenticated %}
                 <!-- Authenticated User Menu -->
-                <a href="{{ url_for('dashboard') }}" class="nav-link" data-translate="nav_dashboard">Dashboard</a>
+                <a href="{{ url_for('auth.dashboard') }}" class="nav-link" data-translate="nav_dashboard">Dashboard</a>
                 <div class="nav-user-menu">
                     <span class="nav-user-name">{{ session.name }}</span>
-                    <a href="{{ url_for('auth_logout') }}" class="nav-link nav-logout" data-translate="nav_logout">Logout</a>
+                    <a href="{{ url_for('auth.logout') }}" class="nav-link nav-logout" data-translate="nav_logout">Logout</a>
                 </div>
             {% else %}
                 <!-- Guest User Menu -->
-                <a href="{{ url_for('auth_login') }}" class="nav-link" data-translate="nav_login">Login</a>
-                <a href="{{ url_for('auth_register') }}" class="nav-button nav-signup" data-translate="nav_signup">Sign up</a>
+                <a href="{{ url_for('auth.login') }}" class="nav-link" data-translate="nav_login">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="nav-button nav-signup" data-translate="nav_signup">Sign up</a>
             {% endif %}
         </div>
-        
+
         <!-- Mobile Menu Toggle -->
         <button class="nav-toggle" aria-label="Toggle navigation">
             <span class="nav-toggle-bar"></span>
