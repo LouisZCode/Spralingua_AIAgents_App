@@ -6,6 +6,9 @@ dist/
 wheels/
 *.egg-info
 
+#Internal:
+todo_list.md
+
 # Virtual environments
 .venv
 

@@ -44,6 +44,13 @@ class MinimaxClient:
             'harry': 'AlpineSnowboardCoach_2024',  # Custom cloned voice for Harry
             'sally': 'SadSally_German_v2'          # Custom cloned voice for Sally
         }
+
+        # Archive: Original Minimax default voices (before custom cloning)
+        # These are built-in Minimax voices, kept for reference
+        self.archived_voices = {
+            'harry_original': 'male-qn-qingse',   # Cheerful male voice
+            'sally_original': 'female-shaonv'     # Thoughtful female voice
+        }
         
         print(f"[MINIMAX] Client initialized - API key configured: {bool(self.api_key)}")
     
