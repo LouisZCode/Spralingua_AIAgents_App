@@ -39,10 +39,10 @@ class MinimaxClient:
             "format": "mp3"
         }
         
-        # Character voice mappings
+        # Character voice mappings (custom cloned voices from Minimax)
         self.character_voices = {
-            'harry': 'male-qn-qingse',  # Cheerful male voice
-            'sally': 'female-shaonv'     # Thoughtful female voice
+            'harry': 'AlpineSnowboardCoach_2024',  # Custom cloned voice for Harry
+            'sally': 'SadSally_German_v2'          # Custom cloned voice for Sally
         }
         
         print(f"[MINIMAX] Client initialized - API key configured: {bool(self.api_key)}")
